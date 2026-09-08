@@ -5,11 +5,15 @@ import { ComboboxProps, ComboboxOptionItemData } from './types';
 
 const EMPTY_ARRAY: unknown[] = [];
 
-/** Estado de apertura/búsqueda + click-para-abrir del combobox genérico (FC163 F1B-2, split Alfa 219_AN). */
-export function useComboboxToggle(
-  disabled: boolean,
-  inputRef: RefObject<HTMLInputElement>
-): {
+/**
+ * Estado de apertura/búsqueda + click-para-abrir del combobox genérico
+ * (FC163 F1B-2, split Alfa 219_AN). FC166 Track D (S6819) — `disabled` ya
+ * no se comprueba aquí: el trigger es un <button disabled={disabled}>
+ * nativo (antes era un <div role="button">), así que el navegador bloquea
+ * el click/foco/teclado antes de que este handler pueda ejecutarse; la
+ * comprobación interna quedó inalcanzable (0 uncovered_conditions real).
+ */
+export function useComboboxToggle(inputRef: RefObject<HTMLInputElement>): {
   isOpen: boolean;
   searchTerm: string;
   setSearchTerm: (v: string) => void;
@@ -20,7 +24,6 @@ export function useComboboxToggle(
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleTriggerClick = (): void => {
-    if (disabled) return;
     setIsOpen(!isOpen);
     if (!isOpen) {
       setSearchTerm('');
@@ -158,7 +161,6 @@ export function useCombobox<T>(props: ComboboxProps<T>): UseComboboxResult {
     value,
     onChange,
     onSearch,
-    disabled = false,
     getOptionValue,
     getOptionLabel,
     getOptionSecondary,
@@ -166,10 +168,8 @@ export function useCombobox<T>(props: ComboboxProps<T>): UseComboboxResult {
   } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { isOpen, searchTerm, setSearchTerm, setIsOpen, handleTriggerClick } = useComboboxToggle(
-    disabled,
-    inputRef
-  );
+  const { isOpen, searchTerm, setSearchTerm, setIsOpen, handleTriggerClick } =
+    useComboboxToggle(inputRef);
   const { items, selectedLabel, loading } = useComboboxData(
     isOpen,
     searchTerm,

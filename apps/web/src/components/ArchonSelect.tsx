@@ -296,7 +296,7 @@ export default function ArchonSelect({
     portalRoot,
     handleToggle,
     handleSelect,
-  } = useArchonSelectState(options, value, onChange, placeholderProp, disabled, searchable);
+  } = useArchonSelectState(options, value, onChange, placeholderProp, searchable);
 
   return (
     <div className="relative w-full" ref={containerRef}>

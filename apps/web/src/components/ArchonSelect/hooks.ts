@@ -135,16 +135,21 @@ export function useResetSearchOnOpen(
   }, [isOpen, searchable, setSearchTerm, inputRef]);
 }
 
-/** Handlers de toggle/selección del combobox (FC163 F1B-2, split Alfa 219_AN). */
+/**
+ * Handlers de toggle/selección del combobox (FC163 F1B-2, split Alfa 219_AN).
+ * FC166 Track D (S6819) — `disabled` ya no se comprueba aquí: el trigger es
+ * un <button disabled={disabled}> nativo (antes era un <div role="button">),
+ * así que el navegador bloquea el click/foco/teclado antes de que este
+ * handler pueda ejecutarse en absoluto; la comprobación interna quedó
+ * inalcanzable (0 uncovered_conditions real, no una omisión de test).
+ */
 export function useArchonSelectActions(
-  disabled: boolean,
   isOpen: boolean,
   setIsOpen: Dispatch<SetStateAction<boolean>>,
   updatePosition: () => void,
   onChange: (v: string) => void
 ): { handleToggle: () => void; handleSelect: (v: string) => void } {
   const handleToggle = (): void => {
-    if (disabled) return;
     if (!isOpen) updatePosition();
     setIsOpen((prev) => !prev);
   };
@@ -175,7 +180,6 @@ export function useArchonSelectState(
   value: string,
   onChange: (v: string) => void,
   emptyLabel: string,
-  disabled: boolean,
   searchable: boolean
 ): UseArchonSelectStateResult {
   const [isOpen, setIsOpen] = useState(false);
@@ -194,7 +198,6 @@ export function useArchonSelectState(
   const portalRoot = usePortalRoot();
   useResetSearchOnOpen(isOpen, searchable, setSearchTerm, inputRef);
   const { handleToggle, handleSelect } = useArchonSelectActions(
-    disabled,
     isOpen,
     setIsOpen,
     updatePosition,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface ArchonModalProps {
@@ -18,21 +18,35 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
   ariaLabel,
   containerClassName,
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  // FC166 Track D (S6819/S6848/S1082) — click-outside/Escape are handled via
+  // document-level listeners instead of onClick/onKeyDown JSX props on the
+  // backdrop <div>: a div with click/key handlers but no native semantics
+  // is itself a Sonar "non-native interactive element" finding, and there
+  // is no role that honestly describes "click-catcher behind a dialog".
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose();
+    };
+    const handleOutsideClick = (e: MouseEvent): void => {
+      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleOutsideClick);
+    return (): void => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
   return createPortal(
-    <div
-      className="archon-modal-backdrop"
-      onClick={handleBackdropClick}
-      onKeyDown={(e: React.KeyboardEvent): void => {
-        if (e.key === 'Escape') onClose();
-      }}
-    >
+    <div className="archon-modal-backdrop">
       <dialog
+        ref={dialogRef}
         open
         // A bare <dialog open> (no showModal()) still inherits the UA
         // stylesheet's `position: absolute; inset-block-start: 0; margin:
