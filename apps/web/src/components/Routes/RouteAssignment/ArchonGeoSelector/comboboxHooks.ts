@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useClickOutside } from './comboboxCore';
-import { ComboboxProps, ComboboxOptionItemData } from './types';
+import { ComboboxProps, ComboboxOptionItemData, ComboboxAccessors } from './types';
 
 const EMPTY_ARRAY: unknown[] = [];
 
@@ -84,7 +84,7 @@ export function useComboboxSelectedLabel<T>(
   useEffect((): void => {
     if (value) {
       const match =
-        options.find((opt) => getOptionValue(opt) === value) ||
+        options.find((opt) => getOptionValue(opt) === value) ??
         initialOptions.find((opt) => getOptionValue(opt) === value);
       if (match) {
         setSelectedLabel(getOptionLabel(match));
@@ -113,17 +113,18 @@ function buildComboboxItems<T>(
   }));
 }
 
-/** Une opciones/loading/selectedLabel/items en una sola llamada (FC163 F1B-2, split Alfa 219_AN). */
+/** Une opciones/loading/selectedLabel/items en una sola llamada (FC163 F1B-2,
+ * split Alfa 219_AN). Los 3 accesores de forma de opción viajan agrupados en
+ * `accessors` (FC166 Track D S107 — 8 parámetros excedía el máximo de 7). */
 function useComboboxData<T>(
   isOpen: boolean,
   searchTerm: string,
   onSearch: (query: string) => Promise<T[]>,
   initialOptions: T[],
   value: number | undefined,
-  getOptionValue: (opt: T) => number,
-  getOptionLabel: (opt: T) => string,
-  getOptionSecondary?: (opt: T) => string | undefined
+  accessors: ComboboxAccessors<T>
 ): { items: ComboboxOptionItemData[]; selectedLabel: string; loading: boolean } {
+  const { getOptionValue, getOptionLabel, getOptionSecondary } = accessors;
   const { options, loading } = useComboboxOptions(isOpen, searchTerm, onSearch, initialOptions);
   const selectedLabel = useComboboxSelectedLabel(
     value,
@@ -176,9 +177,11 @@ export function useCombobox<T>(props: ComboboxProps<T>): UseComboboxResult {
     onSearch,
     initialOptions,
     value,
-    getOptionValue,
-    getOptionLabel,
-    getOptionSecondary
+    {
+      getOptionValue,
+      getOptionLabel,
+      getOptionSecondary,
+    }
   );
   useClickOutside(containerRef, (): void => setIsOpen(false));
 

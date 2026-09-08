@@ -98,9 +98,7 @@ export type LoginResult =
 /** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly. */
 export async function login(username: string, password: string): Promise<LoginResult> {
   let user = await SessionRepository.findUserWithRoleAndDepartmentByUsername(username);
-  if (!user) {
-    user = await findUserByEmail(username);
-  }
+  user ??= await findUserByEmail(username);
   if (!user) {
     return { ok: false, status: 401, errorCode: 'L3' };
   }

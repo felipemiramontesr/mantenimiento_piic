@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 /**
@@ -87,19 +87,27 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
     []
   );
 
+  // FC166 Track D (S6481) — el objeto `value` del Provider se recreaba en
+  // cada render; `setSearchTerm`/`setSearchConfig`/`setIsMobileMenuOpen` ya
+  // son estables por contrato de React (useState) y `setSectionData` ya
+  // estaba en useCallback([]), así que este useMemo solo recalcula cuando
+  // cambia un valor de estado real.
+  const contextValue = useMemo<SovereignLayoutContextType>(
+    () => ({
+      layoutData,
+      searchTerm,
+      setSearchTerm,
+      searchConfig,
+      setSearchConfig,
+      setSectionData,
+      isMobileMenuOpen,
+      setIsMobileMenuOpen,
+    }),
+    [layoutData, searchTerm, searchConfig, setSectionData, isMobileMenuOpen]
+  );
+
   return (
-    <SovereignLayoutContext.Provider
-      value={{
-        layoutData,
-        searchTerm,
-        setSearchTerm,
-        searchConfig,
-        setSearchConfig,
-        setSectionData,
-        isMobileMenuOpen,
-        setIsMobileMenuOpen,
-      }}
-    >
+    <SovereignLayoutContext.Provider value={contextValue}>
       {children}
     </SovereignLayoutContext.Provider>
   );

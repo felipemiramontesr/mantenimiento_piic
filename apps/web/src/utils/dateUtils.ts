@@ -4,12 +4,16 @@
  * Standards: es-MX (DD/MM/YYYY)
  */
 
+/** Raw date shapes accepted across this module's formatters (S4323 — alias
+ * in vez de repetir la unión en cada firma que lo usa). */
+export type DateInput = string | number | Date;
+
 /**
  * Formats a date string or object to the Spanish (Mexico) standard (Date only).
  * @param date - The date to format (string, number, or Date object)
  * @returns Formatted date string (DD/MM/YYYY)
  */
-export const formatDate = (date: string | number | Date): string => {
+export const formatDate = (date: DateInput): string => {
   if (!date) return '---';
   return new Date(date).toLocaleDateString('es-MX', {
     day: '2-digit',
@@ -23,7 +27,7 @@ export const formatDate = (date: string | number | Date): string => {
  * @param date - The date to format
  * @returns Formatted date/time string (DD/MM/YYYY hh:mm AM/PM)
  */
-export const formatDateTime = (date: string | number | Date): string => {
+export const formatDateTime = (date: DateInput): string => {
   if (!date) return '---';
   return new Date(date).toLocaleString('es-MX', {
     day: '2-digit',
@@ -50,10 +54,7 @@ export const toDateOnly = (date: string | null | undefined): string | undefined 
  * @param end - End date
  * @returns Formatted duration string (e.g., "2h 30m")
  */
-export const calculateDuration = (
-  start: string | number | Date,
-  end: string | number | Date | null
-): string => {
+export const calculateDuration = (start: DateInput, end: DateInput | null): string => {
   if (!start || !end) return '---';
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();

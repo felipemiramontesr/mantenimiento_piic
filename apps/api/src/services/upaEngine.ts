@@ -429,8 +429,10 @@ export function calculateUpaOrder(input: UpaInput): UpaOutput {
   const cascadeTasks: Task[] = activeLevels.flatMap((level) =>
     getTasksForPackage(level, brand, fuelType)
   );
-  tasks.push(...deduplicateCascade(cascadeTasks, lastClosedWorkOrder));
-  tasks.push(...getStage4Tasks(lastClosedWorkOrder));
+  tasks.push(
+    ...deduplicateCascade(cascadeTasks, lastClosedWorkOrder),
+    ...getStage4Tasks(lastClosedWorkOrder)
+  );
 
   return { tasks, validationErrors: [] };
 }

@@ -191,16 +191,15 @@ export async function completeMaintenance(
     );
     await persistCompletionDetails(movement.id as number, data.details, connection);
 
-    await applyMaintenanceCompletionToUnit(
-      connection,
+    await applyMaintenanceCompletionToUnit(connection, {
       unitId,
-      data.odometerAtService,
-      finalServiceDate,
+      odometerAtService: data.odometerAtService,
+      serviceDate: finalServiceDate,
       maintIntervalKm,
-      data.details,
-      data.endOdometer,
-      data.fuelLevelEnd
-    );
+      details: data.details,
+      endOdometer: data.endOdometer,
+      fuelLevelEnd: data.fuelLevelEnd,
+    });
     await connection.commit();
 
     dispatchCompletionNotifications(uuid, unitId);

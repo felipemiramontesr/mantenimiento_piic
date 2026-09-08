@@ -50,7 +50,10 @@ function generateJWT(clientEmail: string, privateKey: string): string {
   });
   const encodedClaim = Buffer.from(claim).toString('base64url');
 
-  const formattedKey = privateKey.replaceAll('\\n', '\n');
+  // String.raw evita la doble-escapada visual de '\\n' (S7780) — el patrón
+  // buscado es el literal de 2 caracteres backslash+n que traen las llaves
+  // PEM serializadas en variables de entorno, no un salto de línea real.
+  const formattedKey = privateKey.replaceAll(String.raw`\n`, '\n');
   const sign = crypto.createSign('RSA-SHA256');
   sign.update(`${encodedHeader}.${encodedClaim}`);
   const signature = sign.sign(formattedKey, 'base64url');

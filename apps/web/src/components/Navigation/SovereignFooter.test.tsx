@@ -5,7 +5,7 @@ import SovereignFooter from './SovereignFooter';
 import { SYSTEM_VERSION } from '../../constants/versionConstants';
 
 vi.mock('../../ArchonDoctor', () => ({
-  ArchonDoctor: (): React.ReactElement => <div data-testid="archon-doctor-mock" />,
+  default: (): React.ReactElement => <div data-testid="archon-doctor-mock" />,
 }));
 
 vi.mock('../Logo/ArchonLogo', () => ({

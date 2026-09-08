@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ArchonDoctor } from './ArchonDoctor';
+import ArchonDoctor from './ArchonDoctor';
 
 /**
  * FC 074 F2 — Navegación Soberana Móvil.

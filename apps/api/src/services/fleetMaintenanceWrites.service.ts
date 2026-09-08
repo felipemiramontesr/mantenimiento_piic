@@ -2,14 +2,13 @@ import { RowDataPacket } from 'mysql2';
 import crypto from 'node:crypto';
 import db from './db';
 import * as FleetMaintenanceRepository from './fleetMaintenanceWrites.repository';
-import { resolveCatalogId, CatalogMappingError } from './catalogMapper';
+import { resolveCatalogId } from './catalogMapper';
 import NotificationService, {
   ArchonNotificationType,
   ArchonNotificationPriority,
 } from './notification.service';
 import { MAINTENANCE } from '../constants/maintenance';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
-import { FleetMaintenanceServiceError } from './fleetMaintenance.errors';
 import {
   resolveOwnerScope,
   computeServiceType,
@@ -31,7 +30,21 @@ import {
  * the repository only ever executes SQL against the `executor` it's handed
  * (Cond.R-156-M4). Zero SQL, zero Fastify (I1/I2).
  */
-export { CatalogMappingError, FleetMaintenanceServiceError };
+export { CatalogMappingError } from './catalogMapper';
+export { FleetMaintenanceServiceError } from './fleetMaintenance.errors';
+
+/** Datos de cierre de un movimiento MAINTENANCE (FC166 Track D S107 — los 7
+ * campos de dato de `applyMaintenanceCompletionToUnit` viajan agrupados aquí
+ * porque junto con `connection` excedían el máximo de 7 parámetros). */
+export interface MaintenanceCompletionInput {
+  unitId: string;
+  odometerAtService: number;
+  serviceDate: string;
+  maintIntervalKm: number | string;
+  details: Array<{ taskCode: string; status: string }>;
+  endOdometer?: number;
+  fuelLevelEnd?: number;
+}
 
 /**
  * Finalizes a MAINTENANCE movement: updates fleet_units odometer, forecast, and status.
@@ -40,14 +53,17 @@ export { CatalogMappingError, FleetMaintenanceServiceError };
  */
 export async function applyMaintenanceCompletionToUnit(
   connection: FleetMaintenanceRepository.Executor,
-  unitId: string,
-  odometerAtService: number,
-  serviceDate: string,
-  maintIntervalKm: number | string,
-  details: Array<{ taskCode: string; status: string }>,
-  endOdometer?: number,
-  fuelLevelEnd?: number
+  input: MaintenanceCompletionInput
 ): Promise<void> {
+  const {
+    unitId,
+    odometerAtService,
+    serviceDate,
+    maintIntervalKm,
+    details,
+    endOdometer,
+    fuelLevelEnd,
+  } = input;
   const unitRow = await FleetMaintenanceRepository.findUnitOdometer(unitId, connection);
   const currentOdometer = Number(unitRow?.odometer || 0);
 
@@ -123,7 +139,7 @@ function dispatchIntakeOpenNotifications(uuid: string, unitId: string, technicia
           metadata: { uuid, unitId, actionRequired: true },
         });
       }
-      return Promise.resolve();
+      return undefined;
     })
     .catch(() => {
       // Notification failure is non-fatal per zero-noise policy
@@ -241,16 +257,15 @@ async function finalizeIntake(
       message: 'Maintenance order created. Awaiting technician acceptance.',
     };
   }
-  await applyMaintenanceCompletionToUnit(
-    connection,
-    data.unitId,
-    data.odometerAtService,
-    data.serviceDate,
-    unit.maintIntervalKm as number | string,
-    data.details,
-    data.endOdometer,
-    data.fuelLevelEnd
-  );
+  await applyMaintenanceCompletionToUnit(connection, {
+    unitId: data.unitId,
+    odometerAtService: data.odometerAtService,
+    serviceDate: data.serviceDate,
+    maintIntervalKm: unit.maintIntervalKm as number | string,
+    details: data.details,
+    endOdometer: data.endOdometer,
+    fuelLevelEnd: data.fuelLevelEnd,
+  });
   await connection.commit();
   return {
     uuid: logUuid,

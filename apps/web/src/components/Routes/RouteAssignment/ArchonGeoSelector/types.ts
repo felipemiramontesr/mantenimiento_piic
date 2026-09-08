@@ -36,6 +36,15 @@ export interface ComboboxProps<T> {
   initialOptions?: T[];
 }
 
+/** Los 3 accesores de forma de opción de `ComboboxProps<T>`, agrupados
+ * (FC166 Track D S107) para que `useComboboxData` no exceda el máximo de
+ * 7 parámetros — mismo contrato, solo empaquetado en un objeto. */
+export interface ComboboxAccessors<T> {
+  getOptionValue: (opt: T) => number;
+  getOptionLabel: (opt: T) => string;
+  getOptionSecondary?: (opt: T) => string | undefined;
+}
+
 export interface ComboboxOptionItemData {
   key: string;
   id: number;

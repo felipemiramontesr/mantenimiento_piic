@@ -34,8 +34,12 @@ export interface PreviewWorkOrderResult {
   }>;
 }
 
+/** Estatus posibles de una tarea de orden de trabajo (S4323 — alias en vez
+ * de repetir la unión en cada firma que lo usa). */
+export type TaskStatus = 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
+
 export interface UpdateTaskStatusInput {
-  status: 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
+  status: TaskStatus;
   evidenceUrls?: string[];
   evidenceNotes?: string;
 }
@@ -45,7 +49,7 @@ export interface WorkOrderTaskDetail {
   stage: TaskStage;
   packageLevel: PackageLevel | null;
   description: string;
-  status: 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
+  status: TaskStatus;
   evidenceUrls: string[] | null;
   evidenceNotes: string | null;
   completedAt: Date | null;
@@ -428,7 +432,7 @@ export async function getWorkOrder(workOrderId: number): Promise<WorkOrderDetail
       stage: r.stage as TaskStage,
       packageLevel: (r.package_level as PackageLevel | null) ?? null,
       description: r.description as string,
-      status: r.task_status as 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL',
+      status: r.task_status as TaskStatus,
       evidenceUrls: r.evidence_urls ? (JSON.parse(r.evidence_urls as string) as string[]) : null,
       evidenceNotes: (r.evidence_notes as string | null) ?? null,
       completedAt: (r.completed_at as Date | null) ?? null,

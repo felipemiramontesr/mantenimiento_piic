@@ -41,7 +41,10 @@ function cellValue(row: Record<string, unknown>, column: CsvColumn): string {
   if (PII_KEYS.has(column.key)) return PII_MASK; // política de archivo: sin excepciones
   const raw = row[column.key];
   if (raw === null || raw === undefined) return '';
-  return escapeCsvCell(String(raw));
+  // `raw` es un valor arbitrario de fila (unknown) — se evita
+  // "[object Object]" en la celda CSV si alguna vez es un objeto (S6551).
+  const rawStr = typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
+  return escapeCsvCell(rawStr);
 }
 
 /** CSV RFC 4180 (CRLF) — solo columnas visibles, cero peticiones de red. */

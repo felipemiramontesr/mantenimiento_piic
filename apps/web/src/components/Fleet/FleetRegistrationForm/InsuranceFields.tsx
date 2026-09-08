@@ -101,11 +101,7 @@ function InsuranceExpiryAndCostFields({
             inputMode="decimal"
             placeholder="Ej: 850.00"
             className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
-            value={
-              formData.insuranceCost !== undefined && formData.insuranceCost !== null
-                ? formData.insuranceCost
-                : ''
-            }
+            value={formData.insuranceCost ?? ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
               const val = e.target.value === '' ? undefined : Number.parseFloat(e.target.value);
               setFormData((prev) => ({ ...prev, insuranceCost: val }));

@@ -164,10 +164,17 @@ function maxSeverity(a: AlertSeverity, b: AlertSeverity): AlertSeverity {
   return SEVERITY_RANK[a] >= SEVERITY_RANK[b] ? a : b;
 }
 
+/** `value` es `unknown` (dato crudo de BD) — nunca un objeto/arreglo en la
+ * práctica (siempre Date/string/number desde columnas de fecha), pero se
+ * evita "[object Object]" si alguna vez llega uno (S6551). */
+function stringifyRaw(value: unknown): string {
+  return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+}
+
 function formatDateEsMx(value: unknown): string {
   if (value == null) return 'N/D';
-  const d = value instanceof Date ? value : new Date(String(value));
-  if (Number.isNaN(d.getTime())) return String(value);
+  const d = value instanceof Date ? value : new Date(stringifyRaw(value));
+  if (Number.isNaN(d.getTime())) return stringifyRaw(value);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -229,11 +236,13 @@ export function buildOverdueDescription(
       return `Último Mantenimiento: ${dateStr} · ${days} días vencido`;
     }
     const base =
-      lastServiceDate instanceof Date ? lastServiceDate : new Date(String(lastServiceDate));
+      lastServiceDate instanceof Date ? lastServiceDate : new Date(stringifyRaw(lastServiceDate));
     const due = new Date(base);
     due.setDate(due.getDate() + Number(maintIntervalDays));
     return `Próximo Mantenimiento: ${formatDateEsMx(due)} · en ${Math.abs(days)} días`;
   }
 
-  return `Último Mantenimiento: ${dateStr} · Intervalo: ${String(maintIntervalDays ?? 'N/D')} días`;
+  return `Último Mantenimiento: ${dateStr} · Intervalo: ${stringifyRaw(
+    maintIntervalDays ?? 'N/D'
+  )} días`;
 }

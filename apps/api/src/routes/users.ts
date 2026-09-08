@@ -98,7 +98,7 @@ async function handleGetProfileImage(request: FastifyRequest, reply: FastifyRepl
 
     // Data URI: decode and serve as binary image
     if (stored.startsWith('data:')) {
-      const matches = stored.match(/^data:(image\/\w+);base64,(.+)$/);
+      const matches = /^data:(image\/\w+);base64,(.+)$/.exec(stored);
       if (!matches) {
         reply.code(404).send({ error: 'Invalid image data format' });
         return;

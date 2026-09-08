@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { redirectUserToLogin } from './navigation';
+import redirectUserToLogin from './navigation';
 
 /**
  * FC162 F3 (100% mandatorio) — navigation.ts sin test previo. jsdom lanza

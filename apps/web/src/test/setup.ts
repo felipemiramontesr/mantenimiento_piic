@@ -78,13 +78,29 @@ const mockIOCallbacks = new Map<Element, IOCallback>();
 class MockIntersectionObserver
   implements Omit<IntersectionObserver, 'root' | 'rootMargin' | 'thresholds'>
 {
-  static callCount = 0;
+  // FC166 Track D (S1444) — `callCount`/`lastOptions` no pueden ser
+  // `readonly` directamente (se reasignan en el constructor y en `reset()`,
+  // ambos fuera de un inicializador estático). Se mueve el estado mutable
+  // a este holder privado — sí genuinamente `readonly` (su referencia nunca
+  // cambia, solo sus campos) — y se exponen como getters públicos de solo
+  // lectura, preservando la forma externa (`ArchonMockIO.callCount`, etc.)
+  // consumida por Sidebar.test.tsx.
+  private static readonly state: { callCount: number; lastOptions: IOOptions | undefined } = {
+    callCount: 0,
+    lastOptions: undefined,
+  };
 
-  static lastOptions: IOOptions | undefined;
+  static get callCount(): number {
+    return MockIntersectionObserver.state.callCount;
+  }
+
+  static get lastOptions(): IOOptions | undefined {
+    return MockIntersectionObserver.state.lastOptions;
+  }
 
   static reset(): void {
-    MockIntersectionObserver.callCount = 0;
-    MockIntersectionObserver.lastOptions = undefined;
+    MockIntersectionObserver.state.callCount = 0;
+    MockIntersectionObserver.state.lastOptions = undefined;
   }
 
   readonly root: Element | Document | null = null;
@@ -93,11 +109,11 @@ class MockIntersectionObserver
 
   readonly thresholds: ReadonlyArray<number> = [];
 
-  private ioCallback: IOCallback;
+  private readonly ioCallback: IOCallback;
 
   constructor(callback: IOCallback, options?: IOOptions) {
-    MockIntersectionObserver.callCount += 1;
-    MockIntersectionObserver.lastOptions = options;
+    MockIntersectionObserver.state.callCount += 1;
+    MockIntersectionObserver.state.lastOptions = options;
     this.ioCallback = callback;
   }
 
@@ -125,7 +141,12 @@ class MockIntersectionObserver
   }
 
   // eslint-disable-next-line class-methods-use-this
-  disconnect(): void {}
+  disconnect(): void {
+    // No-op intencional: el mock no retiene estado por-instancia que limpiar
+    // al desconectar (`mockIOCallbacks` se limpia globalmente en `afterEach`
+    // más abajo); el método existe solo para satisfacer el contrato de
+    // `IntersectionObserver` (S1186).
+  }
 
   // eslint-disable-next-line class-methods-use-this
   takeRecords(): IntersectionObserverEntry[] {

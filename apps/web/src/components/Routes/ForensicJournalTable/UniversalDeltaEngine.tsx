@@ -24,7 +24,11 @@ function formatVal(v: unknown, k: string): string {
   if (!Number.isNaN(Number(v))) {
     return Number(v).toLocaleString(undefined, { minimumFractionDigits: 1 });
   }
-  return String(v);
+  // `v` es `unknown` a nivel de firma (datos de snapshot JSON arbitrarios),
+  // pero el WHITELIST de arriba es un dominio cerrado de 3 claves no
+  // numéricas — en la práctica `v` siempre es string aquí. Se preserva una
+  // representación real si algún día llega un objeto (S6551).
+  return typeof v === 'object' ? JSON.stringify(v) : String(v);
 }
 
 /** Parsea `snapshot_before`/`snapshot_after` (JSON o ya-objeto) de forma

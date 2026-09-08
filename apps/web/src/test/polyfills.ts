@@ -1,23 +1,27 @@
-/* eslint-disable */
 // 🔱 Sovereign Web API Polyfills for isolated VM environments (vmForks/vmThreads compatibility)
 import { TransformStream, ReadableStream, WritableStream } from 'node:stream/web';
 import { TextEncoder, TextDecoder } from 'node:util';
 
+// Patching globals with APIs TypeScript's own lib types don't declare is
+// inherently untyped — narrowed to `Record<string, unknown>` instead of
+// `any` (equally unsafe by necessity here, but not the literal `any` type).
+const patchedGlobal = global as unknown as Record<string, unknown>;
+
 if (typeof global.TransformStream === 'undefined') {
-  (global as any).TransformStream = TransformStream;
+  patchedGlobal.TransformStream = TransformStream;
 }
 if (typeof global.ReadableStream === 'undefined') {
-  (global as any).ReadableStream = ReadableStream;
+  patchedGlobal.ReadableStream = ReadableStream;
 }
 if (typeof global.WritableStream === 'undefined') {
-  (global as any).WritableStream = WritableStream;
+  patchedGlobal.WritableStream = WritableStream;
 }
 if (typeof global.TextEncoder === 'undefined') {
-  (global as any).TextEncoder = TextEncoder;
+  patchedGlobal.TextEncoder = TextEncoder;
 }
 if (typeof global.TextDecoder === 'undefined') {
-  (global as any).TextDecoder = TextDecoder;
+  patchedGlobal.TextDecoder = TextDecoder;
 }
 if (typeof global.ProgressEvent === 'undefined') {
-  (global as any).ProgressEvent = class ProgressEvent extends Event {};
+  patchedGlobal.ProgressEvent = class ProgressEvent extends Event {};
 }

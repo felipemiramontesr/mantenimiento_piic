@@ -49,19 +49,19 @@ export const parseAddress = (destinationStr: string): ParsedAddress => {
 
   if (parts.length >= 4) {
     const streetPart = parts[0];
-    const intMatch = streetPart.match(/[\s,]{1,20}Int\.?\s{0,20}(.{1,200})$/i);
+    const intMatch = /[\s,]{1,20}Int\.?\s{0,20}(.{1,200})$/i.exec(streetPart);
     let mainStreet = streetPart;
     if (intMatch) {
       parsedNumeroInterior = intMatch[1].trim();
       mainStreet = streetPart.substring(0, intMatch.index).trim();
     }
 
-    const numMatch = mainStreet.match(/[\s,]{1,20}#(No\.?|N[°.]?)?\s{0,20}(\S{1,50})$/i);
+    const numMatch = /[\s,]{1,20}#(No\.?|N[°.]?)?\s{0,20}(\S{1,50})$/i.exec(mainStreet);
     if (numMatch) {
       parsedNumero = numMatch[2].trim();
       parsedCalle = mainStreet.substring(0, numMatch.index).trim();
     } else {
-      const numEndMatch = mainStreet.match(/[\s,]{1,20}(\d{1,10}[a-zA-Z]?)$/);
+      const numEndMatch = /[\s,]{1,20}(\d{1,10}[a-zA-Z]?)$/.exec(mainStreet);
       if (numEndMatch) {
         parsedNumero = numEndMatch[1].trim();
         parsedCalle = mainStreet.substring(0, numEndMatch.index).trim();
@@ -205,7 +205,11 @@ export const validateTirePressures = (formData: RouteAssignmentFormData): string
   ['DI', 'DD', 'TI', 'TD'].some((pos) => {
     const val = tires[pos];
     if (val !== undefined && val !== null) {
-      const valStr = String(val);
+      // Un JSON malformado podría dejar `val` como objeto/arreglo — se
+      // rechaza igual (String() de un objeto seguiría fallando el parseo
+      // Number() de abajo), pero el mensaje de error usa una
+      // representación real en vez de "[object Object]" (S6551).
+      const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val);
       if (valStr.trim() !== '') {
         const numVal = Number(valStr);
         if (Number.isNaN(numVal) || numVal < 20 || numVal > 100) {

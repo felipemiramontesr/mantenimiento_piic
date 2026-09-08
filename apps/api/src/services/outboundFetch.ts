@@ -64,7 +64,7 @@ function isPrivateV4(ip: string): boolean {
 export function isPrivateIp(ip: string): boolean {
   if (ip.includes('.') && !ip.includes(':')) return isPrivateV4(ip);
   const lower = ip.toLowerCase();
-  const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(lower);
   if (mapped) return isPrivateV4(mapped[1]); // v4-mapped hereda la clasificación v4
   if (lower === '::' || lower === '::1') return true; // unspecified / loopback
   if (
@@ -290,7 +290,10 @@ async function performOutboundRequest(
       port: parsed.port === '' ? 443 : Number(parsed.port),
       path: `${parsed.pathname}${parsed.search}`,
       method: init.method ?? 'GET',
-      headers: { ...(init.headers ?? {}), Host: parsed.hostname }, // (c)
+      // Spread de `undefined` en un objeto literal es un no-op válido en JS
+      // (CopyDataProperties ignora null/undefined) — el fallback `?? {}` era
+      // superfluo (S7744).
+      headers: { ...init.headers, Host: parsed.hostname }, // (c)
       body: init.body,
       timeoutMs: init.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     });

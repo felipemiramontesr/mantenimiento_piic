@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import { UserIndustrial } from '../types/user';
 import api from '../api/client';
 import { setToken, clearToken } from '../api/tokenStore';
@@ -96,6 +104,123 @@ function createSessionActions(
   return { login, logout };
 }
 
+/** Sesión: epoch ref + acciones estables (impersonation/login/logout/
+ * updateCurrentUser) — extraída de `AuthProvider` para respetar el cap de 50
+ * líneas de Gate 2 (FC166 Track D); mismo comportamiento verbatim, incluye
+ * el guard R-L-CONTEXT de epoch (FC 070) y el S6481 de `login`/`logout`. */
+function useAuthSessionActions(
+  setCurrentUser: React.Dispatch<React.SetStateAction<UserIndustrial | null>>,
+  setIsAuthenticated: (value: boolean) => void,
+  setViewAsUser: (user: UserIndustrial | null) => void
+): {
+  sessionEpochRef: React.MutableRefObject<number>;
+  startImpersonation: (target: UserIndustrial) => void;
+  stopImpersonation: () => void;
+  getSessionEpoch: () => number;
+  login: (token: string, user: UserIndustrial) => void;
+  logout: () => Promise<void>;
+  updateCurrentUser: (data: Partial<UserIndustrial>) => void;
+} {
+  // FC 070 — Auth_Session_Restore_Race_Guard. Contador de generación: cada
+  // login/logout manual avanza el epoch. La restauración silenciosa de sesión
+  // al montar (restoreSession, en AuthProvider) captura el epoch vigente al
+  // iniciar y descarta su resultado — éxito o fallo, T1 — si el epoch ya
+  // avanzó cuando resuelve (una acción manual más reciente ya definió el
+  // estado).
+  const sessionEpochRef = useRef(0);
+
+  const startImpersonation = useCallback(
+    (target: UserIndustrial): void => setViewAsUser(target),
+    [setViewAsUser]
+  );
+  const stopImpersonation = useCallback((): void => setViewAsUser(null), [setViewAsUser]);
+  const getSessionEpoch = useCallback((): number => sessionEpochRef.current, []);
+  const bumpEpoch = useCallback((): void => {
+    sessionEpochRef.current += 1;
+  }, []);
+
+  // FC166 Track D (S6481) — `bumpEpoch` ya es estable (useCallback []), y
+  // setCurrentUser/setIsAuthenticated son estables por contrato de React
+  // (useState), así que memoizar aquí mantiene `login`/`logout` con la misma
+  // identidad entre renders (antes se recreaban en cada uno).
+  const { login, logout } = useMemo(
+    () => createSessionActions(bumpEpoch, setCurrentUser, setIsAuthenticated),
+    [bumpEpoch, setCurrentUser, setIsAuthenticated]
+  );
+
+  // Forma funcional: evita depender de `currentUser` en el useCallback (deja
+  // `updateCurrentUser` con identidad estable) preservando el no-op original
+  // cuando no hay usuario — React se abstiene de re-renderizar si el updater
+  // regresa la misma referencia (`prev`).
+  const updateCurrentUser = useCallback(
+    (data: Partial<UserIndustrial>): void => {
+      setCurrentUser((prev) => (prev ? { ...prev, ...data } : prev));
+    },
+    [setCurrentUser]
+  );
+
+  return {
+    sessionEpochRef,
+    startImpersonation,
+    stopImpersonation,
+    getSessionEpoch,
+    login,
+    logout,
+    updateCurrentUser,
+  };
+}
+
+/** Memoiza el objeto `value` del Provider — extraída de `AuthProvider` para
+ * respetar el cap de 50 líneas de Gate 2 (FC166 Track D); mismo
+ * comportamiento verbatim (S6481: solo recalcula cuando cambia un valor
+ * real). */
+function useAuthContextValue(value: AuthContextType): AuthContextType {
+  const {
+    currentUser,
+    effectiveUser,
+    isImpersonating,
+    isLoading,
+    login,
+    logout,
+    updateCurrentUser,
+    isAuthenticated,
+    startImpersonation,
+    stopImpersonation,
+    ownerType,
+    getSessionEpoch,
+  } = value;
+  return useMemo<AuthContextType>(
+    () => ({
+      currentUser,
+      effectiveUser,
+      isImpersonating,
+      isLoading,
+      login,
+      logout,
+      updateCurrentUser,
+      isAuthenticated,
+      startImpersonation,
+      stopImpersonation,
+      ownerType,
+      getSessionEpoch,
+    }),
+    [
+      currentUser,
+      effectiveUser,
+      isImpersonating,
+      isLoading,
+      login,
+      logout,
+      updateCurrentUser,
+      isAuthenticated,
+      startImpersonation,
+      stopImpersonation,
+      ownerType,
+      getSessionEpoch,
+    ]
+  );
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserIndustrial | null>(null);
   const [viewAsUser, setViewAsUser] = useState<UserIndustrial | null>(null);
@@ -109,57 +234,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isImpersonating = viewAsUser !== null;
   const effectiveUser = viewAsUser ?? currentUser;
 
-  // FC 070 — Auth_Session_Restore_Race_Guard. Contador de generación: cada
-  // login/logout manual avanza el epoch. La restauración silenciosa de sesión
-  // al montar (restoreSession, más abajo) captura el epoch vigente al iniciar
-  // y descarta su resultado — éxito o fallo, T1 — si el epoch ya avanzó
-  // cuando resuelve (una acción manual más reciente ya definió el estado).
-  const sessionEpochRef = useRef(0);
-
-  const startImpersonation = (target: UserIndustrial): void => setViewAsUser(target);
-
-  const stopImpersonation = (): void => setViewAsUser(null);
-
-  const getSessionEpoch = (): number => sessionEpochRef.current;
-
-  const bumpEpoch = (): void => {
-    sessionEpochRef.current += 1;
-  };
-
-  const { login, logout } = createSessionActions(bumpEpoch, setCurrentUser, setIsAuthenticated);
+  const {
+    sessionEpochRef,
+    startImpersonation,
+    stopImpersonation,
+    getSessionEpoch,
+    login,
+    logout,
+    updateCurrentUser,
+  } = useAuthSessionActions(setCurrentUser, setIsAuthenticated, setViewAsUser);
 
   useEffect(() => {
     const epochAtStart = sessionEpochRef.current;
     restoreSession(sessionEpochRef, epochAtStart, setCurrentUser, setIsAuthenticated, setIsLoading);
-  }, []);
+  }, [sessionEpochRef]);
 
-  const updateCurrentUser = (data: Partial<UserIndustrial>): void => {
-    if (currentUser) {
-      const updated = { ...currentUser, ...data };
-      setCurrentUser(updated);
-    }
-  };
+  const contextValue = useAuthContextValue({
+    currentUser,
+    effectiveUser,
+    isImpersonating,
+    isLoading,
+    login,
+    logout,
+    updateCurrentUser,
+    isAuthenticated,
+    startImpersonation,
+    stopImpersonation,
+    ownerType,
+    getSessionEpoch,
+  });
 
-  return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        effectiveUser,
-        isImpersonating,
-        isLoading,
-        login,
-        logout,
-        updateCurrentUser,
-        isAuthenticated,
-        startImpersonation,
-        stopImpersonation,
-        ownerType,
-        getSessionEpoch,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

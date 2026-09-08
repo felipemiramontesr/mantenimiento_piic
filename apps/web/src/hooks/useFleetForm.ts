@@ -1,5 +1,4 @@
-/* eslint-disable */
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, MutableRefObject } from 'react';
 import { AxiosResponse } from 'axios';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
@@ -64,205 +63,222 @@ interface CatalogsState {
   environmentalHolograms: CatalogOption[];
 }
 
-export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFormReturn {
-  const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
+const INITIAL_CATALOGS_STATE: CatalogsState = {
+  assetTypes: [],
+  fuelTypes: [],
+  driveTypes: [],
+  transmissionTypes: [],
+  marcas: [],
+  modelos: [],
+  freqTime: [],
+  freqUsage: [],
+  departments: [],
+  locations: [],
+  useTypes: [],
+  tireBrands: [],
+  lubeBrands: [],
+  filterBrands: [],
+  engineTypes: [],
+  terrainTypes: [],
+  owners: [],
+  complianceStatuses: [],
+  colors: [],
+  maintenanceCenters: [],
+  insuranceCompanies: [],
+  routeOrigins: [],
+  environmentalHolograms: [],
+};
 
+/** 🌊 Pure Cascade Fetcher — a nivel de módulo (FC166 Track D — Gate 2
+ * `max-lines-per-function`): no cierra sobre nada del closure de
+ * `useFleetForm` (solo usa sus propios argumentos + `api`/
+ * `extractCatalogData`), así que vivir fuera del hook es un movimiento
+ * verbatim, no solo una extracción cosmética — tampoco se recrea en cada
+ * render. */
+async function fetchCategory(category: string, parentId?: number): Promise<CatalogOption[]> {
+  const ts = Date.now();
+  const pid = parentId ? Number(parentId) : null;
+  // Strict parent filtering
+  const url = pid
+    ? `/catalogs/${category}?parentId=${pid}&_cb=${ts}`
+    : `/catalogs/${category}?_cb=${ts}`;
+
+  try {
+    const res = await api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(url);
+    const data = extractCatalogData(res);
+
+    // If empty but strictly needed, we allow a global lookup ONLY for Brands if parent is missing
+    if (data.length === 0 && pid && category === 'BRAND') {
+      const fallback = await api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+        `/catalogs/${category}?_cb=${ts}`
+      );
+      return extractCatalogData(fallback);
+    }
+    return data;
+  } catch (err) {
+    // 🛡️ Zero-Noise Test Shield
+    const isTest =
+      typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
+    if (!isTest) {
+      // eslint-disable-next-line no-console -- diagnóstico intencional, gateado por el Zero-Noise Test Shield
+      console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
+    }
+    return [];
+  }
+}
+
+/** 🛡️ Mount Shield local — mismo patrón que `useMountedRef` de
+ * `useSilkHydration.ts`, duplicado aquí en vez de importado para no acoplar
+ * dos dominios (fleet-form / silk-hydration) que hoy no se relacionan (FC166
+ * Track D — Gate 2); mismo comportamiento verbatim. */
+function useMountedFlag(): MutableRefObject<boolean> {
   const isMountedRef = useRef(true);
-  const hasHydratedRef = useRef(false);
-
-  const [catalogs, setCatalogs] = useState<CatalogsState>({
-    assetTypes: [],
-    fuelTypes: [],
-    driveTypes: [],
-    transmissionTypes: [],
-    marcas: [],
-    modelos: [],
-    freqTime: [],
-    freqUsage: [],
-    departments: [],
-    locations: [],
-    useTypes: [],
-    tireBrands: [],
-    lubeBrands: [],
-    filterBrands: [],
-    engineTypes: [],
-    terrainTypes: [],
-    owners: [],
-    complianceStatuses: [],
-    colors: [],
-    maintenanceCenters: [],
-    insuranceCompanies: [],
-    routeOrigins: [],
-    environmentalHolograms: [],
-  });
-
-  const resetError = useCallback(() => setError(null), []);
-
-  /**
-   * 🌊 Pure Cascade Fetcher
-   */
-  const fetchCategory = async (category: string, parentId?: number): Promise<CatalogOption[]> => {
-    const ts = Date.now();
-    const pid = parentId ? Number(parentId) : null;
-    // Strict parent filtering
-    const url = pid
-      ? `/catalogs/${category}?parentId=${pid}&_cb=${ts}`
-      : `/catalogs/${category}?_cb=${ts}`;
-
-    try {
-      const res = await api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(url);
-      const data = extractCatalogData(res);
-
-      // If empty but strictly needed, we allow a global lookup ONLY for Brands if parent is missing
-      if (data.length === 0 && pid && category === 'BRAND') {
-        const fallback = await api.get<
-          { success: boolean; data: CatalogOption[] } | CatalogOption[]
-        >(`/catalogs/${category}?_cb=${ts}`);
-        return extractCatalogData(fallback);
-      }
-      return data;
-    } catch (err) {
-      // 🛡️ Zero-Noise Test Shield
-      const isTest =
-        typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
-      if (!isTest) {
-        console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
-      }
-      return [];
-    }
-  };
-
-  /**
-   * 🏗️ Foundation Hydration
-   */
-  const hydrate = useCallback(async (): Promise<void> => {
-    // 🛡️ EAGER LOCK: set synchronously (before any await) so the caller
-    // effect's own !hasHydratedRef.current guard (below) can never let a
-    // second hydrate() through — hydrate is a private closure, this useEffect
-    // is its only call site, so a redundant internal guard here was dead code
-    // (FC165 F2 Dead-Branch Purge, verified exhaustively before removal).
-    hasHydratedRef.current = true;
-
-    setIsLoading(true);
-
-    try {
-      const [
-        assetList,
-        fuelList,
-        driveList,
-        transList,
-        timeList,
-        usageList,
-        deptList,
-        locList,
-        usesList,
-        tireList,
-        lubeList,
-        filterList,
-        engineList,
-        terrainList,
-        ownerList,
-        complianceList,
-        colorList,
-        maintCenterList,
-        insuranceList,
-        originList,
-        envList,
-      ] = await Promise.all([
-        getCatalog('ASSET_TYPE'),
-        getCatalog('FUEL'),
-        getCatalog('DRIVE_TYPE'),
-        getCatalog('TRANSMISSION'),
-        getCatalog('FREQ_TIME'),
-        getCatalog('FREQ_USAGE'),
-        getCatalog('DEPARTMENT'),
-        getCatalog('LOCATION'),
-        getCatalog('OPERATIONAL_USE'),
-        getCatalog('TIRE_BRAND'),
-        getCatalog('LUBE_BRAND'),
-        getCatalog('FILTER_BRAND'),
-        getCatalog('ENGINE_TYPE'),
-        getCatalog('TERRAIN_TYPE'),
-        getCatalog('FLEET_OWNER'),
-        getCatalog('COMPLIANCE_STATUS'),
-        getCatalog('VEHICLE_COLOR'),
-        getCatalog('MAINTENANCE_CENTER'),
-        getCatalog('INSURANCE_COMPANY'),
-        getCatalog('ROUTE_ORIGIN'),
-        getCatalog('ENVIRONMENTAL_HOLOGRAM'),
-      ]);
-
-      // Initialize brands for the first asset type (usually VEH)
-      const brandsInitial = await fetchCategory('BRAND', assetList[0]?.id);
-
-      if (isMountedRef.current) {
-        setCatalogs(
-          (prev: CatalogsState): CatalogsState => ({
-            ...prev,
-            assetTypes: assetList,
-            fuelTypes: fuelList,
-            driveTypes: driveList,
-            transmissionTypes: transList,
-            freqTime: timeList,
-            freqUsage: usageList,
-            departments: deptList,
-            locations: locList,
-            useTypes: usesList,
-            tireBrands: tireList,
-            lubeBrands: lubeList,
-            filterBrands: filterList,
-            engineTypes: engineList,
-            terrainTypes: terrainList,
-            owners: ownerList,
-            complianceStatuses: complianceList,
-            colors: colorList,
-            maintenanceCenters: maintCenterList,
-            insuranceCompanies: insuranceList,
-            routeOrigins: originList,
-            environmentalHolograms: envList,
-            marcas:
-              brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
-          })
-        );
-
-        if (assetList.length > 0) {
-          setFormData((prev: CreateFleetUnit): CreateFleetUnit => {
-            if (prev.assetTypeId) return prev;
-            return { ...prev, assetTypeId: assetList[0].id };
-          });
-        }
-      }
-    } catch (err) {
-      // Release lock on error to allow retry
-      hasHydratedRef.current = false;
-      console.error('[Archon Alpha] Critical Hydration Failure', err);
-    } finally {
-      if (isMountedRef.current) setIsLoading(false);
-    }
-  }, []);
-
-  // 3. Lifecycle & Initialization
-  useEffect(() => {
-    if (shouldHydrate && isMountedRef.current && !hasHydratedRef.current && !isLoading) {
-      hydrate();
-    }
-  }, [hydrate, shouldHydrate]);
-
   useEffect(() => {
     isMountedRef.current = true;
     return (): void => {
       isMountedRef.current = false;
     };
   }, []);
+  return isMountedRef;
+}
 
-  /**
-   * 🔱 CASCADE HANDLERS
-   */
-  const handleAssetTypeChange = async (id: number): Promise<void> => {
+interface HydrationSetters {
+  isMountedRef: MutableRefObject<boolean>;
+  hasHydratedRef: MutableRefObject<boolean>;
+  setCatalogs: React.Dispatch<React.SetStateAction<CatalogsState>>;
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+/** Mapa campo-de-`CatalogsState` ↔ código de catálogo — única fuente de
+ * verdad consumida por `fetchAllFleetCatalogsNamed` (evita repetir los 21
+ * nombres 3 veces: destructuring + Promise.all + objeto de retorno). Vive a
+ * nivel de módulo, así que no cuenta contra el presupuesto de líneas de la
+ * función (Gate 2). */
+const FLEET_CATALOG_SPECS: ReadonlyArray<
+  [keyof Omit<CatalogsState, 'marcas' | 'modelos'>, string]
+> = [
+  ['assetTypes', 'ASSET_TYPE'],
+  ['fuelTypes', 'FUEL'],
+  ['driveTypes', 'DRIVE_TYPE'],
+  ['transmissionTypes', 'TRANSMISSION'],
+  ['freqTime', 'FREQ_TIME'],
+  ['freqUsage', 'FREQ_USAGE'],
+  ['departments', 'DEPARTMENT'],
+  ['locations', 'LOCATION'],
+  ['useTypes', 'OPERATIONAL_USE'],
+  ['tireBrands', 'TIRE_BRAND'],
+  ['lubeBrands', 'LUBE_BRAND'],
+  ['filterBrands', 'FILTER_BRAND'],
+  ['engineTypes', 'ENGINE_TYPE'],
+  ['terrainTypes', 'TERRAIN_TYPE'],
+  ['owners', 'FLEET_OWNER'],
+  ['complianceStatuses', 'COMPLIANCE_STATUS'],
+  ['colors', 'VEHICLE_COLOR'],
+  ['maintenanceCenters', 'MAINTENANCE_CENTER'],
+  ['insuranceCompanies', 'INSURANCE_COMPANY'],
+  ['routeOrigins', 'ROUTE_ORIGIN'],
+  ['environmentalHolograms', 'ENVIRONMENTAL_HOLOGRAM'],
+];
+
+/** Dispara los 21 fetches de catálogos base en paralelo, ya devueltos con las
+ * claves de `CatalogsState` (evita un destructuring/merge gigante en el
+ * caller) — extraída de `runFleetFormHydration` por el mismo motivo (Gate
+ * 2); mismos catálogos/orden verbatim (data-driven vía `FLEET_CATALOG_SPECS`
+ * en vez de repetir los 21 nombres). */
+async function fetchAllFleetCatalogsNamed(): Promise<Omit<CatalogsState, 'marcas' | 'modelos'>> {
+  const results = await Promise.all(FLEET_CATALOG_SPECS.map(([, code]) => getCatalog(code)));
+  const entries = FLEET_CATALOG_SPECS.map(([field], i) => [field, results[i]] as const);
+  return Object.fromEntries(entries) as Omit<CatalogsState, 'marcas' | 'modelos'>;
+}
+
+/** 🏗️ Foundation Hydration — extraída del cuerpo del `useCallback` de
+ * `hydrate` por el mismo motivo (Gate 2); mismo comportamiento verbatim
+ * (EAGER LOCK antes de cualquier await, fallback de marcas de emergencia). */
+async function runFleetFormHydration(setters: HydrationSetters): Promise<void> {
+  const { isMountedRef, hasHydratedRef, setCatalogs, setFormData, setIsLoading } = setters;
+  // 🛡️ EAGER LOCK: set synchronously (before any await) so the caller
+  // effect's own !hasHydratedRef.current guard can never let a second
+  // hydrate() through — hydrate is a private closure, its lifecycle effect
+  // is its only call site, so a redundant internal guard here was dead code
+  // (FC165 F2 Dead-Branch Purge, verified exhaustively before removal).
+  hasHydratedRef.current = true;
+
+  setIsLoading(true);
+
+  try {
+    const fetched = await fetchAllFleetCatalogsNamed();
+    // Initialize brands for the first asset type (usually VEH)
+    const brandsInitial = await fetchCategory('BRAND', fetched.assetTypes[0]?.id);
+
+    if (isMountedRef.current) {
+      setCatalogs(
+        (prev: CatalogsState): CatalogsState => ({
+          ...prev,
+          ...fetched,
+          marcas: brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
+        })
+      );
+
+      if (fetched.assetTypes.length > 0) {
+        setFormData((prev: CreateFleetUnit): CreateFleetUnit => {
+          if (prev.assetTypeId) return prev;
+          return { ...prev, assetTypeId: fetched.assetTypes[0].id };
+        });
+      }
+    }
+  } catch (err) {
+    // Release lock on error to allow retry
+    hasHydratedRef.current = false;
+    // eslint-disable-next-line no-console -- diagnóstico critico intencional
+    console.error('[Archon Alpha] Critical Hydration Failure', err);
+  } finally {
+    if (isMountedRef.current) setIsLoading(false);
+  }
+}
+
+/** Dueña del ciclo de vida de hidratación completa (mount-shield + lock +
+ * trigger) — extraída de `useFleetForm` por el mismo motivo (Gate 2); mismo
+ * comportamiento verbatim. `isMountedRef`/`hasHydratedRef` solo los usa el
+ * flujo de hidratación, así que viven encapsulados aquí. */
+function useFleetFormHydrationLifecycle(
+  shouldHydrate: boolean,
+  isLoading: boolean,
+  setCatalogs: React.Dispatch<React.SetStateAction<CatalogsState>>,
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+): void {
+  const isMountedRef = useMountedFlag();
+  const hasHydratedRef = useRef(false);
+
+  const hydrate = useCallback(
+    (): Promise<void> =>
+      runFleetFormHydration({
+        isMountedRef,
+        hasHydratedRef,
+        setCatalogs,
+        setFormData,
+        setIsLoading,
+      }),
+    []
+  );
+
+  // Lifecycle & Initialization
+  useEffect(() => {
+    if (shouldHydrate && isMountedRef.current && !hasHydratedRef.current && !isLoading) {
+      hydrate();
+    }
+  }, [hydrate, shouldHydrate]);
+}
+
+/** Cascada Asset→Brand: reinicia brand/model + recarga marcas — extraída del
+ * mismo motivo (Gate 2); mismo comportamiento verbatim. */
+function useAssetTypeChangeHandler(
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>,
+  setCatalogs: React.Dispatch<React.SetStateAction<CatalogsState>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+): (id: number) => Promise<void> {
+  return async (id: number): Promise<void> => {
     setIsLoading(true);
     setFormData(
       (prev: CreateFleetUnit): CreateFleetUnit => ({
@@ -283,8 +299,16 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     );
     setIsLoading(false);
   };
+}
 
-  const handleMarcaChange = async (brandId: number): Promise<void> => {
+/** Cascada Brand→Model: reinicia model + recarga modelos — extraída del
+ * mismo motivo (Gate 2); mismo comportamiento verbatim. */
+function useMarcaChangeHandler(
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>,
+  setCatalogs: React.Dispatch<React.SetStateAction<CatalogsState>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+): (brandId: number) => Promise<void> {
+  return async (brandId: number): Promise<void> => {
     setIsLoading(true);
     setFormData(
       (prev: CreateFleetUnit): CreateFleetUnit => ({
@@ -303,15 +327,19 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     );
     setIsLoading(false);
   };
+}
 
-  const handleModeloChange = (modelId: number): void => {
-    setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, modelId }));
-  };
-
-  const handleSubmit = async (
-    e: React.FormEvent,
-    onSuccess?: () => Promise<void>
-  ): Promise<void> => {
+/** Submit de alta de unidad — extraída del mismo motivo (Gate 2); mismo
+ * comportamiento verbatim (Validation Shield + distinción de error de API
+ * vs. genérico). */
+function useFleetFormSubmit(
+  formData: CreateFleetUnit,
+  isSubmitting: boolean,
+  setError: React.Dispatch<React.SetStateAction<string | null>>,
+  setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>,
+  setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>
+): (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void> {
+  return async (e: React.FormEvent, onSuccess?: () => Promise<void>): Promise<void> => {
     e.preventDefault();
     if (isSubmitting) return;
     setError(null);
@@ -342,21 +370,26 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
         throw new Error(res.data.error || 'Server Internal Error');
       }
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || (err as Error).message;
+      const apiError = (err as { response?: { data?: { error?: string } } } | undefined)?.response
+        ?.data?.error;
+      const errorMsg = apiError || (err as Error).message;
       setError(errorMsg);
-      throw new Error(errorMsg);
+      throw new Error(errorMsg, { cause: err });
     } finally {
       setIsSubmitting(false);
     }
   };
+}
 
-  const resetForm = (): void => {
-    setFormData(getInitialFleetForm());
-    setRegistrationSuccess(false);
-    setError(null);
-  };
-
-  const hydrateEditUnit = async (mappedData: CreateFleetUnit): Promise<void> => {
+/** Hidrata el formulario en modo edición (marcas/modelos del registro
+ * existente) — extraída del mismo motivo (Gate 2); mismo comportamiento
+ * verbatim. */
+function useHydrateEditUnit(
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>,
+  setCatalogs: React.Dispatch<React.SetStateAction<CatalogsState>>
+): (mappedData: CreateFleetUnit) => Promise<void> {
+  return async (mappedData: CreateFleetUnit): Promise<void> => {
     setIsLoading(true);
     setFormData(mappedData);
 
@@ -387,6 +420,55 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
       setIsLoading(false);
     }
   };
+}
+
+/** Lee un `File` como data-URL base64 — extraída de `setSelectedFiles` por el
+ * mismo motivo (Gate 2); mismo comportamiento verbatim. */
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise<string>((resolve: (value: string) => void): void => {
+    const reader = new FileReader();
+    reader.onloadend = (): void => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+}
+
+/** 🔱 Archon Alpha Engine — orquesta hidratación de catálogos + cascada
+ * Asset→Brand→Model + submit/reset del formulario de alta/edición de
+ * unidades. Ver los hooks de módulo arriba para cada pieza. */
+export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFormReturn {
+  const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
+  const [catalogs, setCatalogs] = useState<CatalogsState>(INITIAL_CATALOGS_STATE);
+
+  const resetError = useCallback(() => setError(null), []);
+
+  useFleetFormHydrationLifecycle(shouldHydrate, isLoading, setCatalogs, setFormData, setIsLoading);
+
+  const handleAssetTypeChange = useAssetTypeChangeHandler(setFormData, setCatalogs, setIsLoading);
+  const handleMarcaChange = useMarcaChangeHandler(setFormData, setCatalogs, setIsLoading);
+
+  const handleModeloChange = (modelId: number): void => {
+    setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, modelId }));
+  };
+
+  const handleSubmit = useFleetFormSubmit(
+    formData,
+    isSubmitting,
+    setError,
+    setIsSubmitting,
+    setRegistrationSuccess
+  );
+
+  const resetForm = (): void => {
+    setFormData(getInitialFleetForm());
+    setRegistrationSuccess(false);
+    setError(null);
+  };
+
+  const hydrateEditUnit = useHydrateEditUnit(setIsLoading, setFormData, setCatalogs);
 
   return {
     ...catalogs,
@@ -406,16 +488,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     resetForm,
     hydrateEditUnit,
     setSelectedFiles: async (files: File[]): Promise<void> => {
-      const base64Files = await Promise.all(
-        files.map(
-          (file: File): Promise<string> =>
-            new Promise<string>((resolve: (value: string) => void): void => {
-              const reader = new FileReader();
-              reader.onloadend = (): void => resolve(reader.result as string);
-              reader.readAsDataURL(file);
-            })
-        )
-      );
+      const base64Files = await Promise.all(files.map(readFileAsBase64));
       setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, images: base64Files }));
     },
   };

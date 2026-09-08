@@ -1,4 +1,3 @@
-﻿/* eslint-disable */
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -30,10 +29,10 @@ import { formatDateTime } from '../../utils/dateUtils';
 import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useFleet } from '../../context/FleetContext';
-import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import { useTco } from '../../hooks/useTco';
-import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
+import { useAssetTypeFields, FieldVisibility } from '../../hooks/useAssetTypeFields';
 import AT from '../../styles/archonTypography';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
@@ -44,6 +43,15 @@ interface FleetGridViewProps {
   loading?: boolean;
   onEdit: (unit: FleetUnit) => void;
 }
+
+/** Formateadores en-US compartidos (FC166 Track D — Gate 2
+ * `max-lines-per-function`): reemplazan las ~15 llamadas repetidas a
+ * `.toLocaleString('en-US', {...})` a lo largo del archivo — mismo
+ * comportamiento verbatim en cada punto de uso. */
+const formatNum2 = (n: number): string =>
+  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatNumFlex = (n: number): string =>
+  n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 const IdentityCluster = ({
   unit,
@@ -114,11 +122,7 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           LEASING
         </span>
         <span className="text-archon-xl font-black text-navy-900">
-          $
-          {Number(unit.monthlyLeasePayment || 0).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
+          ${formatNum2(Number(unit.monthlyLeasePayment || 0))}
         </span>
         <span className="text-archon-sm font-mono text-slate-400 bg-slate-50 px-1.5 rounded uppercase tracking-tighter mt-1">
           CTA: {cuenta}
@@ -129,10 +133,7 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           <RefreshCcw size={11} className="text-sky-500" />
           {unit.usageFreqLabel ||
             (unit.maintIntervalKm
-              ? `${Number(unit.maintIntervalKm).toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} ${usageUnit}`
+              ? `${formatNum2(Number(unit.maintIntervalKm))} ${usageUnit}`
               : '—')}
         </span>
         <span className="flex items-center gap-1.5 text-archon-base font-bold text-slate-400 uppercase tracking-tighter">
@@ -142,16 +143,22 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
       </div>
       <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
         <span className="text-archon-base font-black text-sky-700">
-          {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {usageUnit}/D
+          {formatNum2(Number(unit.dailyUsageAvg || 0))} {usageUnit}/D
         </span>
       </div>
     </div>
   );
 };
+
+/** Litros actuales/capacidad del tanque — extraída de `OdometerCluster` por
+ * el mismo motivo (Gate 2); mismo comportamiento verbatim. */
+function formatFuelLiters(lastFuelLevel: number | undefined | null, tankCapacity: number): string {
+  const percent =
+    lastFuelLevel !== undefined && lastFuelLevel !== null ? Number(lastFuelLevel) : 100;
+  const cap = Number(tankCapacity || 0);
+  const currentLiters = (percent / 100) * cap;
+  return `${formatNum2(currentLiters)} / ${formatNum2(cap)} L`;
+}
 
 const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const usageUnit = unit.usageUnitName || 'KM';
@@ -162,20 +169,12 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
       <div className="flex items-center gap-3 bg-sky-50 px-4 py-2 rounded border border-sky-100 transform hover:scale-105 transition-transform">
         <Gauge size={16} className="text-sky-600" />
         <span className="text-[15px] font-black text-navy-900 tracking-tight whitespace-nowrap">
-          {Number(unit.odometer || 0).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {usageUnit}
+          {formatNum2(Number(unit.odometer || 0))} {usageUnit}
         </span>
       </div>
       <div className="flex flex-col items-center opacity-60 text-archon-md font-bold text-slate-600">
         <span>
-          {Number(unit.lastServiceReading || 0).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {usageUnit}
+          {formatNum2(Number(unit.lastServiceReading || 0))} {usageUnit}
         </span>
         <span className="text-archon-sm font-black text-slate-400 uppercase tracking-widest mt-0.5">
           {unit.lastServiceDate ? formatDateTime(new Date(unit.lastServiceDate)) : '---'}
@@ -186,13 +185,7 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           OBJETIVO {usageUnit}
         </span>
         <span className="text-archon-lg font-black text-amber-800">
-          {Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0).toLocaleString(
-            'en-US',
-            {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }
-          )}
+          {formatNum2(Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0))}
         </span>
       </div>
       <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
@@ -205,21 +198,7 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         <div className="flex flex-col items-center">
           <span className="text-archon-xs font-black text-slate-400 uppercase">Tanque</span>
           <span className="text-archon-base font-black text-navy-800">
-            {(() => {
-              const percent =
-                unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
-                  ? Number(unit.lastFuelLevel)
-                  : 100;
-              const cap = Number(tanque || 0);
-              const currentLiters = (percent / 100) * cap;
-              return `${currentLiters.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} / ${cap.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} L`;
-            })()}
+            {formatFuelLiters(unit.lastFuelLevel, tanque)}
           </span>
         </div>
       </div>
@@ -375,11 +354,7 @@ const ServiceForecastCluster = ({
         <span
           className={`text-archon-xl font-black ${isClose ? 'text-red-600' : 'text-emerald-700'}`}
         >
-          {Number(kmPara).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {usageUnit}
+          {formatNum2(Number(kmPara))} {usageUnit}
         </span>
       </div>
       <div className="bg-slate-50 px-2.5 py-1 rounded opacity-60 text-archon-sm font-black uppercase text-slate-500 border border-slate-100">
@@ -399,7 +374,7 @@ const HealthStatusCluster = ({
   forecast: MaintenanceForecast;
   unitId: string;
 }): React.JSX.Element => {
-  const isOverdue = forecast.isOverdue;
+  const { isOverdue } = forecast;
 
   const inner = (
     <div
@@ -449,6 +424,44 @@ const getUnitForecast = (unit: FleetUnit): MaintenanceForecast =>
     unit.lastServiceDate || null
   );
 
+/** Mensaje de estado loading/vacío de `TcoKpiCluster` — extraída por el
+ * mismo motivo (Gate 2); mismo JSX verbatim. */
+function TcoKpiStatusMessage({
+  testId,
+  className,
+  message,
+}: {
+  testId: string;
+  className: string;
+  message: string;
+}): React.JSX.Element {
+  return (
+    <div className={`text-archon-xs ${className} mt-2 italic`} data-testid={testId}>
+      {message}
+    </div>
+  );
+}
+
+/** Una fila label/valor de `TcoKpiCluster` — extraída por el mismo motivo
+ * (Gate 2); mismo JSX verbatim (solo el color del valor varía por caso de
+ * uso, vía `valueClassName`). */
+function TcoStatRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName: string;
+}): React.JSX.Element {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-archon-xs text-slate-400 uppercase">{label}</span>
+      <span className={`text-archon-base font-black ${valueClassName}`}>{value}</span>
+    </div>
+  );
+}
+
 // ============================================================================
 // COMPONENT: TcoKpiCluster — Total Cost of Ownership summary (FC-3 Fase 3E)
 // ============================================================================
@@ -460,18 +473,13 @@ const TcoKpiCluster = ({
   odometer: number;
 }): React.JSX.Element => {
   const { data, loading } = useTco(unitId);
-  if (loading) {
+  if (loading || !data || data.tco_total === 0) {
     return (
-      <div className="text-archon-xs text-slate-400 mt-2 italic" data-testid="tco-kpi-loading">
-        Cargando TCO...
-      </div>
-    );
-  }
-  if (!data || data.tco_total === 0) {
-    return (
-      <div className="text-archon-xs text-slate-300 mt-2 italic" data-testid="tco-kpi-empty">
-        Sin gastos registrados
-      </div>
+      <TcoKpiStatusMessage
+        testId={loading ? 'tco-kpi-loading' : 'tco-kpi-empty'}
+        className={loading ? 'text-slate-400' : 'text-slate-300'}
+        message={loading ? 'Cargando TCO...' : 'Sin gastos registrados'}
+      />
     );
   }
   const costPerKm = odometer > 0 ? data.tco_total / odometer : null;
@@ -483,35 +491,24 @@ const TcoKpiCluster = ({
       <span className="text-archon-xs font-black text-navy-400 uppercase tracking-widest">
         KPIs PROPIETARIO
       </span>
-      <div className="flex flex-col items-center">
-        <span className="text-archon-xs text-slate-400 uppercase">TCO Total</span>
-        <span className="text-archon-base font-black text-navy-900">
-          $
-          {data.tco_total.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </span>
-      </div>
+      <TcoStatRow
+        label="TCO Total"
+        value={`$${formatNum2(data.tco_total)}`}
+        valueClassName="text-navy-900"
+      />
       {costPerKm !== null && (
-        <div className="flex flex-col items-center">
-          <span className="text-archon-xs text-slate-400 uppercase">Costo/KM</span>
-          <span className="text-archon-base font-black text-slate-700">
-            $
-            {costPerKm.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </span>
-        </div>
+        <TcoStatRow
+          label="Costo/KM"
+          value={`$${formatNum2(costPerKm)}`}
+          valueClassName="text-slate-700"
+        />
       )}
       {data.last_record_at && (
-        <div className="flex flex-col items-center">
-          <span className="text-archon-xs text-slate-400 uppercase">Último Gasto</span>
-          <span className="text-archon-base font-black text-slate-700">
-            {formatDate(new Date(data.last_record_at))}
-          </span>
-        </div>
+        <TcoStatRow
+          label="Último Gasto"
+          value={formatDate(new Date(data.last_record_at))}
+          valueClassName="text-slate-700"
+        />
       )}
     </div>
   );
@@ -520,162 +517,239 @@ const TcoKpiCluster = ({
 // ============================================================================
 // COMPONENT: FleetUnitRow (SOLID: SRP + Performance Optimization)
 // ============================================================================
-const FleetUnitRow = React.memo(
-  ({
-    unit,
-    index,
-    onSelectImage,
-    onEdit,
-  }: {
-    unit: FleetUnit;
-    index: number;
-    onSelectImage: (u: FleetUnit) => void;
-    onEdit: (u: FleetUnit) => void;
-  }): React.JSX.Element => {
-    const forecast = getUnitForecast(unit);
-    const isOverdue = !!forecast?.isOverdue;
-    const { hasPermission } = usePermissions();
-    const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
-    const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
+// Las 3 celdas más grandes (ACTIVO/UNIDAD/ACCIONES) se extraen a componentes
+// de módulo (FC166 Track D — Gate 2 `max-lines-per-function`); mismo JSX
+// verbatim en cada una, solo el sitio cambió.
 
-    const usageUnit = unit.usageUnitName || 'KM';
+const FleetUnitImageCell = ({
+  unit,
+  onSelectImage,
+}: {
+  unit: FleetUnit;
+  onSelectImage: (u: FleetUnit) => void;
+}): React.JSX.Element =>
+  unit.images?.[0] ? (
+    <div
+      className="w-20 h-20 mx-auto rounded-[4px] shadow-sm bg-slate-100 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+      onClick={(): void => onSelectImage(unit)}
+    >
+      <img
+        src={unit.images[0]}
+        className="w-full h-full object-contain"
+        alt={unit.id}
+        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+          const imgElement = e.currentTarget;
+          imgElement.src = '/img/archon-unit-default.png';
+        }}
+      />
+    </div>
+  ) : (
+    <div
+      className="w-20 h-20 mx-auto rounded-[4px] bg-slate-100 flex items-center justify-center border border-dashed border-slate-200 cursor-pointer overflow-hidden relative"
+      onClick={(): void => onSelectImage(unit)}
+    >
+      <img
+        src="/img/archon-unit-default.png"
+        alt="Archon Unit Default"
+        className="w-full h-full object-contain"
+      />
+    </div>
+  );
 
-    return (
-      <motion.tr
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.04 }}
-        data-testid={`fleet-row-${unit.id.toLowerCase()}`}
-        className={`bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300`}
-      >
-        <td className="py-4 px-2 text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          {unit.images?.[0] ? (
-            <div
-              className="w-20 h-20 mx-auto rounded-[4px] shadow-sm bg-slate-100 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-              onClick={(): void => onSelectImage(unit)}
-            >
-              <img
-                src={unit.images[0]}
-                className="w-full h-full object-contain"
-                alt={unit.id}
-                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-                  const imgElement = e.currentTarget;
-                  imgElement.src = '/img/archon-unit-default.png';
-                }}
-              />
-            </div>
-          ) : (
-            <div
-              className="w-20 h-20 mx-auto rounded-[4px] bg-slate-100 flex items-center justify-center border border-dashed border-slate-200 cursor-pointer overflow-hidden relative"
-              onClick={(): void => onSelectImage(unit)}
-            >
-              <img
-                src="/img/archon-unit-default.png"
-                alt="Archon Unit Default"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-archon-lg font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
-              {unit.id}
-            </span>
-            <div className="flex flex-col items-center">
-              <span className="text-archon-xl font-black text-navy-900 uppercase tracking-tight">
-                {unit.marca} {unit.modelo}
-              </span>
-              <span className="text-archon-md font-bold text-slate-500 mt-0.5">
-                ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
-              </span>
-            </div>
-            <div className="flex flex-col items-center opacity-80 pt-1">
-              <span className="text-archon-base font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Wrench size={12} />
-                {unit.departamento || 'SIN REGISTRO'}
-              </span>
-              <span className="text-archon-sm font-mono text-slate-400 mt-1">
-                VIN: {unit.numeroSerie || '---'}
-              </span>
-            </div>
-          </div>
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <IdentityCluster
-            unit={unit}
-            tarjeta={unit.circulationCardNumber || '---'}
-            showPlaca={assetFields.placa}
-            showTarjeta={assetFields.circulationCardNumber}
-          />
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <LogisticsCluster unit={unit} />
-        </td>
-
-        <td className="py-4 px-2 min-w-[140px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <OdometerCluster unit={unit} />
-        </td>
-
-        <td className="py-4 px-2 min-w-[180px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <SpecCluster unit={unit} />
-          <TcoKpiCluster unitId={unit.id} odometer={unit.odometer} />
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <HealthStatusCluster forecast={forecast} unitId={unit.id} />
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <FleetKpiMatrix
-            availability={unit.availabilityIndex ?? 100}
-            mtbf={unit.mtbfHours ?? 0}
-            mttr={unit.mttrHours ?? 0}
-            backlog={unit.backlogCount ?? 0}
-            healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
-            daysRemaining={Math.ceil(
-              (forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-            )}
-          />
-        </td>
-
-        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <div className="flex flex-col gap-2 items-center">
-            <Link
-              to={`/dashboard/fleet/${unit.id}`}
-              title="Ver nodo completo de la unidad"
-              className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group"
-            >
-              <ExternalLink
-                size={16}
-                className="transition-transform duration-300 group-hover:scale-110"
-              />
-            </Link>
-            {canEdit && (
-              <button
-                onClick={(): void => onEdit(unit)}
-                title="Editar Activo (Auditado)"
-                className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
-              >
-                <Pencil
-                  size={18}
-                  className="transition-transform duration-300 group-hover:rotate-12"
-                />
-              </button>
-            )}
-          </div>
-        </td>
-      </motion.tr>
-    );
-  }
+const FleetUnitIdentityCell = ({ unit }: { unit: FleetUnit }): React.JSX.Element => (
+  <div className="flex flex-col items-center gap-2">
+    <span className="text-archon-lg font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
+      {unit.id}
+    </span>
+    <div className="flex flex-col items-center">
+      <span className="text-archon-xl font-black text-navy-900 uppercase tracking-tight">
+        {unit.marca} {unit.modelo}
+      </span>
+      <span className="text-archon-md font-bold text-slate-500 mt-0.5">
+        ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
+      </span>
+    </div>
+    <div className="flex flex-col items-center opacity-80 pt-1">
+      <span className="text-archon-base font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
+        <Wrench size={12} />
+        {unit.departamento || 'SIN REGISTRO'}
+      </span>
+      <span className="text-archon-sm font-mono text-slate-400 mt-1">
+        VIN: {unit.numeroSerie || '---'}
+      </span>
+    </div>
+  </div>
 );
+
+const FleetUnitActionsCell = ({
+  unit,
+  canEdit,
+  onEdit,
+}: {
+  unit: FleetUnit;
+  canEdit: boolean;
+  onEdit: (u: FleetUnit) => void;
+}): React.JSX.Element => (
+  <div className="flex flex-col gap-2 items-center">
+    <Link
+      to={`/dashboard/fleet/${unit.id}`}
+      title="Ver nodo completo de la unidad"
+      className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group"
+    >
+      <ExternalLink size={16} className="transition-transform duration-300 group-hover:scale-110" />
+    </Link>
+    {canEdit && (
+      <button
+        onClick={(): void => onEdit(unit)}
+        title="Editar Activo (Auditado)"
+        className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+      >
+        <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
+      </button>
+    )}
+  </div>
+);
+
+interface FleetUnitRowCellsProps {
+  unit: FleetUnit;
+  forecast: MaintenanceForecast;
+  isOverdue: boolean;
+  usageUnit: string;
+  assetFields: FieldVisibility;
+  canEdit: boolean;
+  onSelectImage: (u: FleetUnit) => void;
+  onEdit: (u: FleetUnit) => void;
+}
+
+/** Primeras 5 `<td>` de la fila (Activo/Unidad/Identidad/Logística/
+ * Odometría) — extraídas de `FleetUnitRowComponent` por el mismo motivo
+ * (Gate 2); mismo JSX verbatim. */
+function FleetUnitRowCellsLeft({
+  unit,
+  assetFields,
+  onSelectImage,
+}: Pick<FleetUnitRowCellsProps, 'unit' | 'assetFields' | 'onSelectImage'>): React.JSX.Element {
+  return (
+    <>
+      <td className="py-4 px-2 text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <FleetUnitImageCell unit={unit} onSelectImage={onSelectImage} />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <FleetUnitIdentityCell unit={unit} />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <IdentityCluster
+          unit={unit}
+          tarjeta={unit.circulationCardNumber || '---'}
+          showPlaca={assetFields.placa}
+          showTarjeta={assetFields.circulationCardNumber}
+        />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <LogisticsCluster unit={unit} />
+      </td>
+
+      <td className="py-4 px-2 min-w-[140px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <OdometerCluster unit={unit} />
+      </td>
+    </>
+  );
+}
+
+/** Últimas 5 `<td>` de la fila (Configuración/Pronóstico/Salud/KPIs/
+ * Acciones) — extraídas del mismo motivo (Gate 2); mismo JSX verbatim. */
+function FleetUnitRowCellsRight({
+  unit,
+  forecast,
+  isOverdue,
+  usageUnit,
+  canEdit,
+  onEdit,
+}: Pick<
+  FleetUnitRowCellsProps,
+  'unit' | 'forecast' | 'isOverdue' | 'usageUnit' | 'canEdit' | 'onEdit'
+>): React.JSX.Element {
+  return (
+    <>
+      <td className="py-4 px-2 min-w-[180px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <SpecCluster unit={unit} />
+        <TcoKpiCluster unitId={unit.id} odometer={unit.odometer} />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <HealthStatusCluster forecast={forecast} unitId={unit.id} />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <FleetKpiMatrix
+          availability={unit.availabilityIndex ?? 100}
+          mtbf={unit.mtbfHours ?? 0}
+          mttr={unit.mttrHours ?? 0}
+          backlog={unit.backlogCount ?? 0}
+          healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
+          daysRemaining={Math.ceil(
+            (forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          )}
+        />
+      </td>
+
+      <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <FleetUnitActionsCell unit={unit} canEdit={canEdit} onEdit={onEdit} />
+      </td>
+    </>
+  );
+}
+
+// react/display-name: React.memo needs a named function to attribute in
+// DevTools/lint — the inner component is named, memo just wraps it.
+function FleetUnitRowComponent({
+  unit,
+  index,
+  onSelectImage,
+  onEdit,
+}: {
+  unit: FleetUnit;
+  index: number;
+  onSelectImage: (u: FleetUnit) => void;
+  onEdit: (u: FleetUnit) => void;
+}): React.JSX.Element {
+  const forecast = getUnitForecast(unit);
+  const isOverdue = !!forecast?.isOverdue;
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
+  const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
+
+  const usageUnit = unit.usageUnitName || 'KM';
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      data-testid={`fleet-row-${unit.id.toLowerCase()}`}
+      className={`bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300`}
+    >
+      <FleetUnitRowCellsLeft unit={unit} assetFields={assetFields} onSelectImage={onSelectImage} />
+      <FleetUnitRowCellsRight
+        unit={unit}
+        forecast={forecast}
+        isOverdue={isOverdue}
+        usageUnit={usageUnit}
+        canEdit={canEdit}
+        onEdit={onEdit}
+      />
+    </motion.tr>
+  );
+}
+
+const FleetUnitRow = React.memo(FleetUnitRowComponent);
 
 // ============================================================================
 // UNIVERSAL SEARCH SPECIFICATIONS (DRY COMPLIANT)
@@ -756,10 +830,7 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
   const kmPara = forecast.kmParaServicio;
   const usageUnit = u.usageUnitName || 'KM';
   const numStr = String(kmPara);
-  const formattedStr = Number(kmPara).toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  const formattedStr = formatNumFlex(Number(kmPara));
   if (numStr.includes(query) || formattedStr.toLowerCase().includes(query)) {
     return { label: 'Km. Restantes', value: `${formattedStr} ${usageUnit}` };
   }
@@ -771,12 +842,9 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
     if (cfg.type === 'string') {
       return String(val).toLowerCase().includes(query);
     }
-    const numStr = String(val);
-    const formattedStr = Number(val).toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-    return numStr.includes(query) || formattedStr.toLowerCase().includes(query);
+    const cfgNumStr = String(val);
+    const cfgFormattedStr = formatNumFlex(Number(val));
+    return cfgNumStr.includes(query) || cfgFormattedStr.toLowerCase().includes(query);
   });
 
   if (foundConfig) {
@@ -784,10 +852,7 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
     const formattedValue =
       foundConfig.type === 'string'
         ? String(val)
-        : `${Number(val).toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          })}${foundConfig.suffix}`;
+        : `${formatNumFlex(Number(val))}${foundConfig.suffix}`;
 
     return { label: foundConfig.label, value: formattedValue };
   }
@@ -800,19 +865,26 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
 };
 
 // ============================================================================
-// MAIN COMPONENT: FleetGridView
+// MAIN COMPONENT SUPPORT (Gate 2 max-lines-per-function): search-config
+// registration, image-selection state, sort/filter engines, and the static
+// table headers/queryable-keys specs all move to module-level functions/
+// hooks/constants so `FleetGridView` itself is only orchestration. Mismo
+// comportamiento verbatim en cada pieza, solo el sitio cambió.
 // ============================================================================
-export const FleetGridView = ({
-  units = [],
-  loading = false,
-  onEdit,
-}: FleetGridViewProps): React.JSX.Element => {
-  const { getUnitDetails } = useFleet();
-  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
-  const [selectedGalleryUnit, setSelectedGalleryUnit] = useState<FleetUnit | null>(null);
-  const [isFetchingImages, setIsFetchingImages] = useState(false);
 
-  // 🛡️ Dynamic Register for Universal Search Protocol (DRY Compliant)
+/** Registra/limpia la config de Búsqueda Universal para esta vista —
+ * extraída de `FleetGridView`'s primer `useEffect`. */
+function useFleetGridSearchConfig(
+  units: FleetUnit[],
+  setSearchConfig: (
+    config: {
+      placeholder: string;
+      getSuggestions: (term: string) => SearchSuggestion[];
+      onSuggestionSelect: (suggestion: SearchSuggestion) => void;
+    } | null
+  ) => void,
+  setSearchTerm: (term: string) => void
+): void {
   React.useEffect(() => {
     setSearchConfig({
       placeholder: 'Buscar por placas, marca, modelo, sede o departamento...',
@@ -820,7 +892,7 @@ export const FleetGridView = ({
         const query = term.toLowerCase().trim();
         return (units || [])
           .filter((u) => u && u.id)
-          .map((u) => {
+          .map((u): SearchSuggestion | null => {
             const match = matchFieldInUnit(u, query);
             if (!match) return null;
             return {
@@ -832,29 +904,38 @@ export const FleetGridView = ({
               rawItem: u,
             };
           })
-          .filter((s): s is any => s !== null);
+          .filter((s): s is SearchSuggestion => s !== null);
       },
       onSuggestionSelect: (suggestion) => {
         setSearchTerm(suggestion.id);
       },
     });
 
-    return () => {
+    return (): void => {
       setSearchConfig(null);
     };
   }, [units, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  React.useEffect(() => {
-    return () => {
+  React.useEffect(
+    (): (() => void) => (): void => {
       setSearchTerm('');
-    };
-  }, [setSearchTerm]);
+    },
+    [setSearchTerm]
+  );
+}
 
-  // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
-  const sanitizedUnits = React.useMemo(() => {
-    return (units || []).filter((u) => u && u.id);
-  }, [units]);
+/** Estado + acción de selección de imagen (con hydration on-demand) —
+ * extraída de `FleetGridView` por el mismo motivo (Gate 2); mismo
+ * comportamiento verbatim. */
+function useFleetGridImageSelection(getUnitDetails: (id: string) => Promise<FleetUnit | null>): {
+  selectedGalleryUnit: FleetUnit | null;
+  isFetchingImages: boolean;
+  handleSelectImage: (unit: FleetUnit) => Promise<void>;
+  closeGallery: () => void;
+} {
+  const [selectedGalleryUnit, setSelectedGalleryUnit] = useState<FleetUnit | null>(null);
+  const [isFetchingImages, setIsFetchingImages] = useState(false);
 
   const handleSelectImage = useCallback(
     async (unit: FleetUnit): Promise<void> => {
@@ -865,6 +946,7 @@ export const FleetGridView = ({
           const fullUnit = await getUnitDetails(unit.id);
           setSelectedGalleryUnit(fullUnit || unit);
         } catch (error) {
+          // eslint-disable-next-line no-console -- diagnostico intencional
           console.error('[Archon Visualizer] Failed to hydrate unit images:', error);
           setSelectedGalleryUnit(unit); // Fallback to local unit details
         } finally {
@@ -877,163 +959,262 @@ export const FleetGridView = ({
     [getUnitDetails]
   );
 
-  const [sortConfig, setSortConfig] = useState<{
-    field: 'unidad' | 'programacion' | 'pronostico' | null;
-    direction: 'asc' | 'desc';
-  }>({ field: null, direction: 'asc' });
+  return {
+    selectedGalleryUnit,
+    isFetchingImages,
+    handleSelectImage,
+    closeGallery: (): void => setSelectedGalleryUnit(null),
+  };
+}
 
-  const sortedUnits = React.useMemo((): FleetUnit[] => {
-    if (!sortConfig.field) return sanitizedUnits;
+type SortField = 'unidad' | 'programacion' | 'pronostico' | null;
+interface FleetSortConfig {
+  field: SortField;
+  direction: 'asc' | 'desc';
+}
 
-    const unitsWithForecast = sanitizedUnits.map(
-      (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast } => ({
-        unit: u,
-        forecast: getUnitForecast(u),
-      })
+/** Cuerpo de `sortedUnits` — extraída del `useMemo` por el mismo motivo
+ * (Gate 2); mismo comportamiento verbatim. */
+function sortFleetUnits(sanitizedUnits: FleetUnit[], sortConfig: FleetSortConfig): FleetUnit[] {
+  if (!sortConfig.field) return sanitizedUnits;
+
+  const unitsWithForecast = sanitizedUnits.map(
+    (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast } => ({
+      unit: u,
+      forecast: getUnitForecast(u),
+    })
+  );
+
+  return [...unitsWithForecast]
+    .sort(
+      (
+        a: { unit: FleetUnit; forecast: MaintenanceForecast },
+        b: { unit: FleetUnit; forecast: MaintenanceForecast }
+      ): number => {
+        // Sin inicializador: las 3 ramas del if/else-if/else de abajo cubren
+        // el tipo cerrado de sortConfig.field de forma exhaustiva (ver
+        // comentario en el bloque else), un `= 0` inicial nunca sobrevive
+        // para ser leído (no-useless-assignment).
+        let valA: number;
+        let valB: number;
+
+        if (sortConfig.field === 'unidad') {
+          valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
+          valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
+        } else if (sortConfig.field === 'programacion') {
+          valA = a.forecast.kmParaServicio;
+          valB = b.forecast.kmParaServicio;
+        } else {
+          // FC165 F3 Slice3.1 — purga: el guard `if(!sortConfig.field)
+          // return` de arriba ya excluye null, y el tipo de field es cerrado
+          // a 'unidad'|'programacion'|'pronostico' — por eliminación, si no
+          // es ninguno de los dos anteriores solo puede ser 'pronostico'
+          // (censo vivo: 0 hits en un tercer `=== 'pronostico'` explícito).
+          valA = a.forecast.forecastDate.getTime();
+          valB = b.forecast.forecastDate.getTime();
+        }
+
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+    )
+    .map((i: { unit: FleetUnit; forecast: MaintenanceForecast }): FleetUnit => i.unit);
+}
+
+/** Claves consultables por texto libre en `filterFleetUnitsByQuery` —
+ * hoisted a nivel de módulo (dato estático, no depende del componente). */
+const QUERYABLE_UNIT_KEYS: { key: keyof FleetUnit; type: 'string' | 'numeric' }[] = [
+  { key: 'placas', type: 'string' },
+  { key: 'marca', type: 'string' },
+  { key: 'modelo', type: 'string' },
+  { key: 'sede', type: 'string' },
+  { key: 'departamento', type: 'string' },
+  { key: 'owner', type: 'string' },
+  { key: 'complianceStatus', type: 'string' },
+  { key: 'status', type: 'string' },
+  { key: 'assetType', type: 'string' },
+  { key: 'fuelType', type: 'string' },
+  { key: 'traccion', type: 'string' },
+  { key: 'transmision', type: 'string' },
+  { key: 'numeroSerie', type: 'string' },
+  { key: 'circulationCardNumber', type: 'string' },
+  { key: 'accountingAccount', type: 'string' },
+  { key: 'insurancePolicyNumber', type: 'string' },
+  { key: 'motor', type: 'string' },
+  { key: 'tireBrand', type: 'string' },
+  { key: 'tireSpec', type: 'string' },
+  { key: 'color', type: 'string' },
+  // Numeric
+  { key: 'monthlyLeasePayment', type: 'numeric' },
+  { key: 'odometer', type: 'numeric' },
+  { key: 'lastServiceReading', type: 'numeric' },
+  { key: 'nextServiceReading', type: 'numeric' },
+  { key: 'capacidadCarga', type: 'numeric' },
+  { key: 'fuelTankCapacity', type: 'numeric' },
+  { key: 'maintIntervalKm', type: 'numeric' },
+  { key: 'maintIntervalDays', type: 'numeric' },
+  { key: 'dailyUsageAvg', type: 'numeric' },
+];
+
+/** Cuerpo de `filteredUnits` — extraída del `useMemo` por el mismo motivo
+ * (Gate 2); mismo comportamiento verbatim (🔍 Multicriteria Filter Logic,
+ * ACOP Compliant & Offline Resilient). */
+function filterFleetUnitsByQuery(sortedUnits: FleetUnit[], searchTerm: string): FleetUnit[] {
+  if (!searchTerm.trim()) return sortedUnits;
+  const term = searchTerm.toLowerCase().trim();
+
+  return sortedUnits.filter((u) => {
+    // 1. Calculate Dynamic remaining kilometers
+    const forecast = calculateMaintForecast(
+      u.maintIntervalDays,
+      u.maintIntervalKm,
+      u.dailyUsageAvg || 0,
+      u.odometer,
+      u.lastServiceReading || 0,
+      u.lastServiceDate || null
     );
 
-    return [...unitsWithForecast]
-      .sort(
-        (
-          a: { unit: FleetUnit; forecast: MaintenanceForecast },
-          b: { unit: FleetUnit; forecast: MaintenanceForecast }
-        ): number => {
-          let valA = 0;
-          let valB = 0;
+    const kmPara = forecast.kmParaServicio;
+    const kmParaNumStr = String(kmPara);
+    const kmParaFormattedStr = formatNumFlex(Number(kmPara));
+    const matchesKmPara =
+      kmParaNumStr.includes(term) || kmParaFormattedStr.toLowerCase().includes(term);
 
-          if (sortConfig.field === 'unidad') {
-            valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
-            valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
-          } else if (sortConfig.field === 'programacion') {
-            valA = a.forecast.kmParaServicio;
-            valB = b.forecast.kmParaServicio;
-          } else {
-            // FC165 F3 Slice3.1 — purga: el guard `if(!sortConfig.field)
-            // return` de arriba ya excluye null, y el tipo de field es
-            // cerrado a 'unidad'|'programacion'|'pronostico' — por
-            // eliminación, si no es ninguno de los dos anteriores solo
-            // puede ser 'pronostico' (censo vivo: 0 hits en un tercer
-            // `=== 'pronostico'` explícito).
-            valA = a.forecast.forecastDate.getTime();
-            valB = b.forecast.forecastDate.getTime();
-          }
+    // 2. Scan structured database keys
+    const matchesKey = QUERYABLE_UNIT_KEYS.some((cfg) => {
+      const val = u[cfg.key];
+      if (val === null || val === undefined) return false;
 
-          return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-        }
-      )
-      .map((i: { unit: FleetUnit; forecast: MaintenanceForecast }): FleetUnit => i.unit);
-  }, [sanitizedUnits, sortConfig]);
-
-  // 🔍 Multicriteria Filter Logic (ACOP Compliant & Offline Resilient)
-  const filteredUnits = React.useMemo((): FleetUnit[] => {
-    if (!searchTerm.trim()) return sortedUnits;
-    const term = searchTerm.toLowerCase().trim();
-
-    const queryableKeys: { key: keyof FleetUnit; type: 'string' | 'numeric' }[] = [
-      { key: 'placas', type: 'string' },
-      { key: 'marca', type: 'string' },
-      { key: 'modelo', type: 'string' },
-      { key: 'sede', type: 'string' },
-      { key: 'departamento', type: 'string' },
-      { key: 'owner', type: 'string' },
-      { key: 'complianceStatus', type: 'string' },
-      { key: 'status', type: 'string' },
-      { key: 'assetType', type: 'string' },
-      { key: 'fuelType', type: 'string' },
-      { key: 'traccion', type: 'string' },
-      { key: 'transmision', type: 'string' },
-      { key: 'numeroSerie', type: 'string' },
-      { key: 'circulationCardNumber', type: 'string' },
-      { key: 'accountingAccount', type: 'string' },
-      { key: 'insurancePolicyNumber', type: 'string' },
-      { key: 'motor', type: 'string' },
-      { key: 'tireBrand', type: 'string' },
-      { key: 'tireSpec', type: 'string' },
-      { key: 'color', type: 'string' },
-      // Numeric
-      { key: 'monthlyLeasePayment', type: 'numeric' },
-      { key: 'odometer', type: 'numeric' },
-      { key: 'lastServiceReading', type: 'numeric' },
-      { key: 'nextServiceReading', type: 'numeric' },
-      { key: 'capacidadCarga', type: 'numeric' },
-      { key: 'fuelTankCapacity', type: 'numeric' },
-      { key: 'maintIntervalKm', type: 'numeric' },
-      { key: 'maintIntervalDays', type: 'numeric' },
-      { key: 'dailyUsageAvg', type: 'numeric' },
-    ];
-
-    return sortedUnits.filter((u) => {
-      // 1. Calculate Dynamic remaining kilometers
-      const forecast = calculateMaintForecast(
-        u.maintIntervalDays,
-        u.maintIntervalKm,
-        u.dailyUsageAvg || 0,
-        u.odometer,
-        u.lastServiceReading || 0,
-        u.lastServiceDate || null
-      );
-
-      const kmPara = forecast.kmParaServicio;
-      const kmParaNumStr = String(kmPara);
-      const kmParaFormattedStr = Number(kmPara).toLocaleString('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      });
-      const matchesKmPara =
-        kmParaNumStr.includes(term) || kmParaFormattedStr.toLowerCase().includes(term);
-
-      // 2. Scan structured database keys
-      const matchesKey = queryableKeys.some((cfg) => {
-        const val = u[cfg.key];
-        if (val === null || val === undefined) return false;
-
-        if (cfg.type === 'string') {
-          return String(val).toLowerCase().includes(term);
-        } else {
-          const numStr = String(val);
-          const formattedStr = Number(val).toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          });
-          return numStr.includes(term) || formattedStr.toLowerCase().includes(term);
-        }
-      });
-
-      const matchesId = u.id && u.id.toLowerCase().includes(term);
-      const matchesYear = u.year && String(u.year).includes(term);
-      return matchesId || matchesYear || matchesKmPara || matchesKey;
+      if (cfg.type === 'string') {
+        return String(val).toLowerCase().includes(term);
+      }
+      const numStr = String(val);
+      const formattedStr = formatNumFlex(Number(val));
+      return numStr.includes(term) || formattedStr.toLowerCase().includes(term);
     });
-  }, [sortedUnits, searchTerm]);
 
-  const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'ACTIVO', width: '100px' },
-    { key: 'unidad', label: 'UNIDAD', sortable: true, width: '105px' },
-    { key: 'identidad', label: 'IDENTIDAD', width: '145px' },
-    { key: 'logistica', label: 'LOGÍSTICA', width: '125px' },
-    { key: 'odometria', label: 'ODOMETRÍA', width: '130px' },
-    { key: 'configuracion', label: 'CONFIGURACIÓN', width: '210px' },
-    { key: 'programacion', label: 'KM RESTANTES', sortable: true, width: '120px' },
-    { key: 'pronostico', label: 'PRONÓSTICO', sortable: true, width: '110px' },
-    { key: 'salud', label: 'SALUD', width: '140px' },
-    {
-      key: 'acciones',
-      label: 'ACCIONES',
-      width: '65px',
-    },
-  ];
+    const matchesId = u.id && u.id.toLowerCase().includes(term);
+    const matchesYear = u.year && String(u.year).includes(term);
+    return matchesId || matchesYear || matchesKmPara || matchesKey;
+  });
+}
+
+/** Definición estática de columnas — hoisted a nivel de módulo (no depende
+ * del componente). */
+const FLEET_TABLE_HEADERS: ArchonTableHeader[] = [
+  { key: 'activo', label: 'ACTIVO', width: '100px' },
+  { key: 'unidad', label: 'UNIDAD', sortable: true, width: '105px' },
+  { key: 'identidad', label: 'IDENTIDAD', width: '145px' },
+  { key: 'logistica', label: 'LOGÍSTICA', width: '125px' },
+  { key: 'odometria', label: 'ODOMETRÍA', width: '130px' },
+  { key: 'configuracion', label: 'CONFIGURACIÓN', width: '210px' },
+  { key: 'programacion', label: 'KM RESTANTES', sortable: true, width: '120px' },
+  { key: 'pronostico', label: 'PRONÓSTICO', sortable: true, width: '110px' },
+  { key: 'salud', label: 'SALUD', width: '140px' },
+  {
+    key: 'acciones',
+    label: 'ACCIONES',
+    width: '65px',
+  },
+];
+
+/** Toast de hidratación de imágenes — extraído del mismo motivo (Gate 2);
+ * mismo JSX verbatim. */
+function FleetHydratingToast(): React.JSX.Element {
+  return (
+    <div className="fixed bottom-10 right-10 bg-navy-900 text-white px-6 py-3 rounded-full shadow-2xl animate-bounce z-[100] flex items-center gap-3">
+      <RefreshCcw size={20} className="animate-spin text-yellow-400" />
+      <span className="text-xs font-black uppercase tracking-widest">Hidratando Activos...</span>
+    </div>
+  );
+}
+
+/** Overlay de galería de imágenes de la unidad seleccionada — extraído de
+ * `FleetGridView` por el mismo motivo (Gate 2); mismo comportamiento
+ * verbatim (fallback a la imagen default cuando no hay imágenes). */
+function FleetGridGalleryOverlay({
+  unit,
+  onClose,
+}: {
+  unit: FleetUnit;
+  onClose: () => void;
+}): React.JSX.Element {
+  return (
+    <ArchonGalleryOverlay
+      images={
+        unit.images && unit.images.length > 0 ? unit.images : ['/img/archon-unit-default.png']
+      }
+      assetId={unit.id}
+      onClose={onClose}
+    />
+  );
+}
+
+/** Toggle de ordenamiento asc/desc por columna — extraído de `FleetGridView`
+ * por el mismo motivo (Gate 2); mismo comportamiento verbatim. */
+function toggleFleetSort(prev: FleetSortConfig, key: string): FleetSortConfig {
+  const field = key as 'unidad' | 'programacion' | 'pronostico';
+  return {
+    field,
+    direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+  };
+}
+
+/** Sanitiza + ordena + filtra el dataset de unidades — extraída de
+ * `FleetGridView` por el mismo motivo (Gate 2); mismo comportamiento
+ * verbatim en cada etapa (Data Integrity Sentinel → sort → multicriteria
+ * filter). */
+function useFleetGridSortedFilteredUnits(
+  units: FleetUnit[],
+  searchTerm: string
+): {
+  filteredUnits: FleetUnit[];
+  sortConfig: FleetSortConfig;
+  setSortConfig: React.Dispatch<React.SetStateAction<FleetSortConfig>>;
+} {
+  // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
+  const sanitizedUnits = React.useMemo(() => (units || []).filter((u) => u && u.id), [units]);
+
+  const [sortConfig, setSortConfig] = useState<FleetSortConfig>({ field: null, direction: 'asc' });
+
+  const sortedUnits = React.useMemo(
+    (): FleetUnit[] => sortFleetUnits(sanitizedUnits, sortConfig),
+    [sanitizedUnits, sortConfig]
+  );
+
+  const filteredUnits = React.useMemo(
+    (): FleetUnit[] => filterFleetUnitsByQuery(sortedUnits, searchTerm),
+    [sortedUnits, searchTerm]
+  );
+
+  return { filteredUnits, sortConfig, setSortConfig };
+}
+
+// ============================================================================
+// MAIN COMPONENT: FleetGridView
+// ============================================================================
+/** Orquesta búsqueda universal + selección/hidratación de imágenes +
+ * sort/filter del inventario de flota. Ver hooks/funciones de módulo arriba
+ * para cada pieza. */
+export const FleetGridView = ({
+  units = [],
+  loading = false,
+  onEdit,
+}: FleetGridViewProps): React.JSX.Element => {
+  const { getUnitDetails } = useFleet();
+  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
+
+  useFleetGridSearchConfig(units, setSearchConfig, setSearchTerm);
+  const { selectedGalleryUnit, isFetchingImages, handleSelectImage, closeGallery } =
+    useFleetGridImageSelection(getUnitDetails);
+  const { filteredUnits, sortConfig, setSortConfig } = useFleetGridSortedFilteredUnits(
+    units,
+    searchTerm
+  );
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
       {selectedGalleryUnit && (
-        <ArchonGalleryOverlay
-          images={
-            selectedGalleryUnit.images && selectedGalleryUnit.images.length > 0
-              ? selectedGalleryUnit.images
-              : ['/img/archon-unit-default.png']
-          }
-          assetId={selectedGalleryUnit.id}
-          onClose={(): void => setSelectedGalleryUnit(null)}
-        />
+        <FleetGridGalleryOverlay unit={selectedGalleryUnit} onClose={closeGallery} />
       )}
       <ArchonDataTable
         testId="fleet-inventory-table"
@@ -1045,14 +1226,8 @@ export const FleetGridView = ({
             ? `Ningún activo coincide con: "${searchTerm.toUpperCase()}"`
             : 'No hay registros disponibles-'
         }
-        headers={headers}
-        onSort={(key): void => {
-          const field = key as 'unidad' | 'programacion' | 'pronostico';
-          setSortConfig((p) => ({
-            field,
-            direction: p.field === field && p.direction === 'asc' ? 'desc' : 'asc',
-          }));
-        }}
+        headers={FLEET_TABLE_HEADERS}
+        onSort={(key): void => setSortConfig((p) => toggleFleetSort(p, key))}
         sortConfig={sortConfig}
         renderRow={(unit, index): React.ReactElement => (
           <FleetUnitRow
@@ -1064,14 +1239,7 @@ export const FleetGridView = ({
           />
         )}
       />
-      {isFetchingImages && (
-        <div className="fixed bottom-10 right-10 bg-navy-900 text-white px-6 py-3 rounded-full shadow-2xl animate-bounce z-[100] flex items-center gap-3">
-          <RefreshCcw size={20} className="animate-spin text-yellow-400" />
-          <span className="text-xs font-black uppercase tracking-widest">
-            Hidratando Activos...
-          </span>
-        </div>
-      )}
+      {isFetchingImages && <FleetHydratingToast />}
     </div>
   );
 };

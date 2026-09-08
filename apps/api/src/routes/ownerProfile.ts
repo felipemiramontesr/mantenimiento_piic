@@ -38,9 +38,13 @@ const patchSchema = z.object({
 
 type PatchData = z.infer<typeof patchSchema>;
 
+/** Valor SQL escalar de un campo de `owner_profiles` (S4323 — alias en vez
+ * de repetir la unión en cada firma que lo usa). */
+type OwnerProfileSqlValue = string | number | null;
+
 function buildUpdateFields(data: PatchData): {
   fields: string[];
-  values: (string | number | null)[];
+  values: OwnerProfileSqlValue[];
 } {
   const map: Array<[keyof Omit<PatchData, 'especialidades'>, string]> = [
     ['rfc', 'rfc'],
@@ -52,11 +56,11 @@ function buildUpdateFields(data: PatchData): {
     ['neighborhoodId', 'neighborhood_id'],
   ];
 
-  return map.reduce<{ fields: string[]; values: (string | number | null)[] }>(
+  return map.reduce<{ fields: string[]; values: OwnerProfileSqlValue[] }>(
     (acc, [key, col]) => {
       if (data[key] !== undefined) {
         acc.fields.push(`${col} = ?`);
-        acc.values.push(data[key] as string | number | null);
+        acc.values.push(data[key] as OwnerProfileSqlValue);
       }
       return acc;
     },
@@ -236,7 +240,7 @@ async function handleGetOwnerProfile(
 async function runOwnerProfileUpdateTransaction(
   ownerId: number | string,
   fields: string[],
-  values: (string | number | null)[],
+  values: OwnerProfileSqlValue[],
   hasSpecialtiesUpdate: boolean,
   especialidades: string[] | null | undefined
 ): Promise<void> {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArchonDoctor } from '../../ArchonDoctor';
+import ArchonDoctor from '../../ArchonDoctor';
 import ArchonLogo from '../Logo/ArchonLogo';
 import { SYSTEM_VERSION } from '../../constants/versionConstants';
 

@@ -6,13 +6,13 @@ import api, {
   logGatewayStartupIfNeeded,
   readProcessSignal,
 } from './client';
-import { redirectUserToLogin } from './navigation';
+import redirectUserToLogin from './navigation';
 
 import { getToken, clearToken } from './tokenStore';
 
 // 🔱 Mock the Navigation Bridge to prevent JSDOM proxy context crashes
 vi.mock('./navigation', () => ({
-  redirectUserToLogin: vi.fn(),
+  default: vi.fn(),
 }));
 
 // 🔱 Mock tokenStore — client now reads from in-memory store, not localStorage

@@ -1,6 +1,5 @@
-/* eslint-disable */
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { redirectUserToLogin } from './navigation';
+import redirectUserToLogin from './navigation';
 import { getToken, clearToken } from './tokenStore';
 
 /** Hostname para la URL de desarrollo. `window` siempre existe en esta SPA
@@ -30,6 +29,12 @@ export const currentTelemetry = {
   lastStatus: 200,
   baseUrl: import.meta.env.VITE_API_URL || defaultURL,
 };
+
+/** Extiende la config de axios con el timestamp propio de latencia (evita
+ * `any` + guiones bajos colgantes al leer/escribir esta marca custom). */
+interface TimedRequestConfig extends InternalAxiosRequestConfig {
+  startTime?: number;
+}
 
 const api = axios.create({
   baseURL: currentTelemetry.baseUrl,
@@ -64,6 +69,7 @@ export function logGatewayStartupIfNeeded(
   baseUrl: string
 ): void {
   if (!hasProcess || (nodeEnv !== 'test' && !isVitest)) {
+    // eslint-disable-next-line no-console -- diagnóstico de arranque intencional, gateado por el Zero-Noise Test Shield
     console.log('🚀 [Archon API Client V2] Active Gateway:', baseUrl);
   }
 }
@@ -86,7 +92,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxios
 
   // Update Telemetry
   currentTelemetry.lastEndpoint = config.url || 'NONE';
-  (config as any)._startTime = Date.now();
+  (config as TimedRequestConfig).startTime = Date.now();
 
   return config;
 });
@@ -97,7 +103,7 @@ api.interceptors.response.use(
     // Update Telemetry
     currentTelemetry.status = 'ONLINE';
     currentTelemetry.lastStatus = response.status;
-    const startTime = (response.config as any)._startTime;
+    const { startTime } = response.config as TimedRequestConfig;
     if (startTime) {
       currentTelemetry.lastLatency = Date.now() - startTime;
     }
@@ -109,7 +115,7 @@ api.interceptors.response.use(
     if (error.code === 'ERR_NETWORK') {
       currentTelemetry.status = 'OFFLINE';
     }
-    const startTime = (error.config as any)?._startTime;
+    const startTime = (error.config as TimedRequestConfig | undefined)?.startTime;
     if (startTime) {
       currentTelemetry.lastLatency = Date.now() - startTime;
     }
@@ -123,6 +129,7 @@ api.interceptors.response.use(
 
     if (!isTest && !isExpected401) {
       /* istanbul ignore next */
+      // eslint-disable-next-line no-console -- diagnóstico forense intencional, gateado por el Zero-Noise Test Shield
       console.error('🌐 [Archon API Client] Networking Error:', {
         message: error.message,
         status: error.response?.status,
@@ -138,6 +145,7 @@ api.interceptors.response.use(
       if (!isTest) {
         // 🕵️ Forensic Log: Catch the culprit before redirect
         /* istanbul ignore next */
+        // eslint-disable-next-line no-console -- diagnóstico forense intencional, gateado por el Zero-Noise Test Shield
         console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
           url: error.config?.url,
           method: error.config?.method,

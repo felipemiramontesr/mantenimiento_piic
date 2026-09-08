@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction } from 'react';
 import useSilkHydration from './useSilkHydration';
 import { RouteLog } from '../components/Routes/RouteLogTable';
 
-interface useRouteLogsResult {
+interface UseRouteLogsResult {
   logs: RouteLog[];
   setLogs: Dispatch<SetStateAction<RouteLog[]>>;
   isSyncing: boolean;
@@ -14,7 +14,7 @@ interface useRouteLogsResult {
  * Architecture: SOLID - Single Responsibility Logic Layer
  * Purpose: Specialized state and sync management for the Dispatch Log.
  */
-export default function useRouteLogs(): useRouteLogsResult {
+export default function useRouteLogs(): UseRouteLogsResult {
   const {
     data: logs,
     isSyncing,

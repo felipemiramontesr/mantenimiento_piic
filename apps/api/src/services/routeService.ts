@@ -1,10 +1,9 @@
-/* eslint-disable */
-// @ts-nocheck
-import { PoolConnection } from 'mysql2';
+import { RowDataPacket } from 'mysql2';
+import { PoolConnection } from 'mysql2/promise';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
-import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
+import { UNIT_STATUS, MOVEMENT_STATUS, UnitStatusValue } from '../constants/statuses';
 import { resolveCatalogId } from './catalogMapper';
 import * as RouteMovementsRepository from './routeMovements.repository';
 import * as RouteIncidentsRepository from './routeIncidents.repository';
@@ -50,6 +49,25 @@ export interface RouteEntry {
   tire_pressure_json?: string;
   checklist_json?: string;
   description?: string;
+}
+
+/**
+ * Forma real del body de PUT /v1/routes/:uuid (FC 076 F4, `routeUpdateSchema`
+ * en packages/contracts es un `z.record(z.any())` deliberadamente laxo — el
+ * frontend envía un subconjunto camelCase arbitrario, remapeado más abajo a
+ * columnas snake_case vía `movementColumnMap`/`extensionColumnMap`). NO es
+ * `Partial<RouteEntry>` (ese tipo describe las columnas snake_case ya
+ * persistidas, una forma distinta) — usar ese tipo aquí hacía que
+ * `data.destinationNeighborhoodId`/`startReading`/`endReading` fueran
+ * inalcanzables para TypeScript aunque el runtime SÍ los lee correctamente
+ * (confirmado contra el caller real, `routeAssignmentActions.ts`).
+ */
+interface RouteUpdateData {
+  destinationNeighborhoodId?: number | null;
+  destination?: string;
+  startReading?: number;
+  endReading?: number | null;
+  [key: string]: unknown;
 }
 
 export default class RouteService {
@@ -313,40 +331,15 @@ export default class RouteService {
         connection
       );
 
-      // 3. Determine unit status impact (Industrial Safety Protocol)
-      let nextStatus =
-        route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
-      if (severity === 'CRITICAL') {
-        nextStatus = UNIT_STATUS.MAINTENANCE;
-      } else if (category === 'SINIESTRO') {
-        nextStatus = UNIT_STATUS.DISCONTINUED;
-      }
-
-      // 4. Forensic journal entry
-      const statusBefore =
-        route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
-      await RouteIncidentsRepository.insertIncidentActivityLog(
-        {
-          logUuid: randomUUID(),
-          unitId: route.unit_id,
-          routeUuid,
-          readingBefore: route.start_reading,
-          statusBefore,
-          statusAfter: nextStatus,
-          description: `${category}: ${description.substring(0, 100)}`,
-          createdBy: route.driver_id,
-        },
+      // 3-5. Status impact + bitácora forense + aplicación del cambio
+      await RouteService.applyIncidentStatusImpact(
+        route,
+        routeUuid,
+        category,
+        description,
+        severity,
         connection
       );
-
-      // 5. Apply unit status impact if it changed
-      if (nextStatus !== statusBefore) {
-        await RouteIncidentsRepository.updateUnitStatusForIncident(
-          route.unit_id,
-          nextStatus,
-          connection
-        );
-      }
 
       await connection.commit();
       connection.release();
@@ -354,6 +347,51 @@ export default class RouteService {
       await connection.rollback();
       connection.release();
       throw e;
+    }
+  }
+
+  /** Pasos 3-5 de `reportIncident` — determina el impacto de status
+   * (Industrial Safety Protocol), registra la bitácora forense, y aplica el
+   * cambio de status si corresponde. Extraída para respetar el cap de 50
+   * líneas de Gate 2 (FC166 Track D); mismo comportamiento verbatim. */
+  private static async applyIncidentStatusImpact(
+    route: RowDataPacket,
+    routeUuid: string,
+    category: string,
+    description: string,
+    severity: string,
+    connection: PoolConnection
+  ): Promise<void> {
+    let nextStatus: UnitStatusValue =
+      route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
+    if (severity === 'CRITICAL') {
+      nextStatus = UNIT_STATUS.MAINTENANCE;
+    } else if (category === 'SINIESTRO') {
+      nextStatus = UNIT_STATUS.DISCONTINUED;
+    }
+
+    const statusBefore =
+      route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
+    await RouteIncidentsRepository.insertIncidentActivityLog(
+      {
+        logUuid: randomUUID(),
+        unitId: route.unit_id,
+        routeUuid,
+        readingBefore: route.start_reading,
+        statusBefore,
+        statusAfter: nextStatus,
+        description: `${category}: ${description.substring(0, 100)}`,
+        createdBy: route.driver_id,
+      },
+      connection
+    );
+
+    if (nextStatus !== statusBefore) {
+      await RouteIncidentsRepository.updateUnitStatusForIncident(
+        route.unit_id,
+        nextStatus,
+        connection
+      );
     }
   }
 
@@ -380,7 +418,7 @@ export default class RouteService {
   /**
    * Returns all checkpoints for a route, ordered by sequence ASC.
    */
-  static async getCheckpoints(routeUuid: string) {
+  static async getCheckpoints(routeUuid: string): Promise<RowDataPacket[]> {
     const route = await RouteIncidentsRepository.findRouteIdByUuid(routeUuid);
     if (!route) throw new Error('Route not found');
 
@@ -404,15 +442,175 @@ export default class RouteService {
   /**
    * Fetches incidents for a specific route UUID.
    */
-  static async getIncidents(routeUuid: string) {
+  static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
     return RouteIncidentsRepository.listIncidentsByRouteUuid(routeUuid);
   }
 
   /**
    * Fetches all incidents across the fleet.
    */
-  static async getAllIncidents(ownerIds?: number[]) {
+  static async getAllIncidents(ownerIds?: number[]): Promise<RowDataPacket[]> {
     return RouteIncidentsRepository.listAllIncidents(ownerIds);
+  }
+
+  /**
+   * Resuelve el campo `destination` textual cuando `destinationNeighborhoodId`
+   * cambia (paso 2 de `updateRoute`, extraído por complejidad cognitiva).
+   */
+  private static async resolveDestination(
+    data: RouteUpdateData,
+    connection: PoolConnection
+  ): Promise<string | undefined> {
+    if (data.destinationNeighborhoodId === undefined || !data.destinationNeighborhoodId) {
+      return data.destination;
+    }
+    const row = await RouteMovementsRepository.findNeighborhoodLabel(
+      data.destinationNeighborhoodId,
+      connection
+    );
+    if (!row) return data.destination;
+
+    const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
+    const inputDest = data.destination || '';
+    if (inputDest && inputDest !== suffix) {
+      const parts = inputDest.split(row.neighborhood);
+      const prefix = parts[0].trim().replace(/,\s*$/, '');
+      return prefix ? `${prefix}, ${suffix}` : suffix;
+    }
+    return suffix;
+  }
+
+  /**
+   * Reparte los campos de `resolvedData` entre fleet_movements y
+   * fleet_route_extensions (paso 4 de `updateRoute`, extraído por
+   * complejidad cognitiva). Coincide con el `DynamicFieldValue` privado de
+   * routeMovements.repository.ts (union de tipos SQL-parametrizables).
+   */
+  private static splitUpdateFields(
+    resolvedData: RouteUpdateData,
+    fuelLevelColumn: string
+  ): {
+    movementFields: string[];
+    movementValues: (string | number | boolean | null)[];
+    extensionFields: string[];
+    extensionValues: (string | number | boolean | null)[];
+  } {
+    const movementColumnMap: Record<string, string> = {
+      unitId: 'unit_id',
+      status: 'status',
+      startReading: 'start_reading',
+      endReading: 'end_reading',
+      fuelLevel: fuelLevelColumn,
+      fuelLitersLoaded: 'fuel_liters_loaded',
+      fuelAmount: 'fuel_amount',
+      fuelTicketImage: 'fuel_ticket_image',
+      description: 'description',
+    };
+
+    const extensionColumnMap: Record<string, string> = {
+      operatorId: 'driver_id',
+      originId: 'origin_id',
+      destinationNeighborhoodId: 'destination_neighborhood_id',
+      destination: 'destination',
+      additivesCheck: 'additives_check',
+      tirePressureJson: 'tire_pressure_json',
+      checklistJson: 'checklist_json',
+    };
+
+    const movementFields: string[] = [];
+    const movementValues: (string | number | boolean | null)[] = [];
+    const extensionFields: string[] = [];
+    const extensionValues: (string | number | boolean | null)[] = [];
+
+    Object.entries(resolvedData).forEach(([key, value]) => {
+      const sqlValue = value as string | number | boolean | null;
+      if (movementColumnMap[key]) {
+        movementFields.push(`${movementColumnMap[key]} = ?`);
+        movementValues.push(sqlValue);
+      } else if (extensionColumnMap[key]) {
+        extensionFields.push(`${extensionColumnMap[key]} = ?`);
+        if (key === 'additivesCheck') {
+          extensionValues.push(sqlValue ? 1 : 0);
+        } else {
+          extensionValues.push(sqlValue);
+        }
+      }
+    });
+
+    return { movementFields, movementValues, extensionFields, extensionValues };
+  }
+
+  /** Pasos 1-3 de `updateRoute`: snapshot before + resolución de destino +
+   * validación de telemetría. Extraída para respetar el cap de 50 líneas de
+   * Gate 2 (FC166 Track D); mismo comportamiento verbatim, incluyendo el
+   * guard de `destination` (solo se sobrescribe cuando está resuelto —
+   * evita la key `destination: undefined` espuria descrita abajo). */
+  private static async prepareRouteUpdate(
+    uuid: string,
+    data: RouteUpdateData,
+    connection: PoolConnection
+  ): Promise<{ snapshotBefore: RowDataPacket; resolvedData: RouteUpdateData }> {
+    // 1. Get full snapshot before (joined)
+    const snapshotBefore = await RouteMovementsRepository.findRouteSnapshotForUpdate(
+      uuid,
+      connection
+    );
+    if (!snapshotBefore) throw new Error('Route not found');
+
+    // 2. Resolve destination if neighborhoodId is being updated
+    // Only override `destination` when it's actually meaningful (present
+    // in the original payload, or resolved from neighborhoodId) — an
+    // unconditional spread would add a `destination: undefined` KEY that
+    // Object.entries picks up even when absent from the original `data`,
+    // producing an extra (and wrong) SQL field for payloads that never
+    // touched destination at all.
+    const resolvedDestination = await this.resolveDestination(data, connection);
+    const resolvedData: RouteUpdateData =
+      resolvedDestination !== undefined ? { ...data, destination: resolvedDestination } : data;
+
+    // 3. Telemetry validation
+    const nextStartReading = resolvedData.startReading ?? snapshotBefore.start_reading;
+    const nextEndReading = resolvedData.endReading ?? snapshotBefore.end_reading;
+    if (nextEndReading !== null && nextEndReading < nextStartReading) {
+      throw new Error(
+        `Telemetry Disparity: End reading (${nextEndReading} KM) cannot be lower than start reading (${nextStartReading} KM).`
+      );
+    }
+
+    return { snapshotBefore, resolvedData };
+  }
+
+  /** Paso 4 de `updateRoute`: separa campos entre fleet_movements y
+   * fleet_route_extensions, y persiste cada mitad. Extraída por el mismo
+   * motivo (Gate 2); mismo comportamiento verbatim. */
+  private static async persistRouteUpdateFields(
+    uuid: string,
+    snapshotBefore: RowDataPacket,
+    resolvedData: RouteUpdateData,
+    connection: PoolConnection
+  ): Promise<void> {
+    const fuelLevelColumn =
+      snapshotBefore.status === 'ACTIVE' ? 'fuel_level_start' : 'fuel_level_end';
+    const { movementFields, movementValues, extensionFields, extensionValues } =
+      this.splitUpdateFields(resolvedData, fuelLevelColumn);
+
+    if (movementFields.length > 0) {
+      await RouteMovementsRepository.updateRouteMovementFields(
+        uuid,
+        movementFields.join(', '),
+        movementValues,
+        connection
+      );
+    }
+
+    if (extensionFields.length > 0) {
+      await RouteMovementsRepository.updateRouteExtensionFields(
+        snapshotBefore.id,
+        extensionFields.join(', '),
+        extensionValues,
+        connection
+      );
+    }
   }
 
   /**
@@ -420,7 +618,7 @@ export default class RouteService {
    */
   static async updateRoute(
     uuid: string,
-    data: Partial<RouteEntry>,
+    data: RouteUpdateData,
     reason: string,
     adminId: number
   ): Promise<void> {
@@ -430,102 +628,22 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Get full snapshot before (joined)
-      const snapshotBefore = await RouteMovementsRepository.findRouteSnapshotForUpdate(
+      // 1-3. Snapshot before + resolución de destino + validación de telemetría
+      const { snapshotBefore, resolvedData } = await this.prepareRouteUpdate(
         uuid,
+        data,
         connection
       );
-      if (!snapshotBefore) throw new Error('Route not found');
-
-      // 2. Resolve destination if neighborhoodId is being updated
-      if (data.destinationNeighborhoodId !== undefined && data.destinationNeighborhoodId) {
-        const row = await RouteMovementsRepository.findNeighborhoodLabel(
-          data.destinationNeighborhoodId,
-          connection
-        );
-        if (row) {
-          const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
-          const inputDest = data.destination || '';
-          if (inputDest && inputDest !== suffix) {
-            const parts = inputDest.split(row.neighborhood);
-            const prefix = parts[0].trim().replace(/,\s*$/, '');
-            data.destination = prefix ? `${prefix}, ${suffix}` : suffix;
-          } else {
-            data.destination = suffix;
-          }
-        }
-      }
-
-      // 3. Telemetry validation
-      const nextStartReading = data.startReading ?? snapshotBefore.start_reading;
-      const nextEndReading = data.endReading ?? snapshotBefore.end_reading;
-      if (nextEndReading !== null && nextEndReading < nextStartReading) {
-        throw new Error(
-          `Telemetry Disparity: End reading (${nextEndReading} KM) cannot be lower than start reading (${nextStartReading} KM).`
-        );
-      }
 
       // 4. Split fields between fleet_movements and fleet_route_extensions
-      const movementColumnMap: Record<string, string> = {
-        unitId: 'unit_id',
-        status: 'status',
-        startReading: 'start_reading',
-        endReading: 'end_reading',
-        fuelLevel: snapshotBefore.status === 'ACTIVE' ? 'fuel_level_start' : 'fuel_level_end',
-        fuelLitersLoaded: 'fuel_liters_loaded',
-        fuelAmount: 'fuel_amount',
-        fuelTicketImage: 'fuel_ticket_image',
-        description: 'description',
-      };
-
-      const extensionColumnMap: Record<string, string> = {
-        operatorId: 'driver_id',
-        originId: 'origin_id',
-        destinationNeighborhoodId: 'destination_neighborhood_id',
-        destination: 'destination',
-        additivesCheck: 'additives_check',
-        tirePressureJson: 'tire_pressure_json',
-        checklistJson: 'checklist_json',
-      };
-
-      const movementFields: string[] = [];
-      const movementValues: unknown[] = [];
-      const extensionFields: string[] = [];
-      const extensionValues: unknown[] = [];
-
-      Object.entries(data).forEach(([key, value]) => {
-        if (movementColumnMap[key]) {
-          movementFields.push(`${movementColumnMap[key]} = ?`);
-          movementValues.push(value);
-        } else if (extensionColumnMap[key]) {
-          extensionFields.push(`${extensionColumnMap[key]} = ?`);
-          extensionValues.push(key === 'additivesCheck' ? (value ? 1 : 0) : value);
-        }
-      });
-
-      if (movementFields.length > 0) {
-        await RouteMovementsRepository.updateRouteMovementFields(
-          uuid,
-          movementFields.join(', '),
-          movementValues,
-          connection
-        );
-      }
-
-      if (extensionFields.length > 0) {
-        await RouteMovementsRepository.updateRouteExtensionFields(
-          snapshotBefore.id,
-          extensionFields.join(', '),
-          extensionValues,
-          connection
-        );
-      }
+      await this.persistRouteUpdateFields(uuid, snapshotBefore, resolvedData, connection);
 
       // 5. Get snapshot after (joined)
       const snapshotAfter = await RouteMovementsRepository.findRouteSnapshotByUuid(
         uuid,
         connection
       );
+      if (!snapshotAfter) throw new Error('Route not found after update');
 
       // 6. Forensic audit log
       await recordAuditLog({
@@ -547,7 +665,7 @@ export default class RouteService {
       await connection.rollback();
       connection.release();
       const msg = e instanceof Error ? e.message : 'Unknown database error';
-      throw new Error(`Forensic Update Failure: ${msg}`);
+      throw new Error(`Forensic Update Failure: ${msg}`, { cause: e });
     }
   }
 
@@ -625,22 +743,24 @@ export default class RouteService {
     return ownerScope.includes(ownerId);
   }
 
-  static async listRoutes(ownerScope: number[] | null) {
+  static async listRoutes(ownerScope: number[] | null): Promise<RowDataPacket[]> {
     return RouteRoutesRepository.listRoutesForOwnerScope(ownerScope);
   }
 
-  static async listUnitActivityLogs(ownerScope: number[] | null) {
+  static async listUnitActivityLogs(ownerScope: number[] | null): Promise<RowDataPacket[]> {
     return RouteRoutesRepository.listUnitActivityLogsForOwnerScope(ownerScope);
   }
 
-  static async getRouteNode(uuid: string) {
+  static async getRouteNode(
+    uuid: string
+  ): Promise<{ route: RowDataPacket; incidents: RowDataPacket[] } | null> {
     const route = await RouteRoutesRepository.findRouteNodeByUuid(uuid);
     if (!route) return null;
     const incidents = await RouteRoutesRepository.findRouteNodeIncidents(uuid);
     return { route, incidents };
   }
 
-  static async getIncidentNode(uuid: string) {
+  static async getIncidentNode(uuid: string): Promise<RowDataPacket | null> {
     return RouteRoutesRepository.findIncidentNodeByUuid(uuid);
   }
 }
