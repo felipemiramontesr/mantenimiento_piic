@@ -85,7 +85,7 @@ describe('IdentitySection', () => {
   });
 
   it('updates id/ownerId/placas/numeroSerie and removes the preset image', () => {
-    const { container } = render(<Harness />);
+    render(<Harness />);
 
     fireEvent.change(screen.getByPlaceholderText('Ej: VEH-001'), {
       target: { value: 'VEH-042' },
@@ -109,10 +109,10 @@ describe('IdentitySection', () => {
       '3VWFE21C04M000001'
     );
 
-    // ArchonSelect triggers are <div>s — the only real <button> is the image remove control
-    const removeImageBtn = container.querySelector('button');
-    expect(removeImageBtn).not.toBeNull();
-    fireEvent.click(removeImageBtn as HTMLButtonElement);
+    // FC166 Track D (S6819) — ArchonSelect triggers are now native <button>s
+    // too, so the image remove control is targeted by its accessible name.
+    const removeImageBtn = screen.getByRole('button', { name: 'Eliminar imagen 1' });
+    fireEvent.click(removeImageBtn);
     expect(screen.queryByAltText('Vista 1')).not.toBeInTheDocument();
   });
 

@@ -153,8 +153,10 @@ describe('ArchonImageUploader Component', () => {
     const images = ['img1.png', 'img2.png'];
     render(<ArchonImageUploader images={images} onChange={mockOnChange} />);
 
+    // FC166 Track D (S6819) — the dropzone itself is now a native <button>
+    // too (index 0), so the per-image remove buttons start at index 1.
     const removeButtons = document.querySelectorAll('button');
-    fireEvent.click(removeButtons[0]);
+    fireEvent.click(removeButtons[1]);
 
     expect(mockOnChange).toHaveBeenCalledWith(['img2.png']);
   });
@@ -198,9 +200,11 @@ describe('ArchonImageUploader Component', () => {
         variant="circle"
       />
     );
+    // FC166 Track D (S6819) — the dropzone itself is now a native <button>
+    // too (index 0); the sole image's remove button is index 1.
     const removeButtons = document.querySelectorAll('button');
-    expect(removeButtons.length).toBeGreaterThan(0);
-    fireEvent.click(removeButtons[0]);
+    expect(removeButtons.length).toBeGreaterThan(1);
+    fireEvent.click(removeButtons[1]);
     expect(mockOnChange).toHaveBeenCalledWith([]);
   });
 

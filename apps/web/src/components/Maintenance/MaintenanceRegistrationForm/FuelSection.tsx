@@ -19,8 +19,13 @@ export interface FuelSectionProps {
   inputClass: string;
 }
 
+type FuelSensorCardProps = Pick<
+  FuelSectionProps,
+  'isInProgress' | 'fuelLevelEnd' | 'onFuelLevelEnd'
+>;
+
 /** Card izquierda de FuelSection: sensor de nivel de combustible (FC164 Adenda G2, split Alfa 211_AN). */
-const FuelSensorCard: React.FC<FuelSectionProps> = ({
+const FuelSensorCard: React.FC<FuelSensorCardProps> = ({
   isInProgress,
   fuelLevelEnd,
   onFuelLevelEnd,

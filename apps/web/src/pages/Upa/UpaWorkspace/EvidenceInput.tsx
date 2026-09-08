@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface EvidenceUrlRowProps {
@@ -32,6 +32,27 @@ function EvidenceUrlRow({ url, idx, onUpdate, onRemove }: EvidenceUrlRowProps): 
   );
 }
 
+interface EvidenceRows {
+  readonly rowIds: React.MutableRefObject<string[]>;
+  readonly addUrl: () => void;
+  readonly removeUrl: (idx: number) => void;
+}
+
+// FC166 Track D (S6479) — stable per-row id, kept in lockstep with urls via
+// addUrl/removeUrl; content (e.g. two blank rows) is never a safe key.
+function useEvidenceRows(urls: string[], onUrlsChange: (urls: string[]) => void): EvidenceRows {
+  const rowIdsRef = useRef<string[]>(urls.map(() => crypto.randomUUID()));
+  const addUrl = (): void => {
+    rowIdsRef.current = [...rowIdsRef.current, crypto.randomUUID()];
+    onUrlsChange([...urls, '']);
+  };
+  const removeUrl = (idx: number): void => {
+    rowIdsRef.current = rowIdsRef.current.filter((_, i) => i !== idx);
+    onUrlsChange(urls.filter((_, i) => i !== idx));
+  };
+  return { rowIds: rowIdsRef, addUrl, removeUrl };
+}
+
 interface EvidenceInputProps {
   readonly urls: string[];
   readonly notes: string;
@@ -46,8 +67,7 @@ const EvidenceInput: React.FC<EvidenceInputProps> = ({
   onUrlsChange,
   onNotesChange,
 }) => {
-  const addUrl = (): void => onUrlsChange([...urls, '']);
-  const removeUrl = (idx: number): void => onUrlsChange(urls.filter((_, i) => i !== idx));
+  const { rowIds, addUrl, removeUrl } = useEvidenceRows(urls, onUrlsChange);
   const updateUrl = (idx: number, val: string): void =>
     onUrlsChange(urls.map((u, i) => (i === idx ? val : u)));
 
@@ -57,7 +77,13 @@ const EvidenceInput: React.FC<EvidenceInputProps> = ({
         Evidencias (URLs)
       </p>
       {urls.map((url, idx) => (
-        <EvidenceUrlRow key={idx} url={url} idx={idx} onUpdate={updateUrl} onRemove={removeUrl} />
+        <EvidenceUrlRow
+          key={rowIds.current[idx]}
+          url={url}
+          idx={idx}
+          onUpdate={updateUrl}
+          onRemove={removeUrl}
+        />
       ))}
       <button
         type="button"

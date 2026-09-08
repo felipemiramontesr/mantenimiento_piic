@@ -9,7 +9,7 @@ interface Option {
 }
 
 describe('Combobox — disabled prop omitted (FC165 F3 Slice3.2 Batch1)', () => {
-  it('defaults to enabled (tabIndex 0) when the caller never passes `disabled`', () => {
+  it('defaults to enabled when the caller never passes `disabled`', () => {
     // Todos los call-sites reales (ArchonGeoSelector/GeoFieldsGroup) siempre
     // reenvían un booleano explícito — esta prueba ejercita el otro lado de
     // `props.disabled ?? false`, la ruta de un consumidor directo de este
@@ -25,7 +25,9 @@ describe('Combobox — disabled prop omitted (FC165 F3 Slice3.2 Batch1)', () => 
     );
 
     const trigger = screen.getByRole('button');
-    expect(trigger).toHaveAttribute('tabIndex', '0');
+    // FC166 Track D (S6819) — the trigger is now a native <button>, whose
+    // own `disabled` attribute (not a manual tabIndex) is the real signal.
+    expect(trigger).toBeEnabled();
     expect(trigger.className).not.toContain('cursor-not-allowed');
   });
 });

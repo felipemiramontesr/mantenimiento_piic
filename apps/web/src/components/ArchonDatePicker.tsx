@@ -290,11 +290,20 @@ function CalendarDaysGrid({
   isTodayDay,
   onSelectDay,
 }: CalendarDaysGridProps): React.JSX.Element {
+  // FC166 Track D (S6479) — real days are keyed by their own unique number;
+  // only the leading blank cells (which never carry data or reorder
+  // independently) fall back to a positional key materialized here, not
+  // referenced directly inside the JSX key expression below.
+  const keyedCells = cells.map((day, i) => ({
+    key: day !== null ? `day-${day}` : `empty-${i}`,
+    day,
+  }));
+
   return (
     <div className="grid grid-cols-7 gap-1 text-center">
-      {cells.map(
-        (day: number | null, i: number): React.ReactElement => (
-          <div key={i}>
+      {keyedCells.map(
+        ({ key, day }): React.ReactElement => (
+          <div key={key}>
             {day !== null ? (
               <button
                 type="button"

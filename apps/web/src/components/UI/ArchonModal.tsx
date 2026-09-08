@@ -27,20 +27,29 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
   return createPortal(
     <div
       className="archon-modal-backdrop"
-      role="presentation"
       onClick={handleBackdropClick}
       onKeyDown={(e: React.KeyboardEvent): void => {
         if (e.key === 'Escape') onClose();
       }}
     >
-      <div
+      <dialog
+        open
+        // A bare <dialog open> (no showModal()) still inherits the UA
+        // stylesheet's `position: absolute; inset-block-start: 0; margin:
+        // auto` — with Preflight disabled project-wide (tailwind.config.js)
+        // and neither containerClassName path (default or ArchonCropModal's
+        // custom one) resetting these, the modal would pin to the top of
+        // the backdrop instead of the flex-centered position the original
+        // plain <div> had. Reset inline (highest precedence, applies
+        // regardless of which className is used) — padding/border/
+        // background stay owned by each caller's className, unchanged.
+        style={{ position: 'static', margin: 0, inset: 'auto' }}
         className={containerClassName ?? `archon-modal-container ${maxWidth}`}
-        role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
       >
         {children}
-      </div>
+      </dialog>
     </div>,
     document.body
   );

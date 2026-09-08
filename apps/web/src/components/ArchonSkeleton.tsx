@@ -52,8 +52,10 @@ export const ArchonCardSkeleton: React.FC = () => (
 
 export const ArchonTableSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
   <div className="w-full space-y-4">
-    {Array.from({ length: rows }).map((_, i) => (
-      <div key={i} className="flex space-x-4 p-4 border-b border-slate-100 items-center">
+    {/* FC166 Track D (S6479) — these loading-skeleton rows carry no data of
+        their own, so the row ids are materialized first and keyed off that value. */}
+    {Array.from({ length: rows }, (_, i) => `skeleton-row-${i}`).map((rowId) => (
+      <div key={rowId} className="flex space-x-4 p-4 border-b border-slate-100 items-center">
         <ArchonSkeleton width={40} height={40} borderRadius="4px" />
         <ArchonSkeleton width="20%" height={20} />
         <ArchonSkeleton width="30%" height={20} />

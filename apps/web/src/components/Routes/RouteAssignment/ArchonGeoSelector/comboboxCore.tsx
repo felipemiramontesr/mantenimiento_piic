@@ -32,7 +32,9 @@ export function ComboboxTrigger({
   onClick,
 }: ComboboxTriggerProps): React.JSX.Element {
   return (
-    <div
+    <button
+      type="button"
+      disabled={disabled}
       className={`w-full h-11 bg-[#0f2a44]/5 px-4 flex items-center justify-between transition-all duration-300 rounded-[4px] border-b-2 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-[#0f2a44]/8'
       } ${
@@ -42,13 +44,15 @@ export function ComboboxTrigger({
       }`}
       onClick={onClick}
       onKeyDown={(e: React.KeyboardEvent): void => {
+        // Explicit handling (kept even on a native <button>): prevents the
+        // browser's own Enter/Space-to-click synthesis so onClick fires
+        // exactly once, and keeps this keyboard path exercisable under
+        // jsdom, which doesn't synthesize that click on its own.
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onClick();
         }
       }}
-      role="button"
-      tabIndex={disabled ? -1 : 0}
     >
       <span
         className={`truncate text-archon-lg font-bold ${
@@ -63,7 +67,7 @@ export function ComboboxTrigger({
           isOpen ? 'text-[#f2b705] rotate-180' : 'text-[#0f2a44] opacity-30'
         }`}
       />
-    </div>
+    </button>
   );
 }
 

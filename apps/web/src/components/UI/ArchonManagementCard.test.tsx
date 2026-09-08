@@ -57,12 +57,19 @@ describe('ArchonManagementCard', () => {
     const { container: yellowContainer } = render(
       <ArchonManagementCard {...BASE_PROPS} variant="yellow" />
     );
-    expect(yellowContainer.querySelector('button')?.className).toContain('text-pinnacle-navy');
+    // FC166 Track D (S6819) — the action indicator is a <span> (it has no
+    // onClick of its own; ClickableCardWrapper is the real <button> now),
+    // targeted by its own class instead of tag.
+    expect(yellowContainer.querySelector('.btn-archon-card-action')?.className).toContain(
+      'text-pinnacle-navy'
+    );
 
     const { container: navyContainer } = render(
       <ArchonManagementCard {...BASE_PROPS} variant="navy" />
     );
-    expect(navyContainer.querySelector('button')?.className).toContain('text-white');
+    expect(navyContainer.querySelector('.btn-archon-card-action')?.className).toContain(
+      'text-white'
+    );
   });
 
   it('reverseArrow renders the button text after a left arrow instead of before a right arrow', () => {
@@ -72,7 +79,7 @@ describe('ArchonManagementCard', () => {
 
   it('isActive adds the active ring class to the action button', () => {
     const { container } = render(<ArchonManagementCard {...BASE_PROPS} variant="navy" isActive />);
-    expect(container.querySelector('button')?.className).toContain('ring-1');
+    expect(container.querySelector('.btn-archon-card-action')?.className).toContain('ring-1');
   });
 
   it('clicking the card calls onClick', () => {

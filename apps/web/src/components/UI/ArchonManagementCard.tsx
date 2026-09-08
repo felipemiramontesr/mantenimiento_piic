@@ -67,20 +67,23 @@ const ClickableCardWrapper: React.FC<ClickableCardWrapperProps> = ({
   className,
   children,
 }) => (
-  <div
+  <button
+    type="button"
     onClick={onClick}
     onKeyDown={(e: React.KeyboardEvent): void => {
+      // Explicit handling (kept even on a native <button>): prevents the
+      // browser's own Enter/Space-to-click synthesis so onClick fires
+      // exactly once, and keeps this keyboard path exercisable under
+      // jsdom, which doesn't synthesize that click on its own.
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         onClick(e as unknown as React.MouseEvent);
       }
     }}
-    role="button"
-    tabIndex={0}
     className={className}
   >
     {children}
-  </div>
+  </button>
 );
 
 interface CardActionButtonProps {
@@ -103,8 +106,7 @@ const CardActionButton: React.FC<CardActionButtonProps> = ({
   arrowSize,
   extraClassName,
 }) => (
-  <button
-    type="button"
+  <span
     data-testid={testId}
     className={`
       btn-archon-card-action ${extraClassName ?? ''}
@@ -123,7 +125,7 @@ const CardActionButton: React.FC<CardActionButtonProps> = ({
         <ArrowRight size={arrowSize} className="transition-transform group-hover:translate-x-1" />
       </>
     )}
-  </button>
+  </span>
 );
 
 interface CardHorizontalContentProps {

@@ -190,9 +190,10 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     render(<UserRegistrationForm />);
 
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-    const uploaderZone = screen.getByText(/Arrastra/i).closest('div')?.parentElement;
-    if (!uploaderZone) throw new Error('Uploader zone not found');
-    const fileInput = uploaderZone.querySelector('input[type="file"]');
+    // FC166 Track D (S6819) — the hidden file input is now a sibling, not a
+    // descendant, of the dropzone <button> (nesting interactive content
+    // inside a <button> is invalid HTML), so it's queried document-wide.
+    const fileInput = document.querySelector('input[type="file"]');
     if (!fileInput) throw new Error('File input not found');
     await act(async () => {
       fireEvent.change(fileInput, { target: { files: [file] } });

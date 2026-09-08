@@ -46,17 +46,21 @@ function ArchonSelectTrigger({
   onToggle,
 }: ArchonSelectTriggerProps): React.JSX.Element {
   return (
-    <div
+    <button
+      type="button"
+      disabled={disabled}
       className={archonSelectTriggerClassName(disabled, isOpen)}
       onClick={onToggle}
       onKeyDown={(e: React.KeyboardEvent): void => {
+        // Explicit handling (kept even on a native <button>): prevents the
+        // browser's own Enter/Space-to-click synthesis so onToggle fires
+        // exactly once, and keeps this keyboard path exercisable under
+        // jsdom, which doesn't synthesize that click on its own.
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onToggle();
         }
       }}
-      role="button"
-      tabIndex={disabled ? -1 : 0}
       style={{
         borderBottom: isOpen ? '2px solid #f2b705' : '2px solid rgba(15, 42, 68, 0.1)',
       }}
@@ -83,7 +87,7 @@ function ArchonSelectTrigger({
           className={isOpen ? 'text-[#f2b705]' : 'text-[#0f2a44] opacity-30'}
         />
       </motion.div>
-    </div>
+    </button>
   );
 }
 

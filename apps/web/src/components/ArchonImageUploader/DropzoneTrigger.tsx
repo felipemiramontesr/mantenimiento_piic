@@ -141,6 +141,21 @@ export interface DropzoneTriggerProps {
   readonly accept: string;
 }
 
+// Explicit keyDown (kept alongside a native <button>): jsdom doesn't
+// synthesize the browser's own Enter/Space click, and preventDefault() here
+// stops that native synthesis from double-firing in real browsers.
+function handleDropzoneKeyDown(
+  e: React.KeyboardEvent,
+  isDisabled: boolean,
+  onOpenFileDialog: () => void
+): void {
+  if (isDisabled) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onOpenFileDialog();
+  }
+}
+
 /** Zona de drag & drop + input de archivo (FC163 F1B-2, split Alfa 219_AN — movido a archivo hermano por max-lines:400). */
 export function DropzoneTrigger({
   visual,
@@ -150,25 +165,11 @@ export function DropzoneTrigger({
   accept,
 }: DropzoneTriggerProps): React.JSX.Element {
   const { isDisabled, isDragging, containerSpacingClasses, iconPaddingClasses } = visual;
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (isDisabled) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handlers.onOpenFileDialog();
-    }
-  };
 
   return (
-    <div
-      onDragOver={isDisabled ? undefined : handlers.onDragOver}
-      onDragLeave={isDisabled ? undefined : handlers.onDragLeave}
-      onDrop={isDisabled ? undefined : handlers.onDrop}
-      onClick={isDisabled ? undefined : handlers.onOpenFileDialog}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={isDisabled ? -1 : 0}
-      className={dropzoneClassName(isDisabled, isDragging, containerSpacingClasses)}
-    >
+    <>
+      {/* Sibling, not descendant, of the <button> below — an <input>
+          nested inside a <button> is invalid HTML (FC166 Track D S6819). */}
       <DropzoneFileInput
         multiple={copy.maxImages > 1}
         accept={accept}
@@ -176,20 +177,31 @@ export function DropzoneTrigger({
         disabled={isDisabled}
         onFilesSelected={handlers.onFilesSelected}
       />
-      <DropzoneIcon
-        compact={copy.compact}
-        isDragging={isDragging}
-        iconPaddingClasses={iconPaddingClasses}
-      />
-      <DropzoneCaption
-        compact={copy.compact}
-        isDragging={isDragging}
-        title={copy.title}
-        atCapacity={copy.atCapacity}
-        maxImages={copy.maxImages}
-        allowedFormats={copy.allowedFormats}
-        reducedHeight={copy.reducedHeight}
-      />
-    </div>
+      <button
+        type="button"
+        disabled={isDisabled}
+        onDragOver={isDisabled ? undefined : handlers.onDragOver}
+        onDragLeave={isDisabled ? undefined : handlers.onDragLeave}
+        onDrop={isDisabled ? undefined : handlers.onDrop}
+        onClick={isDisabled ? undefined : handlers.onOpenFileDialog}
+        onKeyDown={(e): void => handleDropzoneKeyDown(e, isDisabled, handlers.onOpenFileDialog)}
+        className={dropzoneClassName(isDisabled, isDragging, containerSpacingClasses)}
+      >
+        <DropzoneIcon
+          compact={copy.compact}
+          isDragging={isDragging}
+          iconPaddingClasses={iconPaddingClasses}
+        />
+        <DropzoneCaption
+          compact={copy.compact}
+          isDragging={isDragging}
+          title={copy.title}
+          atCapacity={copy.atCapacity}
+          maxImages={copy.maxImages}
+          allowedFormats={copy.allowedFormats}
+          reducedHeight={copy.reducedHeight}
+        />
+      </button>
+    </>
   );
 }

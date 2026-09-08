@@ -68,11 +68,11 @@ export function SlideOverBackdrop({ onClose }: SlideOverBackdropProps): React.JS
   return (
     <div
       className="absolute inset-0 bg-[#0f2a44]/40 backdrop-blur-sm transition-opacity"
+      aria-hidden="true"
       onClick={onClose}
       onKeyDown={(e: React.KeyboardEvent): void => {
         if (e.key === 'Escape') onClose();
       }}
-      role="presentation"
     />
   );
 }

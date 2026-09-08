@@ -79,15 +79,17 @@ export function DayGrid({
 }: DayGridProps): React.ReactElement {
   const firstWeekday = getFirstWeekday(year, month);
   const daysInMonth = getDaysInMonth(year, month);
-  const emptyCells = new Array<null>(firstWeekday).fill(null);
+  // Leading blank slots before day 1, one per weekday abbreviation they occupy
+  // (FC166 Track D S6479 — keyed by the weekday label itself, not the loop index).
+  const emptyWeekdaySlots = DIAS_CORTOS.slice(0, firstWeekday);
   const dayCells = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
     <>
       <DayGridHeaders />
       <div className="grid grid-cols-7 border-l border-slate-200">
-        {emptyCells.map((_, i) => (
-          <span key={`e${i}`} className="h-8 border-r border-b border-slate-200" />
+        {emptyWeekdaySlots.map((wd) => (
+          <span key={`empty-${wd}`} className="h-8 border-r border-b border-slate-200" />
         ))}
         {dayCells.map((day) => (
           <DayCellButton

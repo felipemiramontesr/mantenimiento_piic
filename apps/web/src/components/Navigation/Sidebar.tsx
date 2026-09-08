@@ -49,7 +49,7 @@ interface NavItemProps {
 const ScrollContainerCtx = React.createContext<React.RefObject<HTMLElement> | undefined>(undefined);
 
 /** Fade de opacidad por scroll-intersection para NavItem (FC164 Adenda G2, split Alfa 211_AN). */
-function useScrollFade(itemRef: React.RefObject<HTMLDivElement>, active?: boolean): number {
+function useScrollFade(itemRef: React.RefObject<HTMLButtonElement>, active?: boolean): number {
   const scrollCtx = React.useContext(ScrollContainerCtx);
   const [opacity, setOpacity] = useState(1);
   const activeRef = useRef(active);
@@ -67,7 +67,7 @@ function useScrollFade(itemRef: React.RefObject<HTMLDivElement>, active?: boolea
   // la suite completa). Se estrechan los tipos en el punto de uso en vez de
   // dejar un `if`+fallback que ninguna prueba real podía disparar.
   useEffect(() => {
-    const el = itemRef.current as HTMLDivElement;
+    const el = itemRef.current as HTMLButtonElement;
     const container = scrollCtx?.current as HTMLElement;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -182,7 +182,7 @@ const NavItem: React.FC<NavItemProps> = ({
   const { setIsMobileMenuOpen } = useSovereignLayout();
   const showBadge = badgeCount != null && badgeCount > 0;
   const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
-  const itemRef = useRef<HTMLDivElement>(null);
+  const itemRef = useRef<HTMLButtonElement>(null);
   const opacity = useScrollFade(itemRef, active);
   const activate = (): void => {
     navigate(path);
@@ -190,18 +190,21 @@ const NavItem: React.FC<NavItemProps> = ({
   };
 
   return (
-    <div
+    <button
+      type="button"
       ref={itemRef}
       style={{ opacity, transition: 'opacity 300ms ease-in-out' }}
       onClick={activate}
       onKeyDown={(e: React.KeyboardEvent): void => {
+        // Explicit handling (kept even on a native <button>): prevents the
+        // browser's own Enter/Space-to-click synthesis so activate() fires
+        // exactly once, and keeps this keyboard path exercisable under
+        // jsdom, which doesn't synthesize that click on its own.
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           activate();
         }
       }}
-      role="button"
-      tabIndex={0}
       className={navItemClassName(isCollapsed, active)}
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -215,7 +218,7 @@ const NavItem: React.FC<NavItemProps> = ({
       />
       <NavItemLabel label={label} isCollapsed={isCollapsed} active={active} />
       {showBadge && !isCollapsed && <NavBadge badgeLabel={badgeLabel} />}
-    </div>
+    </button>
   );
 };
 
@@ -258,11 +261,11 @@ function MobileOverlay({ isOpen, onClose }: MobileOverlayProps): React.ReactElem
   return (
     <div
       className="fixed inset-0 bg-black/60 z-[55] md:hidden backdrop-blur-sm transition-opacity"
+      aria-hidden="true"
       onClick={onClose}
       onKeyDown={(e: React.KeyboardEvent): void => {
         if (e.key === 'Escape') onClose();
       }}
-      role="presentation"
     />
   );
 }

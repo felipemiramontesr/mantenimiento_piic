@@ -17,11 +17,11 @@ const ProfileSlideOverBackdrop: React.FC<ProfileSlideOverBackdropProps> = ({ onC
   <div
     data-testid="profile-edit-overlay"
     className="fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm"
+    aria-hidden="true"
     onClick={onClose}
     onKeyDown={(e: React.KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
     }}
-    role="presentation"
   />
 );
 

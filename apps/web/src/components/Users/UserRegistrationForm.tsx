@@ -63,7 +63,6 @@ export const buildTempPassword = (length = 12): string => {
 };
 
 interface SuccessViewProps {
-  data: { isEdit?: boolean };
   onClose: () => void;
 }
 
@@ -777,7 +776,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   };
 
   if (successData) {
-    return <SuccessView data={successData} onClose={closeToDirectory} />;
+    return <SuccessView onClose={closeToDirectory} />;
   }
 
   return (

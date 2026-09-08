@@ -35,6 +35,7 @@ function ImagePreviewItem({
       {!disabled && (
         <button
           type="button"
+          aria-label={`Eliminar imagen ${idx + 1}`}
           onClick={(e: React.MouseEvent): void => {
             e.stopPropagation();
             onRemove(idx);
@@ -73,11 +74,16 @@ export function ImagePreviewGrid({
   disabled,
   onRemove,
 }: ImagePreviewGridProps): React.JSX.Element {
+  // FC166 Track D (S6479) — empty slots carry no data of their own, so the
+  // fill count is materialized into values first (`slot-${i}`) and keyed
+  // off that value, rather than the map callback's own index parameter.
+  const emptySlots = Array.from({ length: maxImages - images.length }, (_, i) => `slot-${i}`);
+
   return (
     <div className={`grid grid-cols-4 ${compact ? 'gap-2' : 'gap-12'}`}>
       {images.map((src, idx) => (
         <ImagePreviewItem
-          key={idx}
+          key={src}
           src={src}
           idx={idx}
           variant={variant}
@@ -87,9 +93,9 @@ export function ImagePreviewGrid({
       ))}
 
       {/* Empty slots — dashed fill to reinforce grid capacity */}
-      {Array.from({ length: maxImages - images.length }).map((_, i) => (
+      {emptySlots.map((slotId) => (
         <div
-          key={`empty-${i}`}
+          key={slotId}
           className={`${
             variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
           } rounded-[4px] border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}

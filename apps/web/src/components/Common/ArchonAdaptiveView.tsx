@@ -64,11 +64,8 @@ const ArchonAdaptiveView: React.FC<ArchonAdaptiveViewProps> = ({ storageKey, vie
 
   return (
     <div className="flex flex-col gap-4">
-      <div
-        className="flex items-center justify-end gap-1"
-        role="group"
-        aria-label="Formato de vista"
-      >
+      <fieldset className="flex items-center justify-end gap-1 border-0 p-0 m-0">
+        <legend className="sr-only">Formato de vista</legend>
         {available.map((kind) => {
           const { label, Icon } = VIEW_META[kind];
           const isActive = kind === activeView;
@@ -91,7 +88,7 @@ const ArchonAdaptiveView: React.FC<ArchonAdaptiveViewProps> = ({ storageKey, vie
             </button>
           );
         })}
-      </div>
+      </fieldset>
       <div data-testid="adaptive-view-content">{views[activeView] ?? views.TABLE}</div>
     </div>
   );
