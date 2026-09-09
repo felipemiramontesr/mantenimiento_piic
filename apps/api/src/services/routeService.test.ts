@@ -87,16 +87,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_units
         .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT unit_activity_logs
 
-      const uuid = await RouteService.startRoute(
-        'UNIT-001',
-        1,
-        1000,
-        100,
-        'Mina Sur',
-        undefined,
-        undefined,
-        42
-      );
+      const uuid = await RouteService.startRoute('UNIT-001', 1, 1000, 100, 'Mina Sur', {
+        destinationNeighborhoodId: 42,
+      });
 
       expect(uuid).toBeDefined();
       const insertRouteCall = mockConnection.execute.mock.calls[2];
@@ -113,16 +106,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         .mockResolvedValueOnce([{ affectedRows: 1 }])
         .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      const uuid = await RouteService.startRoute(
-        'UNIT-002',
-        2,
-        500,
-        80,
-        '',
-        undefined,
-        undefined,
-        55
-      );
+      const uuid = await RouteService.startRoute('UNIT-002', 2, 500, 80, '', {
+        destinationNeighborhoodId: 55,
+      });
 
       expect(uuid).toBeDefined();
     });
@@ -138,16 +124,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       // destination starts with neighborhood → split gives empty parts[0] → prefix='' → falsy ternary branch
-      const uuid = await RouteService.startRoute(
-        'UNIT-003',
-        3,
-        800,
-        70,
-        'Col Norte y algo mas',
-        undefined,
-        undefined,
-        66
-      );
+      const uuid = await RouteService.startRoute('UNIT-003', 3, 800, 70, 'Col Norte y algo mas', {
+        destinationNeighborhoodId: 66,
+      });
 
       expect(uuid).toBeDefined();
     });
@@ -161,16 +140,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_units
         .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT unit_activity_logs
 
-      const uuid = await RouteService.startRoute(
-        'UNIT-001',
-        1,
-        1000,
-        100,
-        'Destino Original',
-        undefined,
-        undefined,
-        77
-      );
+      const uuid = await RouteService.startRoute('UNIT-001', 1, 1000, 100, 'Destino Original', {
+        destinationNeighborhoodId: 77,
+      });
 
       expect(uuid).toBeDefined();
       const insertExtensionCall = mockConnection.execute.mock.calls[3];

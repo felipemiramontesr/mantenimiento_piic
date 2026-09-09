@@ -274,7 +274,7 @@ function DoctorFooter(): React.JSX.Element {
       <span>SOVEREIGN CORE V.78.100.184</span>
       <span className="flex items-center gap-1">
         <span className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-        STABLE
+        <span>STABLE</span>
       </span>
     </div>
   );

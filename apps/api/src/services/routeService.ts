@@ -27,6 +27,12 @@ import { resolveOwnerScope } from './ownerScopeResolver';
  */
 export type RouteStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
+export interface StartRouteOptions {
+  originId?: number;
+  description?: string;
+  destinationNeighborhoodId?: number;
+}
+
 export interface RouteEntry {
   id?: number;
   uuid: string;
@@ -93,6 +99,93 @@ export default class RouteService {
     }
   }
 
+  private static validateUnitForRoute(
+    unit: RowDataPacket | null,
+    unitId: string,
+    startReading: number
+  ): void {
+    if (!unit) throw new Error(`Unit ${unitId} not found`);
+    if (unit.status === UNIT_STATUS.IN_ROUTE)
+      throw new Error(`Unit ${unitId} is already in transit`);
+    if (unit.status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
+    if (startReading < unit.odometer) {
+      throw new Error(
+        `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${unit.odometer} KM)`
+      );
+    }
+  }
+
+  private static async resolveDestinationSuffix(
+    destination: string,
+    destinationNeighborhoodId: number | undefined,
+    connection: PoolConnection
+  ): Promise<string> {
+    if (!destinationNeighborhoodId) return destination;
+    const row = await RouteMovementsRepository.findNeighborhoodLabel(
+      destinationNeighborhoodId,
+      connection
+    );
+    if (!row) return destination;
+    const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
+    if (destination && destination !== suffix) {
+      const parts = destination.split(row.neighborhood);
+      const prefix = parts[0].trim().replace(/,\s*$/, '');
+      return prefix ? `${prefix}, ${suffix}` : suffix;
+    }
+    return suffix;
+  }
+
+  private static async persistRouteRecords(
+    params: {
+      routeUuid: string;
+      unitId: string;
+      driverId: number;
+      startReading: number;
+      fuelLevelStart: number;
+      finalDestination: string;
+      unit: RowDataPacket;
+      options?: StartRouteOptions;
+    },
+    connection: PoolConnection
+  ): Promise<void> {
+    const {
+      routeUuid,
+      unitId,
+      driverId,
+      startReading,
+      fuelLevelStart,
+      finalDestination,
+      unit,
+      options,
+    } = params;
+    const movementId = await RouteMovementsRepository.insertRouteMovement(
+      { uuid: routeUuid, unitId, startReading, fuelLevelStart, description: options?.description },
+      connection
+    );
+    await RouteMovementsRepository.insertRouteExtension(
+      {
+        movementId,
+        driverId,
+        originId: options?.originId,
+        destinationNeighborhoodId: options?.destinationNeighborhoodId,
+        destination: finalDestination,
+      },
+      connection
+    );
+    await RouteMovementsRepository.updateUnitStatusToEnRuta(unitId, connection);
+    await RouteMovementsRepository.insertRouteStartActivityLog(
+      {
+        logUuid: randomUUID(),
+        unitId,
+        routeUuid,
+        readingBefore: unit.odometer,
+        statusBefore: unit.status,
+        createdBy: driverId,
+      },
+      connection
+    );
+  }
+
   /**
    * Starts a journey: creates fleet_movements + fleet_route_extensions atomically.
    */
@@ -102,9 +195,7 @@ export default class RouteService {
     startReading: number,
     fuelLevelStart: number,
     destination: string,
-    originId?: number,
-    description?: string,
-    destinationNeighborhoodId?: number
+    options?: StartRouteOptions
   ): Promise<string> {
     const connection = await db.getConnection();
     const routeUuid = randomUUID();
@@ -112,68 +203,25 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Validate unit availability
       const unit = await RouteMovementsRepository.findUnitStatusForUpdate(unitId, connection);
+      this.validateUnitForRoute(unit, unitId, startReading);
 
-      if (!unit) throw new Error(`Unit ${unitId} not found`);
-      if (unit.status === UNIT_STATUS.IN_ROUTE)
-        throw new Error(`Unit ${unitId} is already in transit`);
-      if (unit.status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
-      if (startReading < unit.odometer) {
-        throw new Error(
-          `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${unit.odometer} KM)`
-        );
-      }
-
-      // 1.1 Resolve destination via neighborhood catalog if ID provided
-      let finalDestination = destination;
-      if (destinationNeighborhoodId) {
-        const row = await RouteMovementsRepository.findNeighborhoodLabel(
-          destinationNeighborhoodId,
-          connection
-        );
-        if (row) {
-          const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
-          if (destination && destination !== suffix) {
-            const parts = destination.split(row.neighborhood);
-            const prefix = parts[0].trim().replace(/,\s*$/, '');
-            finalDestination = prefix ? `${prefix}, ${suffix}` : suffix;
-          } else {
-            finalDestination = suffix;
-          }
-        }
-      }
-
-      // 2. Insert CTI base record
-      const movementId = await RouteMovementsRepository.insertRouteMovement(
-        { uuid: routeUuid, unitId, startReading, fuelLevelStart, description },
+      const finalDestination = await this.resolveDestinationSuffix(
+        destination,
+        options?.destinationNeighborhoodId,
         connection
       );
 
-      // 3. Insert CTI route extension
-      await RouteMovementsRepository.insertRouteExtension(
+      await this.persistRouteRecords(
         {
-          movementId,
-          driverId,
-          originId,
-          destinationNeighborhoodId,
-          destination: finalDestination,
-        },
-        connection
-      );
-
-      // 4. Update unit status
-      await RouteMovementsRepository.updateUnitStatusToEnRuta(unitId, connection);
-
-      // 5. Forensic log
-      await RouteMovementsRepository.insertRouteStartActivityLog(
-        {
-          logUuid: randomUUID(),
-          unitId,
           routeUuid,
-          readingBefore: unit.odometer,
-          statusBefore: unit.status,
-          createdBy: driverId,
+          unitId,
+          driverId,
+          startReading,
+          fuelLevelStart,
+          finalDestination,
+          unit: unit!,
+          options,
         },
         connection
       );

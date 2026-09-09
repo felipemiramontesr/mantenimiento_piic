@@ -97,9 +97,11 @@ async function handleStartRoute(
       data.startReading,
       data.fuelLevelStart,
       data.destination,
-      data.originId,
-      data.description,
-      data.destinationNeighborhoodId
+      {
+        originId: data.originId,
+        description: data.description,
+        destinationNeighborhoodId: data.destinationNeighborhoodId,
+      }
     );
     return reply
       .code(201)
