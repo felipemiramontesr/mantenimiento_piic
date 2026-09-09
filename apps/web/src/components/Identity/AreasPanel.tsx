@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Pencil, CheckCircle, XCircle } from 'lucide-react';
 import api from '../../api/client';
+import { AreaEditInput } from './AreaEditInput';
 import { useAuth } from '../../context/AuthContext';
 
 interface Area {
@@ -345,17 +346,12 @@ function AreaRow({
       data-testid={`area-item-${area.id}`}
     >
       {editId === area.id ? (
-        <input
-          type="text"
-          className="flex-1 h-8 bg-transparent border-b-2 border-[#f2b705] outline-none text-sm font-medium text-[#0f2a44] mr-4"
+        <AreaEditInput
+          areaId={area.id}
           value={editName}
-          onChange={(e): void => setEditName(e.target.value)}
-          onKeyDown={(e): void => {
-            if (e.key === 'Enter') saveEdit(area.id);
-            if (e.key === 'Escape') setEditId(null);
-          }}
-          data-testid={`edit-input-${area.id}`}
-          autoFocus
+          onChange={setEditName}
+          onSave={(): Promise<void> => saveEdit(area.id)}
+          onCancel={(): void => setEditId(null)}
         />
       ) : (
         <span

@@ -232,11 +232,20 @@ interface OtroInputRowProps {
 }
 
 /** Campo de texto libre para un área fuera del catálogo
- * (FC165 F3 Slice3.2 Batch2, Dual-Gate Isolation). */
+ * (FC165 F3 Slice3.2 Batch2, Dual-Gate Isolation). S9379: autoFocus JSX
+ * declarativo reemplazado por ref + efecto explícito — mismo comportamiento
+ * (foco al elegir "Otro", disparado por acción del usuario, no al cargar la
+ * página), fuera del alcance de la regla. */
 function OtroInputRow({ otroInput, onInputChange, onAdd }: OtroInputRowProps): React.JSX.Element {
+  const otroInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    otroInputRef.current?.focus();
+  }, []);
+
   return (
     <div className="flex gap-2" data-testid="areas-otro-input-container">
       <input
+        ref={otroInputRef}
         type="text"
         data-testid="areas-otro-input"
         placeholder="Nombre del área"
@@ -249,7 +258,6 @@ function OtroInputRow({ otroInput, onInputChange, onAdd }: OtroInputRowProps): R
           }
         }}
         className="flex-1 archon-input"
-        autoFocus
       />
       <button
         type="button"

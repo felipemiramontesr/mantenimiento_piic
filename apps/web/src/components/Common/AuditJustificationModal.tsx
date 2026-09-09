@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ArchonModal from '../UI/ArchonModal';
 
 interface AuditJustificationModalProps {
@@ -40,8 +40,16 @@ interface ReasonFieldProps {
   readonly onReasonChange: (v: string) => void;
 }
 
-/** Campo de motivo/justificación del cambio (FC163 F2B5). */
+/** Campo de motivo/justificación del cambio (FC163 F2B5). S9379: autoFocus
+ * JSX declarativo reemplazado por ref + efecto explícito — mismo
+ * comportamiento (foco al abrir la modal, disparada por acción del usuario,
+ * no al cargar la página), fuera del alcance de la regla. */
 function ReasonField({ reason, onReasonChange }: ReasonFieldProps): React.JSX.Element {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   return (
     <div className="space-y-4">
       <div>
@@ -53,7 +61,7 @@ function ReasonField({ reason, onReasonChange }: ReasonFieldProps): React.JSX.El
         </label>
         <textarea
           id="audit-justification-reason"
-          autoFocus
+          ref={textareaRef}
           className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors min-h-[220px] resize-none"
           placeholder="Ej: Corrección de error en kilometraje inicial..."
           value={reason}
