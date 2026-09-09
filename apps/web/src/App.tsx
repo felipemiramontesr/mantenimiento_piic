@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
 import LoginPage from './pages/Auth/Login';
 import DashboardLayout from './pages/Dashboard/Layout';
 import ArchonCenter from './pages/Dashboard/ArchonCenter';
@@ -41,8 +41,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
-
-const ROUTER_FUTURE_FLAGS = { v7_startTransition: true, v7_relativeSplatPath: true };
 
 const DASHBOARD_ELEMENT = (
   <ProtectedRoute>
@@ -115,7 +113,7 @@ function AuthenticatedRoutes(): React.ReactElement {
 
 /** 🔱 Archon Root — Sovereign Identity Orchestration (In-Memory Auth Guard, httpOnly cookie flow). */
 const App: React.FC = () => (
-  <BrowserRouter future={ROUTER_FUTURE_FLAGS}>
+  <BrowserRouter>
     <Routes>
       {/* 🛡️ Protected Sovereign Grid */}
       <Route path="*" element={<AuthenticatedRoutes />} />

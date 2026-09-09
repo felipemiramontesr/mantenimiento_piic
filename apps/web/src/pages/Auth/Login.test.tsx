@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import LoginPage from './Login';
 import api from '../../api/client';
 import { AuthProvider } from '../../context/AuthContext';
@@ -15,8 +15,8 @@ vi.mock('../../api/client', () => ({
 }));
 
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('react-router');
   return {
     ...actual,
     useNavigate: (): ReturnType<typeof vi.fn> => mockNavigate,

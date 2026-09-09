@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router';
 import { Map, Truck, Fuel, AlertTriangle, ExternalLink, ChevronLeft, Flag } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
@@ -322,7 +322,7 @@ const RouteNode: React.FC = (): React.JSX.Element => {
       description: 'Volver al registro de rutas',
       buttonText: 'Rutas',
       isActive: false,
-      onClick: (): void => navigate('/dashboard/routes'),
+      onClick: () => navigate('/dashboard/routes'),
     });
   }, [uuid, setSectionData, navigate]);
 

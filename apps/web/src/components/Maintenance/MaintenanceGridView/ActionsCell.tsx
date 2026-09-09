@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ExternalLink, CheckCircle2, XCircle, Cpu, Wrench } from 'lucide-react';
 import { MaintenanceLog } from '../../../types/maintenance';
 

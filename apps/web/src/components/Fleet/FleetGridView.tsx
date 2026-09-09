@@ -16,7 +16,7 @@ import {
   Pencil,
   ExternalLink,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';

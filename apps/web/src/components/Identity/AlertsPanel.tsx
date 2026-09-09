@@ -13,7 +13,7 @@ import {
   TrendingUp,
   LucideIcon,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
 import usePermissions from '../../hooks/usePermissions';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Activity, Pencil, Hash, Briefcase, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';

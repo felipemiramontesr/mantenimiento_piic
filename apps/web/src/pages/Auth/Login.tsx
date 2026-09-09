@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';

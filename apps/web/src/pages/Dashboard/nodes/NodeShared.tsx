@@ -4,7 +4,7 @@
  * Import from this module; never duplicate in individual nodes.
  */
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ChevronLeft, AlertTriangle, RefreshCw } from 'lucide-react';
 import AT from '../../../styles/archonTypography';
 

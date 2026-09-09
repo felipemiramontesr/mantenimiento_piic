@@ -12,8 +12,8 @@ vi.mock('../../api/client', () => ({
 }));
 
 const mockNavigate = vi.hoisted(() => vi.fn());
-vi.mock('react-router-dom', async (): Promise<unknown> => {
-  const actual = await vi.importActual('react-router-dom');
+vi.mock('react-router', async (): Promise<unknown> => {
+  const actual = await vi.importActual('react-router');
   return { ...actual, useNavigate: () => mockNavigate };
 });
 

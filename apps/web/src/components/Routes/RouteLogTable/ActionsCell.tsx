@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Pencil, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { RouteLog } from './types';
 

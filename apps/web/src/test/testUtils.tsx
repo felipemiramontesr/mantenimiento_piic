@@ -2,7 +2,7 @@
 import { render, RenderOptions, renderHook, RenderHookOptions } from '@testing-library/react';
 import { vi } from 'vitest';
 import { type ReactElement, type ReactNode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
 import { AuthProvider } from '../context/AuthContext';

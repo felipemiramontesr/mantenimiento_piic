@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { User, Tag, Calendar } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { ArchonDataTable, ArchonTableHeader } from '../../components/UI/ArchonDataTable';
@@ -90,9 +90,12 @@ const renderIncidentCard = (incident: RouteIncident): React.ReactNode => (
   </div>
 );
 
-const IncidentsModule: React.FC = (): React.ReactElement => {
+// ─── Data hook (FC167 F2 Gate2 — el bump de react-router v7 tocó una línea
+// interna, trayendo la función entera bajo el presupuesto Dual-Gate de 50
+// líneas; extraído a hook + renderer de fila de tabla, mismo comportamiento
+// verbatim). */
+function useIncidentsModuleData(): { incidents: RouteIncident[]; loading: boolean } {
   const { setSectionData } = useSovereignLayout();
-  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<RouteIncident[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -120,6 +123,64 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
       });
   }, []);
 
+  return { incidents, loading };
+}
+
+// FC 081 F1 — doctrina cascada Ω: el texto corto se ve COMPLETO (line-clamp-3,
+// no truncate a 1 línea); title incondicional como respaldo para legacy >3
+// líneas (Cond.1 Bravo).
+const renderIncidentRow = (incident: RouteIncident): React.ReactNode => (
+  <tr key={incident.uuid} className="hover:bg-slate-50/50 transition-all duration-300">
+    <td className="text-center py-3 px-4 font-mono font-bold text-archon-lg text-[#0f2a44]">
+      <Link
+        to={`/dashboard/incidents/${incident.uuid}`}
+        className="hover:text-[#f2b705] transition-colors"
+      >
+        {incident.unit_id}
+      </Link>
+    </td>
+    <td className="text-center py-3 px-4 text-archon-lg text-[#0f2a44]">{incident.driver_name}</td>
+    <td className="text-center py-3 px-4 text-archon-md font-black uppercase tracking-wider text-[#0f2a44]">
+      {incident.category}
+    </td>
+    <td className="text-center py-3 px-4">
+      <div className="flex justify-center">
+        <span
+          className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getSeverityClasses(
+            incident.severity
+          )}`}
+        >
+          {incident.severity}
+        </span>
+      </div>
+    </td>
+    <td className="text-center py-3 px-4">
+      <div className="flex justify-center">
+        <span
+          className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getStatusClasses(
+            incident.status
+          )}`}
+        >
+          {incident.status}
+        </span>
+      </div>
+    </td>
+    <td className="text-left py-3 px-4 max-w-[240px]" title={incident.description}>
+      <span className="block text-archon-label text-[#0f2a44]/70 whitespace-normal break-words line-clamp-3">
+        {incident.description}
+      </span>
+    </td>
+    <td className="text-center py-3 px-4 font-mono text-archon-label text-[#0f2a44]/60">
+      {formatDate(incident.reported_at)}
+    </td>
+  </tr>
+);
+
+/** Módulo de incidencias en ruta — vista tabla/tarjetas conmutable. */
+const IncidentsModule: React.FC = (): React.ReactElement => {
+  const { incidents, loading } = useIncidentsModuleData();
+  const navigate = useNavigate();
+
   return (
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
@@ -136,64 +197,7 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
                     loadingMessage="Sincronizando incidencias..."
                     emptyMessage="Sin incidencias registradas"
                     testId="incidents-table"
-                    renderRow={(incident): React.ReactNode => (
-                      <tr
-                        key={incident.uuid}
-                        className="hover:bg-slate-50/50 transition-all duration-300"
-                      >
-                        <td className="text-center py-3 px-4 font-mono font-bold text-archon-lg text-[#0f2a44]">
-                          <Link
-                            to={`/dashboard/incidents/${incident.uuid}`}
-                            className="hover:text-[#f2b705] transition-colors"
-                          >
-                            {incident.unit_id}
-                          </Link>
-                        </td>
-                        <td className="text-center py-3 px-4 text-archon-lg text-[#0f2a44]">
-                          {incident.driver_name}
-                        </td>
-                        <td className="text-center py-3 px-4 text-archon-md font-black uppercase tracking-wider text-[#0f2a44]">
-                          {incident.category}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <div className="flex justify-center">
-                            <span
-                              className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getSeverityClasses(
-                                incident.severity
-                              )}`}
-                            >
-                              {incident.severity}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <div className="flex justify-center">
-                            <span
-                              className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getStatusClasses(
-                                incident.status
-                              )}`}
-                            >
-                              {incident.status}
-                            </span>
-                          </div>
-                        </td>
-                        {/* FC 081 F1 — doctrina cascada Ω: el texto corto se ve
-                            COMPLETO (line-clamp-3, no truncate a 1 línea); title
-                            incondicional como respaldo para legacy >3 líneas
-                            (Cond.1 Bravo). */}
-                        <td
-                          className="text-left py-3 px-4 max-w-[240px]"
-                          title={incident.description}
-                        >
-                          <span className="block text-archon-label text-[#0f2a44]/70 whitespace-normal break-words line-clamp-3">
-                            {incident.description}
-                          </span>
-                        </td>
-                        <td className="text-center py-3 px-4 font-mono text-archon-label text-[#0f2a44]/60">
-                          {formatDate(incident.reported_at)}
-                        </td>
-                      </tr>
-                    )}
+                    renderRow={renderIncidentRow}
                   />
                 ),
                 CARDS: (
@@ -201,9 +205,7 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
                     items={incidents}
                     keyExtractor={(incident): string => incident.uuid}
                     renderCard={renderIncidentCard}
-                    onCardClick={(incident): void =>
-                      navigate(`/dashboard/incidents/${incident.uuid}`)
-                    }
+                    onCardClick={(incident) => navigate(`/dashboard/incidents/${incident.uuid}`)}
                     emptyMessage="SIN INCIDENCIAS REGISTRADAS"
                   />
                 ),

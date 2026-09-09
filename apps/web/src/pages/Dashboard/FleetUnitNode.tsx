@@ -1,34 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Shield,
-  AlertTriangle,
-  Activity,
-  Cog,
-  FileText,
-  Hash,
-  ChevronLeft,
-  Truck,
-  DollarSign,
-} from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router';
+import { Activity, ChevronLeft, Truck } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
+import { useAssetTypeFields, FieldVisibility } from '../../hooks/useAssetTypeFields';
 
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
-import {
-  InfoRow,
-  SectionCard,
-  NodeLoadingState,
-  NodeErrorState,
-  formatMXN,
-  formatDate,
-  formatNum,
-  formatPct,
-  SEVERITY_BADGE,
-  SEVERITY_LABEL,
-} from './nodes/NodeShared';
+import { SectionCard, NodeLoadingState, NodeErrorState, formatDate } from './nodes/NodeShared';
 import { NodeData, MaintenanceRecord } from './FleetUnitNode/types';
 import { UnitHeader } from './FleetUnitNode/UnitHeader';
 import { MaintenanceSection } from './FleetUnitNode/MaintenanceSection';
@@ -39,23 +18,22 @@ import { OperatorScorecardSection } from './FleetUnitNode/OperatorScorecardSecti
 import { Co2Section } from './FleetUnitNode/Co2Section';
 import { RecallsSection } from './FleetUnitNode/RecallsSection';
 import { MaintenanceRow } from './FleetUnitNode/MaintenanceRow';
+import { IdentityRegistrySection } from './FleetUnitNode/IdentityRegistrySection';
+import { TechnicalSpecsSection } from './FleetUnitNode/TechnicalSpecsSection';
+import { FinancialSummarySection } from './FleetUnitNode/FinancialSummarySection';
+import { ComplianceLegalSection } from './FleetUnitNode/ComplianceLegalSection';
+import { RecentIncidentsSection } from './FleetUnitNode/RecentIncidentsSection';
 
 /**
- * FC 142 F1 — orchestrator only. The 12 sub-components previously declared
+ * FC 142 F1 — orchestrator only. The sub-components previously declared
  * inline now live in `./FleetUnitNode/`, each with its own data hook. This
  * file only fetches the unit-level node payload and composes sections.
+ * FC167 F2 — Identidad/Especificaciones/Financiero/Cumplimiento/Incidentes
+ * extraídas también (el bump de react-router v7 tocó una línea interna,
+ * trayendo la función entera bajo el presupuesto Dual-Gate de 50 líneas) +
+ * fetch/breadcrumb movidos a `useFleetUnitNodeData`; mismo comportamiento
+ * verbatim.
  */
-
-const CATEGORY_LABEL: Record<string, string> = {
-  LEASE: 'Arrendamiento',
-  INSURANCE: 'Seguro',
-  MAINTENANCE: 'Mantenimiento',
-  FUEL: 'Combustible',
-  TIRE: 'Llantas',
-  FINE: 'Multas',
-  REPAIR: 'Reparación',
-  OTHER: 'Otros',
-};
 
 const MAINT_HEADERS: ArchonTableHeader[] = [
   { key: 'date', label: 'Fecha', align: 'center', width: '14%' },
@@ -66,8 +44,29 @@ const MAINT_HEADERS: ArchonTableHeader[] = [
   { key: 'status', label: 'Estado', align: 'center', width: '14%' },
 ];
 
-const FleetUnitNode: React.FC = (): React.JSX.Element => {
-  const { unitId } = useParams<{ unitId: string }>();
+/** Deriva km-desde-último-servicio y km-restantes-al-siguiente a partir del
+ * odómetro actual — pura, usada por `useFleetUnitNodeData` (Gate2). */
+function deriveServiceKm(unit: NodeData['unit'] | undefined): {
+  kmSinceService: number | null;
+  kmRemaining: number | null;
+} {
+  const kmSinceService =
+    unit?.odometer && unit.lastServiceReading ? unit.odometer - unit.lastServiceReading : null;
+  const kmRemaining =
+    unit?.nextServiceReading != null && unit.odometer != null
+      ? unit.nextServiceReading - unit.odometer
+      : null;
+  return { kmSinceService, kmRemaining };
+}
+
+function useFleetUnitNodeData(unitId: string | undefined): {
+  node: NodeData | null;
+  loading: boolean;
+  error: string | null;
+  assetFields: FieldVisibility;
+  kmSinceService: number | null;
+  kmRemaining: number | null;
+} {
   const { setSectionData } = useSovereignLayout();
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +93,7 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
         description: fromAlerts ? 'Volver al panel de alertas' : 'Volver al listado de flota',
         buttonText: backLabel,
         isActive: false,
-        onClick: (): void => navigate(backTo),
+        onClick: () => navigate(backTo),
       }
     );
   }, [unitId, setSectionData, navigate, backTo, backLabel, fromAlerts]);
@@ -111,61 +110,53 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
   }, [unitId]);
 
   const { fields: assetFields } = useAssetTypeFields(node?.unit?.assetTypeId);
+  const { kmSinceService, kmRemaining } = deriveServiceKm(node?.unit);
+
+  return { node, loading, error, assetFields, kmSinceService, kmRemaining };
+}
+
+/** "Historial de Mantenimiento" — extraída del orquestador (Gate2). */
+function MaintenanceHistorySection({
+  history,
+}: {
+  readonly history: MaintenanceRecord[];
+}): React.JSX.Element {
+  return (
+    <SectionCard
+      title="Historial de Mantenimiento"
+      icon={<Activity size={16} className="text-[#f2b705]" />}
+    >
+      <ArchonDataTable<MaintenanceRecord>
+        data={history}
+        headers={MAINT_HEADERS}
+        variant="embedded"
+        emptyMessage="Sin registros de mantenimiento"
+        renderRow={(r): React.ReactElement => <MaintenanceRow key={r.uuid} {...r} />}
+      />
+    </SectionCard>
+  );
+}
+
+/** Página de nodo de unidad de flota — orquesta las secciones de identidad,
+ * especificaciones, mantenimiento, inteligencia, financiero, cumplimiento e
+ * incidentes recientes de una unidad. */
+const FleetUnitNode: React.FC = (): React.JSX.Element => {
+  const { unitId } = useParams<{ unitId: string }>();
+  const { node, loading, error, assetFields, kmSinceService, kmRemaining } =
+    useFleetUnitNodeData(unitId);
 
   if (loading) return <NodeLoadingState />;
   if (!node) return <NodeErrorState error={error} backTo="/dashboard/fleet" backLabel="Flota" />;
 
   const { unit, maintenance, financial, incidents } = node;
-  const kmSinceService =
-    unit.odometer && unit.lastServiceReading ? unit.odometer - unit.lastServiceReading : null;
-  const kmRemaining =
-    unit.nextServiceReading != null && unit.odometer != null
-      ? unit.nextServiceReading - unit.odometer
-      : null;
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
       <UnitHeader unit={unit} openIncidents={incidents.openCount} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SectionCard
-          title="Identidad & Registro"
-          icon={<Hash size={16} className="text-[#f2b705]" />}
-        >
-          {assetFields.placa && <InfoRow label="Placas" value={unit.placas} />}
-          <InfoRow label="Número de serie" value={unit.numeroSerie} />
-          {assetFields.circulationCardNumber && (
-            <InfoRow label="Tarjeta de circulación" value={unit.circulationCardNumber} />
-          )}
-          <InfoRow label="Uso operacional" value={unit.uso} />
-          <InfoRow label="Cuenta contable" value={unit.accountingAccount} />
-          <InfoRow label="Propietario" value={unit.owner} />
-          <InfoRow
-            label="Pago arrendamiento"
-            value={unit.monthlyLeasePayment ? formatMXN(unit.monthlyLeasePayment) : null}
-          />
-        </SectionCard>
-
-        <SectionCard
-          title="Especificaciones Técnicas"
-          icon={<Cog size={16} className="text-[#f2b705]" />}
-        >
-          <InfoRow label="Motor" value={unit.motor} />
-          <InfoRow label="Combustible" value={unit.fuelType} />
-          <InfoRow label="Tracción" value={unit.traccion} />
-          <InfoRow label="Transmisión" value={unit.transmision} />
-          <InfoRow label="Llantas" value={unit.tireSpec} />
-          <InfoRow
-            label="Uso diario promedio"
-            value={unit.dailyUsageAvg ? formatNum(unit.dailyUsageAvg, 'km/día', 1) : null}
-          />
-          <InfoRow label="Capacidad de carga" value={formatNum(unit.capacidadCarga, 'kg')} />
-          <InfoRow label="Tanque de combustible" value={formatNum(unit.fuelTankCapacity, 'L')} />
-          <InfoRow
-            label="Nivel de combustible"
-            value={unit.lastFuelLevel != null ? formatPct(unit.lastFuelLevel, 0) : null}
-          />
-        </SectionCard>
+        <IdentityRegistrySection unit={unit} assetFields={assetFields} />
+        <TechnicalSpecsSection unit={unit} />
       </div>
 
       <MaintenanceSection unit={unit} kmSinceService={kmSinceService} kmRemaining={kmRemaining} />
@@ -186,110 +177,14 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
         year={unit.year}
       />
 
-      <SectionCard
-        title="Historial de Mantenimiento"
-        icon={<Activity size={16} className="text-[#f2b705]" />}
-      >
-        <ArchonDataTable<MaintenanceRecord>
-          data={maintenance.recentHistory}
-          headers={MAINT_HEADERS}
-          variant="embedded"
-          emptyMessage="Sin registros de mantenimiento"
-          renderRow={(r): React.ReactElement => <MaintenanceRow key={r.uuid} {...r} />}
-        />
-      </SectionCard>
+      <MaintenanceHistorySection history={maintenance.recentHistory} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SectionCard
-          title={`Resumen Financiero ${financial.year}`}
-          icon={<DollarSign size={16} className="text-[#f2b705]" />}
-        >
-          {Object.entries(financial.byCategory).map(([cat, total]) => (
-            <InfoRow key={cat} label={CATEGORY_LABEL[cat] ?? cat} value={formatMXN(total)} />
-          ))}
-          <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-archon-base font-black uppercase tracking-[0.15em] text-[#0f2a44]">
-              Total del año
-            </span>
-            <span className="text-archon-lg font-black text-[#0f2a44]">
-              {formatMXN(financial.totalCost)}
-            </span>
-          </div>
-          {financial.totalCost === 0 && (
-            <p className={`${AT.sectionDescription} text-center pt-4`}>
-              Sin transacciones registradas este año
-            </p>
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Cumplimiento & Legal"
-          icon={<Shield size={16} className="text-[#f2b705]" />}
-        >
-          {assetFields.insuranceExpiryDate && (
-            <InfoRow label="Vencimiento seguro" value={formatDate(unit.insuranceExpiryDate)} />
-          )}
-          {assetFields.insurancePolicyNumber && (
-            <InfoRow label="Póliza de seguro" value={unit.insurancePolicyNumber} />
-          )}
-          <InfoRow
-            label="Costo del seguro"
-            value={unit.insuranceCost ? formatMXN(unit.insuranceCost) : null}
-          />
-          {assetFields.vencimientoVerificacion && (
-            <InfoRow label="Verificación" value={formatDate(unit.vencimientoVerificacion)} />
-          )}
-          <InfoRow label="Holográma ambiental" value={unit.environmentalHologram} />
-          <InfoRow label="Cumplimiento legal" value={formatDate(unit.legalComplianceDate)} />
-          <InfoRow label="Verif. mecánica" value={formatDate(unit.lastMechanicalVerification)} />
-          <InfoRow
-            label="Verif. ambiental"
-            value={formatDate(unit.lastEnvironmentalVerification)}
-          />
-          <InfoRow label="Inicio de protocolo" value={formatDate(unit.protocolStartDate)} />
-        </SectionCard>
+        <FinancialSummarySection financial={financial} />
+        <ComplianceLegalSection unit={unit} assetFields={assetFields} />
       </div>
 
-      {incidents.recent.length > 0 && (
-        <SectionCard
-          title="Incidentes Recientes"
-          icon={<AlertTriangle size={16} className="text-[#f2b705]" />}
-        >
-          <div className="flex flex-col divide-y divide-slate-100">
-            {incidents.recent.map((inc) => (
-              <div key={inc.id} className="flex items-start gap-4 py-3">
-                <span
-                  className={`shrink-0 text-archon-xs font-black uppercase px-2 py-0.5 rounded-[3px] mt-0.5 ${
-                    SEVERITY_BADGE[inc.severity] ?? 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  {SEVERITY_LABEL[inc.severity] ?? inc.severity}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className={AT.cellLabel}>{inc.category}</p>
-                  <p className={`${AT.cellDetail} mt-0.5`}>{inc.description}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span className={AT.cellMeta}>{formatDate(inc.reported_at)}</span>
-                  <span
-                    className={`block text-archon-xs font-black uppercase mt-0.5 ${
-                      inc.status === 'OPEN' ? 'text-red-600' : 'text-emerald-600'
-                    }`}
-                  >
-                    {inc.status === 'OPEN' ? 'Abierto' : 'Resuelto'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link
-            to="/dashboard/incidents"
-            className="inline-flex items-center gap-1.5 mt-3 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors"
-          >
-            <FileText size={12} /> Ver todos los incidentes
-          </Link>
-        </SectionCard>
-      )}
+      <RecentIncidentsSection incidents={incidents.recent} />
 
       <div className="flex justify-end pt-4 border-t border-slate-100">
         <span className={AT.sectionDescription}>

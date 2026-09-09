@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { fireEvent } from '@testing-library/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { render, screen } from '../../test/testUtils';
 import server from '../../test/server';
 import IncidentsModule from './IncidentsModule';
 
 const navigateMock = vi.fn();
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('react-router');
   return { ...actual, useNavigate: vi.fn() };
 });
 

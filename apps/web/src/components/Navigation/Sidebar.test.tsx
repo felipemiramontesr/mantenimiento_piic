@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { BrowserRouter, useNavigate } from 'react-router';
 import api from '../../api/client';
 import Sidebar from './Sidebar';
 
@@ -16,8 +16,8 @@ vi.mock('../../hooks/useAlertsCount', () => ({
   default: useAlertsCountMock,
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('react-router');
   return {
     ...actual,
     useNavigate: vi.fn(),

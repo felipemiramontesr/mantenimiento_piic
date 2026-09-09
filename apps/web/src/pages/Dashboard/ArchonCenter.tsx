@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { ArrowRight, Gauge, ShieldCheck, Navigation, ShieldAlert, Users } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import Sidebar from '../../components/Navigation/Sidebar';
 import SovereignHeader from '../../components/Navigation/SovereignHeader';
 import SovereignSubheader from '../../components/Navigation/SovereignSubheader';

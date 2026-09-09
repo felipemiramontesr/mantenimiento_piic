@@ -11,8 +11,8 @@ vi.mock('../../../hooks/useCheckpoints', () => ({
 const mockParams = vi.hoisted(() => ({ uuid: 'route-uuid-001' as string | undefined }));
 const mockNavigate = vi.hoisted(() => vi.fn());
 
-vi.mock('react-router-dom', async (): Promise<unknown> => {
-  const actual = await vi.importActual('react-router-dom');
+vi.mock('react-router', async (): Promise<unknown> => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useParams: () => ({ uuid: mockParams.uuid }),

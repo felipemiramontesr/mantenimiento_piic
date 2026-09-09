@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router';
 import { Wrench, Truck, CheckSquare, ExternalLink, ChevronLeft } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
@@ -126,10 +126,15 @@ function TaskRow(t: TaskDetail): React.JSX.Element {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-const MaintenanceNode: React.FC = (): React.JSX.Element => {
-  const { uuid } = useParams<{ uuid: string }>();
+// ─── Data hook (FC167 F2 Gate2 — el bump de react-router v7 tocó la línea del
+// onClick de retorno, trayendo la función entera bajo el presupuesto Dual-Gate
+// de 50 líneas; extraído a hook + sub-componentes, mismo comportamiento
+// verbatim). */
+function useMaintenanceNodeData(uuid: string | undefined): {
+  node: NodeData | null;
+  loading: boolean;
+  error: string | null;
+} {
   const { setSectionData } = useSovereignLayout();
   const navigate = useNavigate();
   const [node, setNode] = useState<NodeData | null>(null);
@@ -150,7 +155,7 @@ const MaintenanceNode: React.FC = (): React.JSX.Element => {
         description: 'Volver al historial de mantenimiento',
         buttonText: 'Mantenimiento',
         isActive: false,
-        onClick: (): void => navigate('/dashboard/maintenance'),
+        onClick: () => navigate('/dashboard/maintenance'),
       }
     );
   }, [uuid, setSectionData, navigate]);
@@ -165,6 +170,167 @@ const MaintenanceNode: React.FC = (): React.JSX.Element => {
       .finally(() => setLoading(false));
   }, [uuid]);
 
+  return { node, loading, error };
+}
+
+// ─── Sub-componentes de presentación ───────────────────────────────────────────
+
+function MaintenanceNodeHeaderMeta({
+  order,
+  unit,
+}: {
+  readonly order: MaintenanceOrder;
+  readonly unit: UnitSummary | null;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-6 flex-wrap">
+      <span className="text-archon-base font-black text-[#0f2a44]/60">
+        Técnico: <span className="text-[#0f2a44]">{order.technician}</span>
+      </span>
+      <span className="text-archon-base font-black text-[#0f2a44]/60">
+        Fecha: <span className="text-[#0f2a44]">{formatDate(order.service_date)}</span>
+      </span>
+      <span className="text-archon-base font-black text-[#0f2a44]/60">
+        Costo: <span className="text-[#0f2a44]">{formatMXN(order.cost)}</span>
+      </span>
+      {unit && (
+        <Link
+          to={`/dashboard/fleet/${unit.id}`}
+          className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors"
+        >
+          <Truck size={12} /> {unit.id} — {unit.marca} {unit.modelo} <ExternalLink size={11} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function MaintenanceNodeHeader({
+  order,
+  unit,
+}: {
+  readonly order: MaintenanceOrder;
+  readonly unit: UnitSummary | null;
+}): React.JSX.Element {
+  const statusBadge = MOVEMENT_STATUS_BADGE[order.movement_status] ?? 'bg-slate-100 text-slate-500';
+  const failCount = order.details.filter((t) => t.status === 'FAIL').length;
+  return (
+    <div className="card-archon-sovereign !p-6 flex flex-col gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xl font-black text-[#0f2a44] tracking-tight font-mono">
+          {order.uuid.slice(0, 8).toUpperCase()}
+        </span>
+        <span
+          className={`text-archon-sm font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] ${statusBadge}`}
+        >
+          {MOVEMENT_STATUS_LABEL[order.movement_status] ?? order.movement_status}
+        </span>
+        <span className="text-archon-sm font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] bg-[#0f2a44]/5 text-[#0f2a44]">
+          {SERVICE_TYPE_LABEL[order.service_type] ?? order.service_type}
+        </span>
+        {failCount > 0 && (
+          <span className="text-archon-xs font-black uppercase px-2 py-0.5 rounded-[3px] bg-red-100 text-red-700">
+            {failCount} tarea{failCount !== 1 ? 's' : ''} fallida{failCount !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+      <MaintenanceNodeHeaderMeta order={order} unit={unit} />
+    </div>
+  );
+}
+
+function MaintenanceOrderDetailsCard({
+  order,
+}: {
+  readonly order: MaintenanceOrder;
+}): React.JSX.Element {
+  const criticalCount = order.details.filter((t) => t.isCritical).length;
+  return (
+    <SectionCard
+      title="Detalles de la Orden"
+      icon={<Wrench size={16} className="text-[#f2b705]" />}
+    >
+      <InfoRow
+        label="Tipo de servicio"
+        value={SERVICE_TYPE_LABEL[order.service_type] ?? order.service_type}
+      />
+      <InfoRow
+        label="Modo de servicio"
+        value={SERVICE_MODE_LABEL[order.service_mode] ?? order.service_mode}
+      />
+      <InfoRow
+        label="Tipo recomendado"
+        value={
+          order.system_recommended_type
+            ? SERVICE_TYPE_LABEL[order.system_recommended_type] ?? order.system_recommended_type
+            : null
+        }
+      />
+      <InfoRow label="Técnico" value={order.technician} />
+      <InfoRow label="Fecha de servicio" value={formatDate(order.service_date)} />
+      <InfoRow label="Inicio" value={formatDateTime(order.start_at)} />
+      <InfoRow label="Cierre" value={formatDateTime(order.end_at)} />
+      <InfoRow label="Costo total" value={formatMXN(order.cost)} />
+      <InfoRow label="Tareas críticas" value={`${criticalCount} de ${order.details.length}`} />
+    </SectionCard>
+  );
+}
+
+function MaintenanceTelemetryCard({
+  order,
+  unit,
+}: {
+  readonly order: MaintenanceOrder;
+  readonly unit: UnitSummary | null;
+}): React.JSX.Element {
+  return (
+    <SectionCard title="Telemetría" icon={<Truck size={16} className="text-[#f2b705]" />}>
+      <InfoRow label="Odómetro al ingresar" value={formatKm(order.odometer_at_service)} />
+      <InfoRow label="Odómetro al cierre" value={formatKm(order.odometer_at_close)} />
+      <InfoRow label="Nivel comb. inicio" value={formatPct(order.fuel_level_start, 0)} />
+      <InfoRow label="Nivel comb. cierre" value={formatPct(order.fuel_level_end, 0)} />
+      <InfoRow
+        label="Litros cargados"
+        value={order.fuel_liters_loaded ? formatNum(order.fuel_liters_loaded, 'L', 2) : null}
+      />
+      <InfoRow
+        label="Importe combustible"
+        value={order.fuel_amount ? formatMXN(order.fuel_amount) : null}
+      />
+      {unit && (
+        <>
+          <InfoRow label="Odómetro actual (unidad)" value={formatKm(unit.odometer)} />
+          <InfoRow label="Intervalo mant." value={formatKm(unit.maintIntervalKm)} />
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+function MaintenanceTasksCard({ details }: { readonly details: TaskDetail[] }): React.JSX.Element {
+  return (
+    <SectionCard
+      title={`Tareas del Servicio (${details.length})`}
+      icon={<CheckSquare size={16} className="text-[#f2b705]" />}
+    >
+      <ArchonDataTable<TaskDetail>
+        data={details}
+        headers={TASK_HEADERS}
+        variant="embedded"
+        emptyMessage="Sin tareas registradas"
+        renderRow={(t): React.ReactElement => <TaskRow key={t.taskCode} {...t} />}
+      />
+    </SectionCard>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+/** Página de nodo de orden de mantenimiento — detalle, telemetría y tareas. */
+const MaintenanceNode: React.FC = (): React.JSX.Element => {
+  const { uuid } = useParams<{ uuid: string }>();
+  const { node, loading, error } = useMaintenanceNodeData(uuid);
+
   if (loading) return <NodeLoadingState />;
   if (!node)
     return (
@@ -172,119 +338,15 @@ const MaintenanceNode: React.FC = (): React.JSX.Element => {
     );
 
   const { order, unit } = node;
-  const statusBadge = MOVEMENT_STATUS_BADGE[order.movement_status] ?? 'bg-slate-100 text-slate-500';
-  const criticalCount = order.details.filter((t) => t.isCritical).length;
-  const failCount = order.details.filter((t) => t.status === 'FAIL').length;
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      {/* ── Cabecera ── */}
-      <div className="card-archon-sovereign !p-6 flex flex-col gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xl font-black text-[#0f2a44] tracking-tight font-mono">
-            {order.uuid.slice(0, 8).toUpperCase()}
-          </span>
-          <span
-            className={`text-archon-sm font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] ${statusBadge}`}
-          >
-            {MOVEMENT_STATUS_LABEL[order.movement_status] ?? order.movement_status}
-          </span>
-          <span className="text-archon-sm font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] bg-[#0f2a44]/5 text-[#0f2a44]">
-            {SERVICE_TYPE_LABEL[order.service_type] ?? order.service_type}
-          </span>
-          {failCount > 0 && (
-            <span className="text-archon-xs font-black uppercase px-2 py-0.5 rounded-[3px] bg-red-100 text-red-700">
-              {failCount} tarea{failCount !== 1 ? 's' : ''} fallida{failCount !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-6 flex-wrap">
-          <span className="text-archon-base font-black text-[#0f2a44]/60">
-            Técnico: <span className="text-[#0f2a44]">{order.technician}</span>
-          </span>
-          <span className="text-archon-base font-black text-[#0f2a44]/60">
-            Fecha: <span className="text-[#0f2a44]">{formatDate(order.service_date)}</span>
-          </span>
-          <span className="text-archon-base font-black text-[#0f2a44]/60">
-            Costo: <span className="text-[#0f2a44]">{formatMXN(order.cost)}</span>
-          </span>
-          {unit && (
-            <Link
-              to={`/dashboard/fleet/${unit.id}`}
-              className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors"
-            >
-              <Truck size={12} /> {unit.id} — {unit.marca} {unit.modelo} <ExternalLink size={11} />
-            </Link>
-          )}
-        </div>
-      </div>
-
+      <MaintenanceNodeHeader order={order} unit={unit} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Detalles de la orden */}
-        <SectionCard
-          title="Detalles de la Orden"
-          icon={<Wrench size={16} className="text-[#f2b705]" />}
-        >
-          <InfoRow
-            label="Tipo de servicio"
-            value={SERVICE_TYPE_LABEL[order.service_type] ?? order.service_type}
-          />
-          <InfoRow
-            label="Modo de servicio"
-            value={SERVICE_MODE_LABEL[order.service_mode] ?? order.service_mode}
-          />
-          <InfoRow
-            label="Tipo recomendado"
-            value={
-              order.system_recommended_type
-                ? SERVICE_TYPE_LABEL[order.system_recommended_type] ?? order.system_recommended_type
-                : null
-            }
-          />
-          <InfoRow label="Técnico" value={order.technician} />
-          <InfoRow label="Fecha de servicio" value={formatDate(order.service_date)} />
-          <InfoRow label="Inicio" value={formatDateTime(order.start_at)} />
-          <InfoRow label="Cierre" value={formatDateTime(order.end_at)} />
-          <InfoRow label="Costo total" value={formatMXN(order.cost)} />
-          <InfoRow label="Tareas críticas" value={`${criticalCount} de ${order.details.length}`} />
-        </SectionCard>
-
-        {/* Telemetría */}
-        <SectionCard title="Telemetría" icon={<Truck size={16} className="text-[#f2b705]" />}>
-          <InfoRow label="Odómetro al ingresar" value={formatKm(order.odometer_at_service)} />
-          <InfoRow label="Odómetro al cierre" value={formatKm(order.odometer_at_close)} />
-          <InfoRow label="Nivel comb. inicio" value={formatPct(order.fuel_level_start, 0)} />
-          <InfoRow label="Nivel comb. cierre" value={formatPct(order.fuel_level_end, 0)} />
-          <InfoRow
-            label="Litros cargados"
-            value={order.fuel_liters_loaded ? formatNum(order.fuel_liters_loaded, 'L', 2) : null}
-          />
-          <InfoRow
-            label="Importe combustible"
-            value={order.fuel_amount ? formatMXN(order.fuel_amount) : null}
-          />
-          {unit && (
-            <>
-              <InfoRow label="Odómetro actual (unidad)" value={formatKm(unit.odometer)} />
-              <InfoRow label="Intervalo mant." value={formatKm(unit.maintIntervalKm)} />
-            </>
-          )}
-        </SectionCard>
+        <MaintenanceOrderDetailsCard order={order} />
+        <MaintenanceTelemetryCard order={order} unit={unit} />
       </div>
-
-      {/* Tareas */}
-      <SectionCard
-        title={`Tareas del Servicio (${order.details.length})`}
-        icon={<CheckSquare size={16} className="text-[#f2b705]" />}
-      >
-        <ArchonDataTable<TaskDetail>
-          data={order.details}
-          headers={TASK_HEADERS}
-          variant="embedded"
-          emptyMessage="Sin tareas registradas"
-          renderRow={(t): React.ReactElement => <TaskRow key={t.taskCode} {...t} />}
-        />
-      </SectionCard>
+      <MaintenanceTasksCard details={order.details} />
     </div>
   );
 };

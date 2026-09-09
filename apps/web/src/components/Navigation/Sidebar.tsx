@@ -18,7 +18,7 @@ import {
   Rss,
   Building2,
 } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import usePermissions from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
