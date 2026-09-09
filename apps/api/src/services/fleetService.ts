@@ -457,6 +457,26 @@ export default class FleetService {
     }
   }
 
+  /** Resuelve `maintenanceTimeFreqId` a partir de `maintIntervalDays`
+   * (Omega Protocol, catálogo dinámico) — extraída de `preparePayload` para
+   * respetar el cap de Cognitive Complexity 15 (S3776, FC166 Track D
+   * hotfix #2); mismo comportamiento verbatim (early-return equivalente a
+   * la cadena if/else-if/else original). */
+  private static resolveMaintenanceTimeFreqId(days: number): number | null {
+    if (days === 90) return 1048;
+    if (days === 180) return 1044;
+    if (days === 365) return 1045;
+    return null;
+  }
+
+  /** Análogo a `resolveMaintenanceTimeFreqId` para `maintIntervalKm` ->
+   * `maintenanceUsageFreqId`. */
+  private static resolveMaintenanceUsageFreqId(km: number): number | null {
+    if (km === 5000) return 1046;
+    if (km === 10000) return 1047;
+    return null;
+  }
+
   /**
    * Internal helper to handle encryption and data transformation.
    */
@@ -484,26 +504,12 @@ export default class FleetService {
     // 🔱 Dynamic Catalog Frequency Auto-Sync (Omega Protocol)
     if (payload.maintIntervalDays !== undefined) {
       const days = payload.maintIntervalDays !== null ? Number(payload.maintIntervalDays) : 0;
-      if (days === 90) {
-        payload.maintenanceTimeFreqId = 1048;
-      } else if (days === 180) {
-        payload.maintenanceTimeFreqId = 1044;
-      } else if (days === 365) {
-        payload.maintenanceTimeFreqId = 1045;
-      } else {
-        payload.maintenanceTimeFreqId = null;
-      }
+      payload.maintenanceTimeFreqId = this.resolveMaintenanceTimeFreqId(days);
     }
 
     if (payload.maintIntervalKm !== undefined) {
       const km = payload.maintIntervalKm !== null ? Number(payload.maintIntervalKm) : 0;
-      if (km === 5000) {
-        payload.maintenanceUsageFreqId = 1046;
-      } else if (km === 10000) {
-        payload.maintenanceUsageFreqId = 1047;
-      } else {
-        payload.maintenanceUsageFreqId = null;
-      }
+      payload.maintenanceUsageFreqId = this.resolveMaintenanceUsageFreqId(km);
     }
 
     return payload;
