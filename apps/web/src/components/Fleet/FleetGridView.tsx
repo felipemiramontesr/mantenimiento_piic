@@ -431,9 +431,9 @@ function TcoKpiStatusMessage({
   className,
   message,
 }: {
-  testId: string;
-  className: string;
-  message: string;
+  readonly testId: string;
+  readonly className: string;
+  readonly message: string;
 }): React.JSX.Element {
   return (
     <div className={`text-archon-xs ${className} mt-2 italic`} data-testid={testId}>
@@ -450,9 +450,9 @@ function TcoStatRow({
   value,
   valueClassName,
 }: {
-  label: string;
-  value: string;
-  valueClassName: string;
+  readonly label: string;
+  readonly value: string;
+  readonly valueClassName: string;
 }): React.JSX.Element {
   return (
     <div className="flex flex-col items-center">
@@ -529,8 +529,9 @@ const FleetUnitImageCell = ({
   onSelectImage: (u: FleetUnit) => void;
 }): React.JSX.Element =>
   unit.images?.[0] ? (
-    <div
-      className="w-20 h-20 mx-auto rounded-[4px] shadow-sm bg-slate-100 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+    <button
+      type="button"
+      className="w-20 h-20 mx-auto rounded-[4px] shadow-sm bg-slate-100 overflow-hidden cursor-pointer hover:scale-105 transition-transform border-none p-0"
       onClick={(): void => onSelectImage(unit)}
     >
       <img
@@ -542,10 +543,11 @@ const FleetUnitImageCell = ({
           imgElement.src = '/img/archon-unit-default.png';
         }}
       />
-    </div>
+    </button>
   ) : (
-    <div
-      className="w-20 h-20 mx-auto rounded-[4px] bg-slate-100 flex items-center justify-center border border-dashed border-slate-200 cursor-pointer overflow-hidden relative"
+    <button
+      type="button"
+      className="w-20 h-20 mx-auto rounded-[4px] bg-slate-100 flex items-center justify-center border border-dashed border-slate-200 cursor-pointer overflow-hidden relative p-0"
       onClick={(): void => onSelectImage(unit)}
     >
       <img
@@ -553,7 +555,7 @@ const FleetUnitImageCell = ({
         alt="Archon Unit Default"
         className="w-full h-full object-contain"
       />
-    </div>
+    </button>
   );
 
 const FleetUnitIdentityCell = ({ unit }: { unit: FleetUnit }): React.JSX.Element => (
@@ -611,14 +613,14 @@ const FleetUnitActionsCell = ({
 );
 
 interface FleetUnitRowCellsProps {
-  unit: FleetUnit;
-  forecast: MaintenanceForecast;
-  isOverdue: boolean;
-  usageUnit: string;
-  assetFields: FieldVisibility;
-  canEdit: boolean;
-  onSelectImage: (u: FleetUnit) => void;
-  onEdit: (u: FleetUnit) => void;
+  readonly unit: FleetUnit;
+  readonly forecast: MaintenanceForecast;
+  readonly isOverdue: boolean;
+  readonly usageUnit: string;
+  readonly assetFields: FieldVisibility;
+  readonly canEdit: boolean;
+  readonly onSelectImage: (u: FleetUnit) => void;
+  readonly onEdit: (u: FleetUnit) => void;
 }
 
 /** Primeras 5 `<td>` de la fila (Activo/Unidad/Identidad/Logística/
@@ -715,10 +717,10 @@ function FleetUnitRowComponent({
   onSelectImage,
   onEdit,
 }: {
-  unit: FleetUnit;
-  index: number;
-  onSelectImage: (u: FleetUnit) => void;
-  onEdit: (u: FleetUnit) => void;
+  readonly unit: FleetUnit;
+  readonly index: number;
+  readonly onSelectImage: (u: FleetUnit) => void;
+  readonly onEdit: (u: FleetUnit) => void;
 }): React.JSX.Element {
   const forecast = getUnitForecast(unit);
   const isOverdue = !!forecast?.isOverdue;
@@ -814,7 +816,7 @@ const SEARCH_CONFIGS: SearchConfig[] = [
 ];
 
 const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: string } | null => {
-  if (u.id && u.id.toLowerCase().includes(query)) {
+  if (u.id?.toLowerCase().includes(query)) {
     return { label: 'Código', value: u.id };
   }
 
@@ -891,7 +893,7 @@ function useFleetGridSearchConfig(
       getSuggestions: (term: string) => {
         const query = term.toLowerCase().trim();
         return (units || [])
-          .filter((u) => u && u.id)
+          .filter((u) => u?.id)
           .map((u): SearchSuggestion | null => {
             const match = matchFieldInUnit(u, query);
             if (!match) return null;
@@ -999,8 +1001,8 @@ function sortFleetUnits(sanitizedUnits: FleetUnit[], sortConfig: FleetSortConfig
         let valB: number;
 
         if (sortConfig.field === 'unidad') {
-          valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
-          valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
+          valA = Number.parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
+          valB = Number.parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
         } else if (sortConfig.field === 'programacion') {
           valA = a.forecast.kmParaServicio;
           valB = b.forecast.kmParaServicio;
@@ -1092,7 +1094,7 @@ function filterFleetUnitsByQuery(sortedUnits: FleetUnit[], searchTerm: string): 
       return numStr.includes(term) || formattedStr.toLowerCase().includes(term);
     });
 
-    const matchesId = u.id && u.id.toLowerCase().includes(term);
+    const matchesId = u.id?.toLowerCase().includes(term);
     const matchesYear = u.year && String(u.year).includes(term);
     return matchesId || matchesYear || matchesKmPara || matchesKey;
   });
@@ -1135,8 +1137,8 @@ function FleetGridGalleryOverlay({
   unit,
   onClose,
 }: {
-  unit: FleetUnit;
-  onClose: () => void;
+  readonly unit: FleetUnit;
+  readonly onClose: () => void;
 }): React.JSX.Element {
   return (
     <ArchonGalleryOverlay
@@ -1172,7 +1174,7 @@ function useFleetGridSortedFilteredUnits(
   setSortConfig: React.Dispatch<React.SetStateAction<FleetSortConfig>>;
 } {
   // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
-  const sanitizedUnits = React.useMemo(() => (units || []).filter((u) => u && u.id), [units]);
+  const sanitizedUnits = React.useMemo(() => (units || []).filter((u) => u?.id), [units]);
 
   const [sortConfig, setSortConfig] = useState<FleetSortConfig>({ field: null, direction: 'asc' });
 

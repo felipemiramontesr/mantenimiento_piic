@@ -84,4 +84,13 @@ describe('buildCsv (FC 041 Fase E)', () => {
     expect(lines[1]).toBe(`,${PII_MASK},`);
     expect(buildCsv([], COLUMNS)).toBe('Unidad,Placas,Costo');
   });
+
+  it('stringifies a non-primitive cell value instead of "[object Object]" (S6551)', () => {
+    const csv = buildCsv(
+      [{ unit_id: 'PIIC-101', placas: null, cost: { unexpected: 'shape' } }],
+      COLUMNS
+    );
+    expect(csv).toContain('{""unexpected"":""shape""}');
+    expect(csv).not.toContain('[object Object]');
+  });
 });

@@ -579,6 +579,24 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(mockConnection.commit).toHaveBeenCalled();
     });
 
+    it('throws (and rolls back) when the route disappears between the update and the post-update re-fetch (defensive guard)', async () => {
+      const mockBefore = { uuid: 'UUID-GONE', status: 'ACTIVE', id: 42, unit_id: 'ASM-001' };
+
+      // 1. SELECT snapshot before
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
+      // 2. UPDATE fleet_movements (fuelLevel only — no extension fields touched)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 3. SELECT snapshot after → empty (route vanished) → snapshotAfter=null
+      mockConnection.execute.mockResolvedValueOnce([[]]);
+
+      await expect(
+        RouteService.updateRoute('UUID-GONE', { fuelLevel: 80 }, 'Reason', 1)
+      ).rejects.toThrow('Route not found after update');
+
+      expect(mockConnection.rollback).toHaveBeenCalled();
+      expect(mockConnection.commit).not.toHaveBeenCalled();
+    });
+
     it('should update fuel_level_end if route is COMPLETED and propagate to unit', async () => {
       const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED', unit_id: 'ASM-001', id: 42 };
       const mockAfter = {

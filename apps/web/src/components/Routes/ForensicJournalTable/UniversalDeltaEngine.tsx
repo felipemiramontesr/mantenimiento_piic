@@ -18,17 +18,24 @@ const WHITELIST: Record<string, string> = {
 // diferenciado por 'amount' que existían aquí estaban permanentemente
 // inalcanzables (censo vivo, confirmado también en L §FC165 desde Slice
 // 2.1C) — purgados junto con `formatVal`'s branch de 'amount'.
+
+/** `v` es `unknown` a nivel de firma (datos de snapshot JSON arbitrarios),
+ * pero el WHITELIST de arriba es un dominio cerrado de 3 claves no
+ * numéricas — en la práctica `v` siempre es string aquí. Se preserva una
+ * representación real si algún día llega un objeto (S6551). Extraída a
+ * función nombrada (mismo patrón que `alerts.calculators.ts`'s
+ * `stringifyRaw`). */
+function stringifyRaw(v: unknown): string {
+  return typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v);
+}
+
 function formatVal(v: unknown, k: string): string {
   if (v === null || v === undefined) return '—';
   if (k === 'additives_check') return v ? 'SI' : 'NO';
   if (!Number.isNaN(Number(v))) {
     return Number(v).toLocaleString(undefined, { minimumFractionDigits: 1 });
   }
-  // `v` es `unknown` a nivel de firma (datos de snapshot JSON arbitrarios),
-  // pero el WHITELIST de arriba es un dominio cerrado de 3 claves no
-  // numéricas — en la práctica `v` siempre es string aquí. Se preserva una
-  // representación real si algún día llega un objeto (S6551).
-  return typeof v === 'object' ? JSON.stringify(v) : String(v);
+  return stringifyRaw(v);
 }
 
 /** Parsea `snapshot_before`/`snapshot_after` (JSON o ya-objeto) de forma

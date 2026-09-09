@@ -37,14 +37,19 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
+/** `raw` es un valor arbitrario de fila (unknown) — se evita "[object
+ * Object]" en la celda CSV si alguna vez es un objeto (S6551). Extraída a
+ * función nombrada (mismo patrón que `alerts.calculators.ts`'s
+ * `stringifyRaw`). */
+function stringifyRaw(raw: unknown): string {
+  return typeof raw === 'object' && raw !== null ? JSON.stringify(raw) : String(raw);
+}
+
 function cellValue(row: Record<string, unknown>, column: CsvColumn): string {
   if (PII_KEYS.has(column.key)) return PII_MASK; // política de archivo: sin excepciones
   const raw = row[column.key];
   if (raw === null || raw === undefined) return '';
-  // `raw` es un valor arbitrario de fila (unknown) — se evita
-  // "[object Object]" en la celda CSV si alguna vez es un objeto (S6551).
-  const rawStr = typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
-  return escapeCsvCell(rawStr);
+  return escapeCsvCell(stringifyRaw(raw));
 }
 
 /** CSV RFC 4180 (CRLF) — solo columnas visibles, cero peticiones de red. */

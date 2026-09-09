@@ -1,4 +1,5 @@
 import { RowDataPacket } from 'mysql2';
+import { PoolConnection } from 'mysql2/promise';
 import { FastifyBaseLogger } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import db from './db';
@@ -129,6 +130,10 @@ function buildGetAllUnitsQuery(scopeFilter: string): string {
       ORDER BY f.createdAt DESC
     `;
 }
+
+/** Payload crudo de alta/edición de unidad (FC166 Track D S4323 — alias en
+ * vez de repetir la unión en cada firma que lo usa). */
+type FleetUnitPayload = Record<string, string | number | null | string[]>;
 
 /**
  * 🔱 Archon FleetService (SOLID: SRP & High Cohesion)
@@ -261,9 +266,7 @@ export default class FleetService {
   /**
    * Creates a new fleet unit with encryption and blind indexing.
    */
-  static async createUnit(
-    data: Record<string, string | number | null | string[]>
-  ): Promise<{ id: string; uuid: string }> {
+  static async createUnit(data: FleetUnitPayload): Promise<{ id: string; uuid: string }> {
     const id = data.id as string;
     const uuid = randomUUID();
 
@@ -316,12 +319,43 @@ export default class FleetService {
     return { id, uuid };
   }
 
+  /** Pasos 2-3 de `updateUnit`: prepara el payload, valida columnas contra
+   * el allowlist SQL-injection-guard, y ejecuta el UPDATE — extraída para
+   * respetar el cap de 50 líneas de Gate 2 (FC166 Track D); mismo
+   * comportamiento verbatim. Retorna `false` si no hay campos que
+   * actualizar (mismo contrato "sin cambios" que el caller original). */
+  private static async applyUnitUpdate(
+    connection: PoolConnection,
+    id: string,
+    data: FleetUnitPayload
+  ): Promise<boolean> {
+    const updates = this.preparePayload(data);
+
+    const fields = Object.keys(updates);
+    if (fields.length === 0) return false;
+    const invalidCols = fields.filter((f) => !FLEET_UNIT_ALLOWED_COLUMNS.has(f));
+    if (invalidCols.length > 0) {
+      throw new Error(
+        `SQL_INJECTION_GUARD: unexpected columns in UPDATE: ${invalidCols.join(', ')}`
+      );
+    }
+
+    const setClause = fields.map((f) => `${f} = ?`).join(', ');
+    const values = [
+      ...Object.values(updates).map((v) => (v && typeof v === 'object' ? JSON.stringify(v) : v)),
+      id,
+    ];
+
+    await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, values);
+    return true;
+  }
+
   /**
    * Updates an existing unit with forensic audit.
    */
   static async updateUnit(
     id: string,
-    data: Record<string, string | number | null | string[]>,
+    data: FleetUnitPayload,
     reason: string,
     adminId: number
   ): Promise<boolean> {
@@ -341,35 +375,12 @@ export default class FleetService {
       }
       const snapshotBefore = rows[0];
 
-      // 2. Prepare Updates
-      const updates = this.preparePayload(data);
-
-      const fields = Object.keys(updates);
-      if (fields.length === 0) {
+      // 2-3. Prepare + validate + execute UPDATE
+      const updated = await this.applyUnitUpdate(connection, id, data);
+      if (!updated) {
         connection.release();
         return false;
       }
-      const invalidCols = fields.filter((f) => !FLEET_UNIT_ALLOWED_COLUMNS.has(f));
-      if (invalidCols.length > 0) {
-        connection.release();
-        throw new Error(
-          `SQL_INJECTION_GUARD: unexpected columns in UPDATE: ${invalidCols.join(', ')}`
-        );
-      }
-
-      const setClause = fields.map((f) => `${f} = ?`).join(', ');
-      const values = [
-        ...Object.values(updates).map((v) => {
-          if (v && typeof v === 'object') {
-            return JSON.stringify(v);
-          }
-          return v;
-        }),
-        id,
-      ];
-
-      // 3. Perform Update
-      await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, values);
 
       // 4. Snapshot After
       const [rowsAfter] = await connection.execute<RowDataPacket[]>(
@@ -449,9 +460,7 @@ export default class FleetService {
   /**
    * Internal helper to handle encryption and data transformation.
    */
-  private static preparePayload(
-    data: Record<string, string | number | null | string[]>
-  ): Record<string, string | number | null | string[]> {
+  private static preparePayload(data: FleetUnitPayload): FleetUnitPayload {
     const payload = { ...data };
 
     // 🛡️ ALE: Application Level Encryption

@@ -7,10 +7,16 @@ import { SYSTEM_VERSION } from './constants/versionConstants';
  */
 
 interface TelemetryLog {
+  id: number;
   msg: string;
   type: 'info' | 'warn' | 'err' | 'data';
   ts: string;
 }
+
+// Contador monotónico para claves React genuinamente únicas (S6479 — evita
+// usar el índice del array como key, ya que los logs se insertan al frente
+// y el índice de cada entrada cambia en cada `addLog`).
+let telemetryLogIdCounter = 0;
 
 type DoctorTab = 'NET' | 'DATA' | 'ERR' | 'CACHE';
 
@@ -60,8 +66,8 @@ function DoctorNetTab({ context, logs }: DoctorNetTabProps): React.JSX.Element {
           // (ver handleError/el boton "Export JSON to Console") -- filtrado
           // 'data' arriba, todo lo que llega aqui es siempre 'err' (FC165 F3
           // Slice3.2 Batch2, purga de ternario muerto).
-          errLogs.map((log, i) => (
-            <div key={i} className="flex gap-2 text-red-400">
+          errLogs.map((log) => (
+            <div key={log.id} className="flex gap-2 text-red-400">
               <span className="opacity-30">[{log.ts}]</span>
               <span>{log.msg}</span>
             </div>
@@ -131,8 +137,11 @@ function DoctorErrTab({ logs }: { readonly logs: TelemetryLog[] }): React.JSX.El
           ZERO CRITICAL EXCEPTIONS DETECTED
         </p>
       ) : (
-        errLogs.map((log, i) => (
-          <div key={i} className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400">
+        errLogs.map((log) => (
+          <div
+            key={log.id}
+            className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400"
+          >
             <p className="font-bold mb-1">[{log.ts}] SYSTEM_CRASH</p>
             <p className="opacity-80 leading-relaxed">{log.msg}</p>
           </div>
@@ -151,7 +160,8 @@ function DoctorCacheTab(): React.JSX.Element {
           Persistence Layer
         </p>
         <p className="text-pinnacle-white/80">
-          Prefix: <span className="text-blue-400">archon_</span>
+          <span>Prefix: </span>
+          <span className="text-blue-400">archon_</span>
         </p>
       </div>
       <button
@@ -193,7 +203,14 @@ function useArchonDoctorTelemetry(): {
   }, []);
 
   const addLog = (msg: string, type: TelemetryLog['type'] = 'info'): void => {
-    setLogs((prev) => [{ msg, type, ts: new Date().toLocaleTimeString() }, ...prev].slice(0, 50));
+    telemetryLogIdCounter += 1;
+    const entry: TelemetryLog = {
+      id: telemetryLogIdCounter,
+      msg,
+      type,
+      ts: new Date().toLocaleTimeString(),
+    };
+    setLogs((prev) => [entry, ...prev].slice(0, 50));
   };
 
   // Capture global errors for the ERR tab

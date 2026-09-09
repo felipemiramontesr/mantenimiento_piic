@@ -118,6 +118,14 @@ function resolveSilkShouldShowLoading<T>(
   return shouldShowLoading;
 }
 
+/** Construye el `Error` de un sync fallido — extraída del `catch` de
+ * `executeSilkFetch` para evitar un ternario anidado (S3358); mismo
+ * comportamiento verbatim. */
+function buildSilkSyncError(err: unknown, is429: boolean): Error {
+  if (err instanceof Error) return err;
+  return new Error(is429 ? 'RATE_LIMIT_EXCEEDED' : 'Sync failed');
+}
+
 /** Ejecuta el fetch + transform + persistencia del sync — extraída del mismo
  * motivo (Gate 2); mismo comportamiento verbatim (try/catch/finally con
  * mount-shield y clasificación 429). */
@@ -154,9 +162,7 @@ async function executeSilkFetch<T>(
     if (isMounted.current) {
       const status = (err as { response?: { status?: number } } | undefined)?.response?.status;
       const is429 = status === 429;
-      setError(
-        err instanceof Error ? err : new Error(is429 ? 'RATE_LIMIT_EXCEEDED' : 'Sync failed')
-      );
+      setError(buildSilkSyncError(err, is429));
     }
   } finally {
     // setTimeout nunca retorna un valor falsy -- el guard `if(failsafe)`

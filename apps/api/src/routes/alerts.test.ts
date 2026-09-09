@@ -204,6 +204,12 @@ describe('buildOverdueDescription', () => {
     const result = buildOverdueDescription(0, null, dateStr, 90);
     expect(result).toContain('Próximo Mantenimiento');
   });
+
+  it('stringifies a non-primitive maintIntervalDays instead of "[object Object]" (S6551)', () => {
+    const result = buildOverdueDescription(50000, null, null, { unexpected: 'shape' });
+    expect(result).toContain('{"unexpected":"shape"}');
+    expect(result).not.toContain('[object Object]');
+  });
 });
 
 // ─── resolveAlertScope (Feature Contract: Alerts_Role_Scoped_Panel) ──────────

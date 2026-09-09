@@ -408,26 +408,32 @@ function useFleetRouteActions(
     payload: import('../types/route').ReportIncidentPayload
   ) => Promise<void>;
 } {
-  const startRoute = async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
-    await api.post('/routes/start', payload);
-    await refreshUnits(); // Automatic sync of unit status to "En Ruta"
-  };
+  const startRoute = useCallback(
+    async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
+      await api.post('/routes/start', payload);
+      await refreshUnits(); // Automatic sync of unit status to "En Ruta"
+    },
+    [refreshUnits]
+  );
 
-  const finishRoute = async (
-    uuid: string,
-    payload: import('../types/route').FinishRoutePayload
-  ): Promise<void> => {
-    await api.patch(`/routes/${uuid}/finish`, payload);
-    await refreshUnits(); // Automatic sync of unit status to "Disponible" and new reading
-  };
+  const finishRoute = useCallback(
+    async (uuid: string, payload: import('../types/route').FinishRoutePayload): Promise<void> => {
+      await api.patch(`/routes/${uuid}/finish`, payload);
+      await refreshUnits(); // Automatic sync of unit status to "Disponible" and new reading
+    },
+    [refreshUnits]
+  );
 
-  const reportIncident = async (
-    uuid: string,
-    payload: import('../types/route').ReportIncidentPayload
-  ): Promise<void> => {
-    await api.post(`/routes/${uuid}/incidents`, payload);
-    await refreshIncidents();
-  };
+  const reportIncident = useCallback(
+    async (
+      uuid: string,
+      payload: import('../types/route').ReportIncidentPayload
+    ): Promise<void> => {
+      await api.post(`/routes/${uuid}/incidents`, payload);
+      await refreshIncidents();
+    },
+    [refreshIncidents]
+  );
 
   return { startRoute, finishRoute, reportIncident };
 }
@@ -492,23 +498,34 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
   const getUnitDetails = useGetUnitDetails(setUnits);
 
-  return (
-    <FleetContext.Provider
-      value={{
-        units,
-        stats,
-        loading,
-        refreshUnits,
-        error: unitsError,
-        startRoute,
-        finishRoute,
-        reportIncident,
-        getUnitDetails,
-      }}
-    >
-      {children}
-    </FleetContext.Provider>
+  // FC166 Track D (S6481) — el objeto `value` del Provider se recreaba en
+  // cada render; mismo patrón ya usado en Auth/User/SovereignLayoutContext.
+  const contextValue = useMemo<FleetContextType>(
+    () => ({
+      units,
+      stats,
+      loading,
+      refreshUnits,
+      error: unitsError,
+      startRoute,
+      finishRoute,
+      reportIncident,
+      getUnitDetails,
+    }),
+    [
+      units,
+      stats,
+      loading,
+      refreshUnits,
+      unitsError,
+      startRoute,
+      finishRoute,
+      reportIncident,
+      getUnitDetails,
+    ]
   );
+
+  return <FleetContext.Provider value={contextValue}>{children}</FleetContext.Provider>;
 };
 
 export const useFleet = (): FleetContextType => {

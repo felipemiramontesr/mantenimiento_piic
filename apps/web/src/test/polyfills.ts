@@ -7,21 +7,21 @@ import { TextEncoder, TextDecoder } from 'node:util';
 // `any` (equally unsafe by necessity here, but not the literal `any` type).
 const patchedGlobal = global as unknown as Record<string, unknown>;
 
-if (typeof global.TransformStream === 'undefined') {
+if (global.TransformStream === undefined) {
   patchedGlobal.TransformStream = TransformStream;
 }
-if (typeof global.ReadableStream === 'undefined') {
+if (global.ReadableStream === undefined) {
   patchedGlobal.ReadableStream = ReadableStream;
 }
-if (typeof global.WritableStream === 'undefined') {
+if (global.WritableStream === undefined) {
   patchedGlobal.WritableStream = WritableStream;
 }
-if (typeof global.TextEncoder === 'undefined') {
+if (global.TextEncoder === undefined) {
   patchedGlobal.TextEncoder = TextEncoder;
 }
-if (typeof global.TextDecoder === 'undefined') {
+if (global.TextDecoder === undefined) {
   patchedGlobal.TextDecoder = TextDecoder;
 }
-if (typeof global.ProgressEvent === 'undefined') {
+if (global.ProgressEvent === undefined) {
   patchedGlobal.ProgressEvent = class ProgressEvent extends Event {};
 }

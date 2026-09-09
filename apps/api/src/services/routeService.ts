@@ -70,6 +70,10 @@ interface RouteUpdateData {
   [key: string]: unknown;
 }
 
+/** Valor SQL-parametrizable de `splitUpdateFields` (FC166 Track D S4323 —
+ * alias en vez de repetir la unión en cada firma que lo usa). */
+type RouteSqlValue = string | number | boolean | null;
+
 export default class RouteService {
   /**
    * Syncs unit odometer/fuel from the most recent completed ROUTE movement.
@@ -491,9 +495,9 @@ export default class RouteService {
     fuelLevelColumn: string
   ): {
     movementFields: string[];
-    movementValues: (string | number | boolean | null)[];
+    movementValues: RouteSqlValue[];
     extensionFields: string[];
-    extensionValues: (string | number | boolean | null)[];
+    extensionValues: RouteSqlValue[];
   } {
     const movementColumnMap: Record<string, string> = {
       unitId: 'unit_id',
@@ -518,12 +522,12 @@ export default class RouteService {
     };
 
     const movementFields: string[] = [];
-    const movementValues: (string | number | boolean | null)[] = [];
+    const movementValues: RouteSqlValue[] = [];
     const extensionFields: string[] = [];
-    const extensionValues: (string | number | boolean | null)[] = [];
+    const extensionValues: RouteSqlValue[] = [];
 
     Object.entries(resolvedData).forEach(([key, value]) => {
-      const sqlValue = value as string | number | boolean | null;
+      const sqlValue = value as RouteSqlValue;
       if (movementColumnMap[key]) {
         movementFields.push(`${movementColumnMap[key]} = ?`);
         movementValues.push(sqlValue);

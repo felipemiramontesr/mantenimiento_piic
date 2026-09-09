@@ -315,6 +315,15 @@ describe('validateTirePressures', () => {
     });
     expect(result).toBeNull();
   });
+
+  it('stringifies a non-primitive tire pressure value instead of "[object Object]" (S6551)', () => {
+    const result = validateTirePressures({
+      ...baseFormData,
+      tirePressureJson: JSON.stringify({ DI: { unexpected: 'shape' } }),
+    });
+    expect(result).toContain('{"unexpected":"shape"}');
+    expect(result).not.toContain('[object Object]');
+  });
 });
 
 describe('useRouteAssignmentControl (MSW Certified)', () => {

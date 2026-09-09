@@ -191,6 +191,16 @@ export const validateFuelCoherency = (
   return null;
 };
 
+/** `val` es `unknown` (JSON parseado de forma libre) — un JSON malformado
+ * podría dejarlo como objeto/arreglo; se rechaza igual más abajo (String()
+ * de un objeto seguiría fallando el parseo Number()), pero el mensaje de
+ * error usa una representación real en vez de "[object Object]" (S6551).
+ * Extraída a función nombrada (mismo patrón que `alerts.calculators.ts`'s
+ * `stringifyRaw`). */
+function stringifyRaw(val: unknown): string {
+  return typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val);
+}
+
 /** Valida que cada presión de neumático capturada (DI/DD/TI/TD) en
  * `tirePressureJson`, si viene informada, esté entre 20 y 100 PSI. */
 export const validateTirePressures = (formData: RouteAssignmentFormData): string | null => {
@@ -205,11 +215,7 @@ export const validateTirePressures = (formData: RouteAssignmentFormData): string
   ['DI', 'DD', 'TI', 'TD'].some((pos) => {
     const val = tires[pos];
     if (val !== undefined && val !== null) {
-      // Un JSON malformado podría dejar `val` como objeto/arreglo — se
-      // rechaza igual (String() de un objeto seguiría fallando el parseo
-      // Number() de abajo), pero el mensaje de error usa una
-      // representación real en vez de "[object Object]" (S6551).
-      const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      const valStr = stringifyRaw(val);
       if (valStr.trim() !== '') {
         const numVal = Number(valStr);
         if (Number.isNaN(numVal) || numVal < 20 || numVal > 100) {
