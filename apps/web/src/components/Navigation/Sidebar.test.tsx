@@ -726,7 +726,12 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(headerEl?.className).toContain('pt-3');
     });
 
-    it('AT-FC13-B-SB-3: footer contiene py-3 y px-3 (espejo del header, footer no cambia en FC-14)', () => {
+    it('AT-FC13-B-SB-3: footer contiene pt-3 y px-3 (footer no cambia en FC-14; FC170 F1-fix: pb pasó a min 0.75rem)', () => {
+      // FC170 F1-fix: `py-3` + `pb-[env(safe-area-inset-bottom)]` compilaban a
+      // DOS declaraciones de `padding-bottom` — la segunda ganaba la cascada y
+      // en cualquier viewport sin notch `env(safe-area-inset-bottom)` vale 0,
+      // pegando el botón de Logout al borde inferior (reportado por GrayMan).
+      // Separado a `pt-3` (top) + `pb-[max(0.75rem,env(...))]` (bottom con piso).
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -734,8 +739,19 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const footerEl = container.querySelector('aside footer');
       expect(footerEl).not.toBeNull();
-      expect(footerEl?.className).toContain('py-3');
+      expect(footerEl?.className).toContain('pt-3');
       expect(footerEl?.className).toContain('px-3');
+      expect(footerEl?.className).not.toMatch(/\bpy-3\b/);
+    });
+
+    it('AT-FC170-SB-7-fix: footer garantiza padding-bottom mínimo de 0.75rem (max con safe-area-inset-bottom)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const footerEl = container.querySelector('aside footer');
+      expect(footerEl?.className).toMatch(/pb-\[max\(0\.75rem,env\(safe-area-inset-bottom\)\)\]/);
     });
   });
 

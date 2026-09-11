@@ -678,7 +678,7 @@ function SidebarFooter({
   isSystemSettingsActive,
 }: SidebarFooterProps): React.ReactElement {
   return (
-    <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+    <footer className="shrink-0 flex flex-col items-center justify-center pt-3 px-3 gap-2 border-t border-white/5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <SidebarSystemSettingsButton
         isCollapsed={isCollapsed}
         isActive={isSystemSettingsActive}
