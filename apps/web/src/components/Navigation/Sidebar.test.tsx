@@ -1197,4 +1197,81 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(setIsMobileMenuOpenMock).not.toHaveBeenCalled();
     });
   });
+
+  describe('FC170 F1 — Botón "Configuración del Sistema" en SidebarFooter', () => {
+    it('AT-FC170-SB-1: nav-item-system-settings visible arriba de nav-item-logout', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const footer = container.querySelector('footer') as HTMLElement;
+      const settingsBtn = screen.getByTestId('nav-item-system-settings');
+      const logoutBtn = screen.getByTestId('nav-item-logout');
+      const children = Array.from(footer.children);
+      expect(children.indexOf(settingsBtn)).toBeLessThan(children.indexOf(logoutBtn));
+    });
+
+    it('AT-FC170-SB-2: click navega a /dashboard/system-settings y cierra el drawer móvil', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.click(screen.getByTestId('nav-item-system-settings'));
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard/system-settings');
+      expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
+    });
+
+    it('AT-FC170-SB-3: usa h-11 (44px) en vez de h-10 (40px), igual que logout', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const btn = container.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      expect(btn.className).toMatch(/\bh-11\b/);
+      expect(btn.className).not.toMatch(/\bh-10\b/);
+    });
+
+    it('AT-FC170-SB-4: colapsado usa w-11 (44px)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const btn = container.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      expect(btn.className).toMatch(/\bw-11\b/);
+    });
+
+    it('AT-FC170-SB-5: resalta activo cuando la ruta coincide con /dashboard/system-settings', () => {
+      mockLocation.pathname = '/dashboard/system-settings';
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const btn = container.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      expect(btn.className).toMatch(/pinnacle-yellow/);
+    });
+
+    it('AT-FC170-SB-6: NO está activo cuando la ruta es otra (ej. /dashboard/fleet)', () => {
+      mockLocation.pathname = '/dashboard/fleet';
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const btn = container.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      expect(btn.className).not.toMatch(/pinnacle-yellow/);
+    });
+  });
 });

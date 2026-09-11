@@ -17,6 +17,7 @@ import {
   MapPin,
   Rss,
   Building2,
+  Settings,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import usePermissions from '../../hooks/usePermissions';
@@ -613,17 +614,76 @@ function SidebarNavList({
   );
 }
 
+interface SidebarSystemSettingsButtonProps {
+  readonly isCollapsed: boolean;
+  readonly isActive: boolean;
+  readonly onNavigate: () => void;
+}
+
+/** FC170 F1 — botón "Configuración del Sistema" del footer, encima de Logout.
+ *  Extraído para que `SidebarFooter` se mantenga bajo presupuesto (Gate 2). */
+function SidebarSystemSettingsButton({
+  isCollapsed,
+  isActive,
+  onNavigate,
+}: SidebarSystemSettingsButtonProps): React.ReactElement {
+  return (
+    <button
+      type="button"
+      onClick={onNavigate}
+      className={`
+        flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer border-none outline-none overflow-hidden
+        ${
+          isActive
+            ? 'bg-pinnacle-yellow/10 text-pinnacle-yellow border border-pinnacle-yellow/30'
+            : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+        }
+        ${isCollapsed ? 'w-11 h-11 px-0' : 'w-full h-11 px-4'}
+      `}
+      title="Configuración del Sistema"
+      data-testid="nav-item-system-settings"
+    >
+      <Settings size={14} className="shrink-0" />
+      <div
+        className={`
+          transition-[opacity,transform] duration-200 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+          ${
+            isCollapsed
+              ? 'opacity-0 -translate-x-1 pointer-events-none w-0'
+              : 'opacity-100 translate-x-0 ml-2'
+          }
+        `}
+      >
+        <span>Configuración</span>
+      </div>
+    </button>
+  );
+}
+
 interface SidebarFooterProps {
   readonly isCollapsed: boolean;
   readonly onLogout: () => void;
+  readonly onSystemSettings: () => void;
+  readonly isSystemSettingsActive: boolean;
 }
 
 /** ⚙️ FOOTER (15%) — FC 082 F3c2: botón "Panel de Control" (/dashboard/admin)
- *  retirado junto con RolesManager/RolePermissionsMatrix. Extracted to keep
+ *  retirado junto con RolesManager/RolePermissionsMatrix. FC170 F1: botón
+ *  "Configuración del Sistema" agregado encima de Logout. Extracted to keep
  *  `Sidebar` under budget. */
-function SidebarFooter({ isCollapsed, onLogout }: SidebarFooterProps): React.ReactElement {
+function SidebarFooter({
+  isCollapsed,
+  onLogout,
+  onSystemSettings,
+  isSystemSettingsActive,
+}: SidebarFooterProps): React.ReactElement {
   return (
     <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+      <SidebarSystemSettingsButton
+        isCollapsed={isCollapsed}
+        isActive={isSystemSettingsActive}
+        onNavigate={onSystemSettings}
+      />
       <button
         type="button"
         onClick={onLogout}
@@ -679,8 +739,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
-  const goToProfile = (): void => {
-    navigate('/dashboard/settings');
+  const navigateAndCloseMobile = (path: string): void => {
+    navigate(path);
     setIsMobileMenuOpen(false);
   };
 
@@ -700,7 +760,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           isCollapsed={isCollapsed}
           fullImageUrl={fullImageUrl}
           username={currentUser?.username || 'Soberano'}
-          onProfileClick={goToProfile}
+          onProfileClick={(): void => navigateAndCloseMobile('/dashboard/settings')}
           firstFocusableRef={firstFocusableRef}
         />
 
@@ -714,7 +774,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           scrollRef={scrollRef}
         />
 
-        <SidebarFooter isCollapsed={isCollapsed} onLogout={logout} />
+        <SidebarFooter
+          isCollapsed={isCollapsed}
+          onLogout={logout}
+          onSystemSettings={(): void => navigateAndCloseMobile('/dashboard/system-settings')}
+          isSystemSettingsActive={location.pathname.startsWith('/dashboard/system-settings')}
+        />
       </aside>
     </>
   );
