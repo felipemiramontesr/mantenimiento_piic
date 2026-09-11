@@ -1264,7 +1264,7 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(btn.className).toMatch(/\bw-11\b/);
     });
 
-    it('AT-FC170-SB-5: resalta activo cuando la ruta coincide con /dashboard/system-settings', () => {
+    it('AT-FC170-SB-5: aria-current="page" cuando la ruta coincide con /dashboard/system-settings', () => {
       mockLocation.pathname = '/dashboard/system-settings';
       const { container } = render(
         <BrowserRouter>
@@ -1274,10 +1274,10 @@ describe('Sidebar Component (Archon Core)', () => {
       const btn = container.querySelector(
         '[data-testid="nav-item-system-settings"]'
       ) as HTMLElement;
-      expect(btn.className).toMatch(/pinnacle-yellow/);
+      expect(btn.getAttribute('aria-current')).toBe('page');
     });
 
-    it('AT-FC170-SB-6: NO está activo cuando la ruta es otra (ej. /dashboard/fleet)', () => {
+    it('AT-FC170-SB-6: sin aria-current cuando la ruta es otra (ej. /dashboard/fleet)', () => {
       mockLocation.pathname = '/dashboard/fleet';
       const { container } = render(
         <BrowserRouter>
@@ -1287,7 +1287,38 @@ describe('Sidebar Component (Archon Core)', () => {
       const btn = container.querySelector(
         '[data-testid="nav-item-system-settings"]'
       ) as HTMLElement;
-      expect(btn.className).not.toMatch(/pinnacle-yellow/);
+      expect(btn.getAttribute('aria-current')).toBeNull();
+    });
+
+    it('AT-FC170-SB-8-fix: mismos colores/hover que el botón de perfil (reporte de GrayMan)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const settingsBtn = container.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      const profileBtn = container.querySelector(
+        '[data-testid="nav-item-settings"]'
+      ) as HTMLElement;
+      ['bg-white/10', 'text-pinnacle-yellow', 'border-white/10', 'hover:brightness-125'].forEach(
+        (cls) => {
+          expect(settingsBtn.className).toContain(cls);
+          expect(profileBtn.className).toContain(cls);
+        }
+      );
+      // Activo o no, el color/hover no cambia (paridad exacta con perfil).
+      mockLocation.pathname = '/dashboard/system-settings';
+      const { container: activeContainer } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const activeBtn = activeContainer.querySelector(
+        '[data-testid="nav-item-system-settings"]'
+      ) as HTMLElement;
+      expect(activeBtn.className).toBe(settingsBtn.className);
     });
   });
 });

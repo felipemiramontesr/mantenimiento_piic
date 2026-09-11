@@ -620,8 +620,12 @@ interface SidebarSystemSettingsButtonProps {
   readonly onNavigate: () => void;
 }
 
-/** FC170 F1 — botón "Configuración del Sistema" del footer, encima de Logout.
- *  Extraído para que `SidebarFooter` se mantenga bajo presupuesto (Gate 2). */
+/** FC170 F1-fix (reporte de GrayMan): mismos colores/hover que el botón de
+ *  perfil (`SidebarAvatarButton`) — `bg-white/10 text-pinnacle-yellow
+ *  border-white/10 hover:brightness-125`, en vez de un esquema propio.
+ *  El estado activo se señala solo por semántica (`aria-current`), sin
+ *  cambiar color, para no romper la paridad visual pedida. Extraído para
+ *  que `SidebarFooter` se mantenga bajo presupuesto (Gate 2). */
 function SidebarSystemSettingsButton({
   isCollapsed,
   isActive,
@@ -631,13 +635,9 @@ function SidebarSystemSettingsButton({
     <button
       type="button"
       onClick={onNavigate}
+      aria-current={isActive ? 'page' : undefined}
       className={`
-        flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer border-none outline-none overflow-hidden
-        ${
-          isActive
-            ? 'bg-pinnacle-yellow/10 text-pinnacle-yellow border border-pinnacle-yellow/30'
-            : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-        }
+        flex items-center justify-center rounded-[4px] shrink-0 overflow-hidden bg-white/10 text-pinnacle-yellow border border-white/10 border-none hover:brightness-125 transition-all duration-200 cursor-pointer outline-none
         ${isCollapsed ? 'w-11 h-11 px-0' : 'w-full h-11 px-4'}
       `}
       title="Configuración del Sistema"
@@ -654,7 +654,7 @@ function SidebarSystemSettingsButton({
           }
         `}
       >
-        <span>Configuración</span>
+        <span className="text-sm font-medium">Configuración</span>
       </div>
     </button>
   );
