@@ -1,5 +1,4 @@
 import React from 'react';
-import ArchonDoctor from '../../ArchonDoctor';
 import ArchonLogo from '../Logo/ArchonLogo';
 import { SYSTEM_VERSION } from '../../constants/versionConstants';
 
@@ -8,6 +7,9 @@ import { SYSTEM_VERSION } from '../../constants/versionConstants';
  * Implementation: Global System Branding & Legal Metadata (V.78.100.94)
  * Objective: High-performance 10% vertical chassis for system metadata.
  * Refactor: 100% Pure Tailwind Atomic Architecture (Mirror DNA).
+ * FC171 F1 — `<ArchonDoctor />` retirado de este footer global (visible a
+ * cualquier rol, sin gate); su panel forense vive ahora exclusivamente en
+ * la Consola Soberana (`/dashboard/system-settings`, `isOmegaStrict()`).
  */
 
 const SovereignFooter: React.FC = () => (
@@ -17,11 +19,6 @@ const SovereignFooter: React.FC = () => (
           <md envuelve y el padding se reduce. */}
     <div className="flex-1 min-w-0 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-normal md:whitespace-nowrap">
       © Copyright ArchonCore by Dreamtek Versión V.{SYSTEM_VERSION}
-    </div>
-
-    {/* 🔱 Forensic Bridge (Col Gamma) */}
-    <div className="flex-1 flex justify-center">
-      <ArchonDoctor />
     </div>
 
     {/* 🏗️ System Versioning (Col Beta) — FC 082 F3c2: "God Mode"

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Globe, ShieldCheck } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
+import ArchonDoctor from '../../ArchonDoctor';
 
 /**
  * FC170 F1 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
@@ -81,6 +82,15 @@ function SovereignConsoleCard(): React.ReactElement {
         Exclusivo de Ω (role_id = 0) — gobernanza de plataforma, cosmología y auditoría de
         protocolo, extensible en fases futuras del Chasis Modular.
       </p>
+      <div
+        className="pt-2 border-t border-slate-100"
+        data-testid="sovereign-console-doctor-trigger"
+      >
+        <p className="text-[11px] uppercase tracking-widest font-bold text-pinnacle-navy/40 mb-2">
+          Consola Forense Archon Doctor
+        </p>
+        <ArchonDoctor />
+      </div>
     </div>
   );
 }

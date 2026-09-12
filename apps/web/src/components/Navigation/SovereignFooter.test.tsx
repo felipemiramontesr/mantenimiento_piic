@@ -4,10 +4,6 @@ import { describe, it, expect, vi } from 'vitest';
 import SovereignFooter from './SovereignFooter';
 import { SYSTEM_VERSION } from '../../constants/versionConstants';
 
-vi.mock('../../ArchonDoctor', () => ({
-  default: (): React.ReactElement => <div data-testid="archon-doctor-mock" />,
-}));
-
 vi.mock('../Logo/ArchonLogo', () => ({
   default: (): React.ReactElement => <div data-testid="archon-logo-mock" />,
 }));
@@ -50,5 +46,12 @@ describe('SovereignFooter — versión dinámica', () => {
     expect(copyright.className).toContain('whitespace-normal');
     expect(copyright.className).toContain('md:whitespace-nowrap');
     expect(copyright.className).toContain('min-w-0');
+  });
+
+  // FC171 F1 — ArchonDoctor retirado del footer global (Scenario 1): el
+  // panel forense ya no se divulga a usuarios regulares en ninguna página.
+  it('AT-FC171-SF-1: ArchonDoctor ya no se monta en el footer global', () => {
+    const { container } = render(<SovereignFooter />);
+    expect(container.textContent).not.toMatch(/ARCHON DOCTOR/i);
   });
 });

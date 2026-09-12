@@ -1,7 +1,9 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '../../test/testUtils';
+import { render as testRender, screen } from '../../test/testUtils';
 import SystemSettingsModule from './SystemSettingsModule';
 import usePermissions from '../../hooks/usePermissions';
+import { ArchonDoctorProvider } from '../../context/ArchonDoctorContext';
 
 /**
  * FC170 F1 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
@@ -23,6 +25,13 @@ const mockPerms = (opts: { fleet?: boolean; omega?: boolean } = {}): void => {
     isOmegaStrict: (): boolean => opts.omega ?? false,
   });
 };
+
+// FC171 F1 — `SovereignConsoleCard` ahora monta `<ArchonDoctor/>`, que lee de
+// `ArchonDoctorContext`; el `render` de `testUtils` no lo incluye (deliberado
+// — no todos los tests de esta suite mockean `isOmegaStrict`), así que esta
+// suite lo envuelve localmente.
+const render = (ui: React.ReactElement): ReturnType<typeof testRender> =>
+  testRender(<ArchonDoctorProvider>{ui}</ArchonDoctorProvider>);
 
 describe('SystemSettingsModule', () => {
   beforeEach(() => {
@@ -71,5 +80,21 @@ describe('SystemSettingsModule', () => {
     render(<SystemSettingsModule />);
     expect(screen.queryByTestId('system-settings-fms-card')).toBeNull();
     expect(screen.getByTestId('system-settings-sovereign-card')).toBeInTheDocument();
+  });
+
+  // FC171 F1 — ArchonDoctor_Relocation_To_SovereignConsole, Scenario 3.
+  it('FC171 Scenario 3 — Ω ve el disparador de la Consola Forense dentro de la Consola Soberana', () => {
+    mockPerms({ fleet: true, omega: true });
+    render(<SystemSettingsModule />);
+    const trigger = screen.getByTestId('sovereign-console-doctor-trigger');
+    expect(trigger).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ARCHON DOCTOR/i })).toBeInTheDocument();
+  });
+
+  it('FC171 Scenario 3 — un usuario regular (no Ω) NO ve el disparador de la Consola Forense', () => {
+    mockPerms({ fleet: true, omega: false });
+    render(<SystemSettingsModule />);
+    expect(screen.queryByTestId('sovereign-console-doctor-trigger')).toBeNull();
+    expect(screen.queryByRole('button', { name: /ARCHON DOCTOR/i })).toBeNull();
   });
 });

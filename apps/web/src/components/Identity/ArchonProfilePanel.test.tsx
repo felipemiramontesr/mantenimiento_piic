@@ -378,4 +378,21 @@ describe('ArchonProfilePanel — contrato PATCH /auth/users/:id (FC 076 R1)', ()
       ).toBe(true);
     });
   });
+
+  // FC171 F1 — Cond. D3 Opción A: botón de auto-reparación de caché
+  // accesible a cualquier usuario en su perfil, fuera del formulario.
+  describe('FC171 — Reparar Caché Local', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        currentUser: CURRENT_USER,
+        updateCurrentUser: vi.fn(),
+      });
+    });
+
+    it('muestra la sección de mantenimiento local con su disparador', () => {
+      render(<ArchonProfilePanel />);
+      expect(screen.getByTestId('cache-repair-section')).toBeInTheDocument();
+      expect(screen.getByTestId('cache-repair-trigger')).toBeInTheDocument();
+    });
+  });
 });

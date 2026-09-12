@@ -1,6 +1,28 @@
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import React from 'react';
+import { render as rtlRender, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ArchonDoctor from './ArchonDoctor';
+import { ArchonDoctorProvider } from './context/ArchonDoctorContext';
+import usePermissions from './hooks/usePermissions';
+
+/**
+ * FC171 F1 — ArchonDoctor solo se monta hoy dentro de la Consola Soberana
+ * (`isOmegaStrict()`-gated) — estos tests representan siempre esa vista, por
+ * lo que `usePermissions` se mockea a Ω para toda la suite.
+ */
+vi.mock('./hooks/usePermissions', () => ({ default: vi.fn() }));
+
+beforeEach(() => {
+  vi.mocked(usePermissions).mockReturnValue({
+    hasPermission: (): boolean => true,
+    hasAnyPermission: (): boolean => true,
+    isOmnipotent: (): boolean => true,
+    isOmegaStrict: (): boolean => true,
+  });
+});
+
+const render = (ui: React.ReactElement): ReturnType<typeof rtlRender> =>
+  rtlRender(<ArchonDoctorProvider>{ui}</ArchonDoctorProvider>);
 
 /**
  * FC 074 F2 — Navegación Soberana Móvil.
@@ -175,7 +197,34 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
     cleanup();
   });
 
-  it('clears only archon_-prefixed localStorage keys and reloads the page', () => {
+  // FC171 Cond. D3 Opción A — el wipe ahora exige confirmación explícita
+  // antes de ejecutar; un solo click ya no basta (no debe wipear de inmediato).
+  it('AT-FC171-AD-1: un solo click NO wipea -- pide confirmación explícita primero', () => {
+    localStorage.setItem('archon_units', 'stale');
+
+    render(<ArchonDoctor />);
+    openPanel();
+    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
+
+    expect(screen.getByText(/¿Confirmar borrado total\?/i)).toBeInTheDocument();
+    expect(localStorage.getItem('archon_units')).toBe('stale');
+  });
+
+  it('AT-FC171-AD-2: Cancelar vuelve al botón inicial sin wipear', () => {
+    localStorage.setItem('archon_units', 'stale');
+
+    render(<ArchonDoctor />);
+    openPanel();
+    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    expect(screen.getByText(/Emergency Wipe & Reload/i)).toBeInTheDocument();
+    expect(localStorage.getItem('archon_units')).toBe('stale');
+  });
+
+  it('clears only archon_-prefixed localStorage keys and reloads the page after confirmation', () => {
     localStorage.setItem('archon_units', 'stale');
     localStorage.setItem('archon_users', 'stale');
     localStorage.setItem('unrelated_key', 'keep-me');
@@ -191,6 +240,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
     openPanel();
     fireEvent.click(screen.getByText('CACHE'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
+    fireEvent.click(screen.getByText('Confirmar'));
 
     expect(localStorage.getItem('archon_units')).toBeNull();
     expect(localStorage.getItem('archon_users')).toBeNull();

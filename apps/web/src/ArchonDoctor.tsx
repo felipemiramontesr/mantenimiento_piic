@@ -1,34 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SYSTEM_VERSION } from './constants/versionConstants';
+import { useArchonDoctorContext } from './context/ArchonDoctorContext';
+import type { DoctorFleetContext, TelemetryLog } from './hooks/useArchonDoctorTelemetry';
 
 /**
  * 🔱 ARCHON DOCTOR V.4 (INDUSTRIAL FORENSIC)
  * Purpose: Real-time telemetry & data integrity monitoring
+ * FC171 F1 — relocated exclusively into the Sovereign Console
+ * (`/dashboard/system-settings`, `isOmegaStrict()`-gated); telemetry itself
+ * now lives in `ArchonDoctorContext`/`useArchonDoctorTelemetry`.
  */
 
-interface TelemetryLog {
-  id: number;
-  msg: string;
-  type: 'info' | 'warn' | 'err' | 'data';
-  ts: string;
-}
-
-// Contador monotónico para claves React genuinamente únicas (S6479 — evita
-// usar el índice del array como key, ya que los logs se insertan al frente
-// y el índice de cada entrada cambia en cada `addLog`).
-let telemetryLogIdCounter = 0;
-
 type DoctorTab = 'NET' | 'DATA' | 'ERR' | 'CACHE';
-
-/** Forma laxa del bridge de depuración expuesto por FleetContext (misma
- * naturaleza intrínsecamente no tipada que cualquier propiedad global de
- * diagnóstico — no hay tipos de lib que la declaren). */
-interface DoctorFleetContext {
-  isSyncing?: boolean;
-  units?: unknown[];
-  integrity?: { corrupt?: number };
-  stats?: { total?: number };
-}
 
 // Las 4 pestañas se extraen a componentes de módulo (FC166 Track D — Gate 2
 // `max-lines-per-function`) para que `ArchonDoctor` sea solo el shell +
@@ -151,8 +134,47 @@ function DoctorErrTab({ logs }: { readonly logs: TelemetryLog[] }): React.JSX.El
   );
 }
 
-/** Pestaña CACHE — purga de localStorage con prefijo `archon_` + reload. */
+function wipeArchonCacheAndReload(): void {
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('archon_'))
+    .forEach((k) => localStorage.removeItem(k));
+  window.location.reload();
+}
+
+interface WipeConfirmProps {
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}
+
+/** Confirmación explícita del wipe (FC171 Cond. D3 Opción A) — extraída para
+ *  que `DoctorCacheTab` se mantenga bajo presupuesto (Gate 2). */
+function WipeConfirm({ onCancel, onConfirm }: WipeConfirmProps): React.JSX.Element {
+  return (
+    <div className="space-y-2">
+      <p className="text-red-400 text-archon-sm text-center">¿Confirmar borrado total?</p>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={onCancel}
+          className="py-2 bg-white/5 text-pinnacle-white/60 border border-white/10 rounded font-black text-archon-base uppercase hover:bg-white/10 transition-all"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={onConfirm}
+          className="py-2 bg-red-500 text-white border border-red-500 rounded font-black text-archon-base uppercase hover:brightness-90 transition-all"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Pestaña CACHE — purga de localStorage con prefijo `archon_` + reload, con
+ *  confirmación explícita obligatoria (FC171 Cond. D3 Opción A). */
 function DoctorCacheTab(): React.JSX.Element {
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <div className="space-y-4">
       <div className="p-3 bg-black/30 rounded border border-white/5">
@@ -164,65 +186,21 @@ function DoctorCacheTab(): React.JSX.Element {
           <span className="text-blue-400">archon_</span>
         </p>
       </div>
-      <button
-        onClick={() => {
-          Object.keys(localStorage)
-            .filter((k) => k.startsWith('archon_'))
-            .forEach((k) => localStorage.removeItem(k));
-          window.location.reload();
-        }}
-        className="w-full py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded font-black text-archon-base uppercase hover:bg-red-500/20 transition-all"
-      >
-        Emergency Wipe & Reload
-      </button>
+      {confirming ? (
+        <WipeConfirm
+          onCancel={(): void => setConfirming(false)}
+          onConfirm={wipeArchonCacheAndReload}
+        />
+      ) : (
+        <button
+          onClick={(): void => setConfirming(true)}
+          className="w-full py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded font-black text-archon-base uppercase hover:bg-red-500/20 transition-all"
+        >
+          Emergency Wipe & Reload
+        </button>
+      )}
     </div>
   );
-}
-
-/** Estado de telemetría (logs/context) + sus 2 efectos (polling del bridge
- * `__ARCHON_FLEET_CONTEXT__` cada 1s + captura global de errores) —
- * extraída de `ArchonDoctor` para respetar el cap de 50 líneas de Gate 2
- * (FC166 Track D); mismo comportamiento verbatim. */
-function useArchonDoctorTelemetry(): {
-  logs: TelemetryLog[];
-  context: DoctorFleetContext | null;
-  addLog: (msg: string, type?: TelemetryLog['type']) => void;
-} {
-  const [logs, setLogs] = useState<TelemetryLog[]>([]);
-  const [context, setContext] = useState<DoctorFleetContext | null>(null);
-
-  useEffect(() => {
-    const interval = setInterval((): void => {
-      // eslint-disable-next-line no-underscore-dangle -- bridge de depuración global deliberado (mismo patrón que __ARCHON_FLEET__)
-      const fleetContext = (window as unknown as Record<string, unknown>).__ARCHON_FLEET_CONTEXT__;
-      if (fleetContext) {
-        setContext(fleetContext as DoctorFleetContext);
-      }
-    }, 1000);
-    return (): void => clearInterval(interval);
-  }, []);
-
-  const addLog = (msg: string, type: TelemetryLog['type'] = 'info'): void => {
-    telemetryLogIdCounter += 1;
-    const entry: TelemetryLog = {
-      id: telemetryLogIdCounter,
-      msg,
-      type,
-      ts: new Date().toLocaleTimeString(),
-    };
-    setLogs((prev) => [entry, ...prev].slice(0, 50));
-  };
-
-  // Capture global errors for the ERR tab
-  useEffect(() => {
-    const handleError = (event: ErrorEvent): void => {
-      addLog(`CRASH: ${event.message}`, 'err');
-    };
-    window.addEventListener('error', handleError);
-    return (): void => window.removeEventListener('error', handleError);
-  }, []);
-
-  return { logs, context, addLog };
 }
 
 /** Header + Tabs + Footer del panel expandido — extraídos del mismo motivo
@@ -303,7 +281,7 @@ function DoctorLaunchButton({ onOpen }: { readonly onOpen: () => void }): React.
 const ArchonDoctor: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DoctorTab>('NET');
-  const { logs, context, addLog } = useArchonDoctorTelemetry();
+  const { logs, context, addLog } = useArchonDoctorContext();
 
   if (!isOpen) {
     return <DoctorLaunchButton onOpen={() => setIsOpen(true)} />;
