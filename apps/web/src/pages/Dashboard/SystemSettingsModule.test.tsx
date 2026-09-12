@@ -38,11 +38,19 @@ describe('SystemSettingsModule', () => {
     vi.clearAllMocks();
   });
 
-  it('SYS-SETTINGS-HEADER-1: fija título y descripción de sección', () => {
+  it('SYS-SETTINGS-HEADER-1: tenant -- título fijo y descripción de Universo FMS', () => {
     mockPerms({ fleet: true });
     render(<SystemSettingsModule />);
     expect(screen.getByTestId('layout-title').textContent).toBe('Configuración del Sistema');
     expect(screen.getByTestId('layout-description').textContent).toMatch(/Universo FMS/);
+  });
+
+  // FC174 F1 — la descripción refleja SOLO la sección que el actor ve.
+  it('SYS-SETTINGS-HEADER-2: Ω -- descripción de Capacidades Soberanas, sin mencionar FMS', () => {
+    mockPerms({ omega: true });
+    render(<SystemSettingsModule />);
+    expect(screen.getByTestId('layout-description').textContent).toMatch(/Soberanas/);
+    expect(screen.getByTestId('layout-description').textContent).not.toMatch(/FMS/);
   });
 
   it('SYS-SETTINGS-ACCESS-1: sin permiso de flota ni Ω ve el fallback "Sin acceso", 0 tarjetas', () => {
@@ -60,11 +68,13 @@ describe('SystemSettingsModule', () => {
     expect(screen.queryByTestId('system-settings-sovereign-card')).toBeNull();
   });
 
-  it('Scenario 4 — Ω ve la sección de Universo FMS y la sección Soberana de Plataforma', () => {
+  // FC174 F1, Scenario 1 — exclusión mutua ESTRICTA: Ω nunca ve Universo FMS,
+  // ni siquiera cuando también trae permiso de flota (Omega real siempre trae '*').
+  it('FC174 Scenario 1 — Ω ve ÚNICAMENTE la Consola Soberana, NUNCA Universo FMS (aun con permiso de flota)', () => {
     mockPerms({ fleet: true, omega: true });
     render(<SystemSettingsModule />);
-    expect(screen.getByTestId('system-settings-fms-card')).toBeInTheDocument();
     expect(screen.getByTestId('system-settings-sovereign-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('system-settings-fms-card')).toBeNull();
   });
 
   it('Cond.R-170 R2 — Consola Soberana 0 leak en el DOM cuando isOmegaStrict()===false', () => {
@@ -73,9 +83,7 @@ describe('SystemSettingsModule', () => {
     expect(container.innerHTML).not.toMatch(/Consola Soberana/);
   });
 
-  it('Cond.R-170 R3 — la tarjeta FMS depende del permiso de flota, no de isOmegaStrict() por sí solo', () => {
-    // Combinación artificial (un Ω real siempre trae '*' → hasAnyPermission true):
-    // prueba de wiring del gate, no un escenario realista de producción.
+  it('Cond.R-170 R3 / FC174 — Ω sin permiso de flota explícito también ve SOLO la Consola Soberana', () => {
     mockPerms({ fleet: false, omega: true });
     render(<SystemSettingsModule />);
     expect(screen.queryByTestId('system-settings-fms-card')).toBeNull();
@@ -110,13 +118,23 @@ describe('SystemSettingsModule', () => {
     expect(screen.getAllByText('Próximamente')).toHaveLength(3);
   });
 
-  it('FC172 — Consola Soberana muestra 2 tiles "Próximamente" (Cosmología/Auditoría) además del de Doctor', () => {
-    // fleet:false aísla la Consola Soberana (sin la tarjeta FMS también en pantalla).
-    mockPerms({ fleet: false, omega: true });
+  // FC174 F1 — Cosmología pasa de coming_soon a active; solo Auditoría queda "Próximamente".
+  it('FC174 — Consola Soberana muestra Cosmología activa + 1 tile "Próximamente" (Auditoría)', () => {
+    mockPerms({ omega: true });
     render(<SystemSettingsModule />);
-    expect(screen.getByTestId('app-tile-cosmology')).toBeInTheDocument();
+    expect(screen.getByTestId('sovereign-console-cosmology-trigger')).toBeInTheDocument();
     expect(screen.getByTestId('app-tile-protocol-audit')).toBeInTheDocument();
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2);
+    expect(screen.getAllByText('Próximamente')).toHaveLength(1);
+  });
+
+  // FC174 F1, Scenario 2.
+  it('FC174 Scenario 2 — click en el tile de Cosmología navega a /dashboard/cosmology', () => {
+    mockPerms({ omega: true });
+    render(<SystemSettingsModule />);
+
+    fireEvent.click(screen.getByTestId('sovereign-console-cosmology-trigger'));
+
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/cosmology');
   });
 
   // FC173 F1 — Forensic_Console_Full_Page_Module, Scenario 1.

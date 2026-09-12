@@ -14,24 +14,29 @@ import usePermissions from '../../hooks/usePermissions';
 import ArchonAppTile from '../../components/Common/ArchonAppTile';
 
 /**
- * FC170/171/172/173 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
- * Chasis Plug-and-Play para `/dashboard/system-settings`: tarjeta Universo
- * FMS (gate: mismo permiso que ve Fleet — Cond.R-170 R3) + Consola Soberana
- * GrayMan (gate: `isOmegaStrict()` — Cond.R-170 R2). FC172 F1: las opciones
- * de cada tarjeta se presentan como grid de `ArchonAppTile` (estilo Odoo
+ * FC170/171/172/173/174 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
+ * Chasis Plug-and-Play para `/dashboard/system-settings`. FC172 F1: las
+ * opciones se presentan como grid de `ArchonAppTile` (estilo Odoo
  * App-Launcher). FC173 F1: el tile activo de Consola Forense navega a su
- * propia página (`/dashboard/system-settings/forensics`) en vez de abrir un
- * panel flotante — patrón general para futuras tiles activas.
+ * propia página en vez de abrir un panel flotante. FC174 F1: exclusión mutua
+ * ESTRICTA (XOR) — GrayMan (`isOmegaStrict()`) ve ÚNICAMENTE
+ * `SovereignConsoleSection`; un tenant (permiso de flota) ve ÚNICAMENTE
+ * `TenantUniverseSection` (hoy "Universo FMS", scaffolding para el
+ * `universeType` real cuando existan más tipos de universo). El tile de
+ * Cosmología pasa a `active`, navegando a `/dashboard/cosmology` (FC161,
+ * ya existente).
  */
 
-function useSystemSettingsSectionHeader(): void {
+/** FC174: la descripción del header refleja SOLO la sección que el actor
+ *  realmente ve (exclusión mutua), no ambas a la vez. */
+function useSystemSettingsSectionHeader(omega: boolean): void {
   const { setSectionData } = useSovereignLayout();
   useEffect(() => {
     setSectionData(
       'Configuración del Sistema',
-      'Universo FMS y Capacidades Soberanas de Plataforma'
+      omega ? 'Capacidades Soberanas de Plataforma' : 'Umbrales y Parámetros del Universo FMS'
     );
-  }, [setSectionData]);
+  }, [setSectionData, omega]);
 }
 
 const FMS_CAPABILITY_TILES = [
@@ -55,8 +60,10 @@ const FMS_CAPABILITY_TILES = [
   },
 ] as const;
 
-/** Tarjeta Universo FMS — visible con el mismo gate de permiso que el nav-item Unidades. */
-function FmsUniverseCard(): React.ReactElement {
+/** Sección Universo Tenant — hoy siempre "Universo FMS" (scaffolding para
+ *  `universeType` real cuando existan más tipos de universo). FC174: única
+ *  sección visible para un tenant, exclusiva de la Consola Soberana. */
+function TenantUniverseSection(): React.ReactElement {
   return (
     <div className="card-archon-sovereign space-y-4" data-testid="system-settings-fms-card">
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
@@ -90,11 +97,13 @@ function FmsUniverseCard(): React.ReactElement {
 
 interface SovereignConsoleTilesProps {
   readonly onOpenForensics: () => void;
+  readonly onOpenCosmology: () => void;
 }
 
-/** Grid de tiles de la Consola Soberana — extraído para que `SovereignConsoleCard` se mantenga bajo presupuesto (Gate 2). */
+/** Grid de tiles de la Consola Soberana — extraído para que `SovereignConsoleSection` se mantenga bajo presupuesto (Gate 2). */
 function SovereignConsoleTiles({
   onOpenForensics,
+  onOpenCosmology,
 }: SovereignConsoleTilesProps): React.ReactElement {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,10 +118,12 @@ function SovereignConsoleTiles({
       />
       <ArchonAppTile
         id="cosmology"
-        title="Cosmología"
-        description="Gobernanza de universos y cúmulos"
+        title="Cosmología & Multiverso"
+        description="Creación y gobernanza de universos y cúmulos"
         icon={Globe}
-        status="coming_soon"
+        status="active"
+        onClick={onOpenCosmology}
+        dataTestId="sovereign-console-cosmology-trigger"
       />
       <ArchonAppTile
         id="protocol-audit"
@@ -125,8 +136,9 @@ function SovereignConsoleTiles({
   );
 }
 
-/** Tarjeta Consola Soberana — visible SOLO si `isOmegaStrict()` (Cond.R-170 R2). */
-function SovereignConsoleCard(): React.ReactElement {
+/** Sección Consola Soberana — FC174: única sección visible para GrayMan
+ *  (`isOmegaStrict()`), exclusiva de cualquier sección de universo tenant. */
+function SovereignConsoleSection(): React.ReactElement {
   const navigate = useNavigate();
 
   return (
@@ -148,20 +160,24 @@ function SovereignConsoleCard(): React.ReactElement {
         onOpenForensics={(): void => {
           navigate('/dashboard/system-settings/forensics');
         }}
+        onOpenCosmology={(): void => {
+          navigate('/dashboard/cosmology');
+        }}
       />
     </div>
   );
 }
 
-/** FC170 F1 — root page for `/dashboard/system-settings`. */
+/** FC174 F1 — root page for `/dashboard/system-settings`, exclusión mutua
+ *  estricta: Ω ve SOLO la Consola Soberana; un tenant con permiso de flota
+ *  ve SOLO su sección de Universo; sin ninguno de los dos, fallback. */
 const SystemSettingsModule: React.FC = (): React.ReactElement => {
   const { isOmegaStrict, hasAnyPermission } = usePermissions();
-  useSystemSettingsSectionHeader();
-
   const canSeeFms = hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']);
   const omega = isOmegaStrict();
+  useSystemSettingsSectionHeader(omega);
 
-  if (!canSeeFms && !omega) {
+  if (!omega && !canSeeFms) {
     return (
       <div className="animate-in fade-in duration-700">
         <div className="card-archon-sovereign text-center py-12 text-pinnacle-navy/40 text-sm font-medium">
@@ -175,10 +191,7 @@ const SystemSettingsModule: React.FC = (): React.ReactElement => {
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {canSeeFms && <FmsUniverseCard />}
-            {omega && <SovereignConsoleCard />}
-          </div>
+          {omega ? <SovereignConsoleSection /> : <TenantUniverseSection />}
         </div>
       </section>
     </div>
