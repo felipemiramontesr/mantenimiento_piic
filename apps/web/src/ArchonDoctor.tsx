@@ -225,6 +225,16 @@ interface DoctorTabsProps {
   readonly onSelectTab: (tab: DoctorTab) => void;
 }
 
+/** FC173 F1 — etiquetas canónicas de la barra de pestañas horizontal de la
+ *  página completa (el `DoctorTab` interno NET/DATA/ERR/CACHE no cambia,
+ *  solo el texto visible). */
+const TAB_LABELS: Record<DoctorTab, string> = {
+  NET: 'Red / Conexión',
+  DATA: 'Datos Flota',
+  ERR: 'Errores y Logs',
+  CACHE: 'Memoria y Caché',
+};
+
 function DoctorTabs({ activeTab, onSelectTab }: DoctorTabsProps): React.JSX.Element {
   return (
     <div className="flex bg-pinnacle-navy/50 border-b border-pinnacle-yellow/5">
@@ -238,7 +248,7 @@ function DoctorTabs({ activeTab, onSelectTab }: DoctorTabsProps): React.JSX.Elem
               : 'text-pinnacle-white/40 hover:text-pinnacle-white hover:bg-white/5'
           }`}
         >
-          {tab}
+          {TAB_LABELS[tab]}
         </button>
       ))}
     </div>
@@ -262,12 +272,13 @@ interface ArchonDoctorProps {
   readonly onClose: () => void;
 }
 
-/** Panel forense flotante (NET/DATA/ERR/CACHE), controlado desde afuera —
- * FC172 F1: el disparador ahora es el tile "Consola Forense Archon Doctor"
- * en `SovereignConsoleCard`, no un botón propio (retirado, era el hallazgo
- * de touch-target de FC074 F1 — ese invariante ahora lo cubre el tile).
- * Telemetría en vivo del bridge `__ARCHON_FLEET_CONTEXT__` + captura global
- * de errores + purga de caché local. */
+/** Panel forense (NET/DATA/ERR/CACHE), controlado desde afuera — FC173 F1:
+ * retirado el dock flotante fijo (`fixed bottom-4 right-4 w-[450px]`); ahora
+ * se embebe a ancho completo dentro de `ForensicConsoleModule.tsx`
+ * (`/dashboard/system-settings/forensics`), la página dedicada que
+ * reemplaza el panel superpuesto. Telemetría en vivo del bridge
+ * `__ARCHON_FLEET_CONTEXT__` + captura global de errores + purga de caché
+ * local. */
 const ArchonDoctor: React.FC<ArchonDoctorProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<DoctorTab>('NET');
   const { logs, context, addLog } = useArchonDoctorContext();
@@ -275,7 +286,7 @@ const ArchonDoctor: React.FC<ArchonDoctorProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] w-[450px] h-[600px] bg-pinnacle-navy border border-pinnacle-yellow/30 shadow-2xl rounded-lg flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+    <div className="w-full min-h-[600px] bg-pinnacle-navy border border-pinnacle-yellow/30 shadow-2xl rounded-lg flex flex-col overflow-hidden">
       <DoctorHeader onClose={onClose} />
       <DoctorTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 

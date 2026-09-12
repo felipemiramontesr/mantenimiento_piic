@@ -10,6 +10,7 @@ import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import SystemSettingsModule from './pages/Dashboard/SystemSettingsModule';
+import ForensicConsoleModule from './pages/Dashboard/ForensicConsoleModule';
 import AlertsModule from './pages/Dashboard/AlertsModule';
 import CosmologyModule from './pages/Dashboard/CosmologyModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
@@ -76,6 +77,7 @@ function DashboardChildRoutes(): React.ReactElement {
       <Route path="logs" element={<LogsModule />} />
       <Route path="settings" element={<SettingsModule />} />
       <Route path="system-settings" element={<SystemSettingsModule />} />
+      <Route path="system-settings/forensics" element={<ForensicConsoleModule />} />
       <Route path="alerts" element={<AlertsModule />} />
       {/* FC 082 F3c2 — /admin (RolesManager/RolePermissionsMatrix)
           retirado: roles reales se gobiernan vía /v1/cosmonauts/roles */}

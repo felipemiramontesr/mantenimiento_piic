@@ -69,16 +69,16 @@ describe('ArchonDoctor — controlled open/close (FC172)', () => {
 
     expect(screen.getByText(/Listening for network events/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('DATA'));
+    fireEvent.click(screen.getByText('Datos Flota'));
     expect(screen.getByText('Valid Units')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('ERR'));
+    fireEvent.click(screen.getByText('Errores y Logs'));
     expect(screen.getByText(/ZERO CRITICAL EXCEPTIONS DETECTED/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Memoria y Caché'));
     expect(screen.getByText(/Emergency Wipe & Reload/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('NET'));
+    fireEvent.click(screen.getByText('Red / Conexión'));
     expect(screen.getByText(/Listening for network events/i)).toBeInTheDocument();
   });
 });
@@ -96,7 +96,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
 
   it('shows fallback zeros in the DATA tab when no context is present yet', () => {
     render();
-    fireEvent.click(screen.getByText('DATA'));
+    fireEvent.click(screen.getByText('Datos Flota'));
 
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('0');
     expect(screen.getByText('Corrupt/Fail').nextSibling?.textContent).toBe('0');
@@ -112,7 +112,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
     });
 
     expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-yellow-400');
-    fireEvent.click(screen.getByText('DATA'));
+    fireEvent.click(screen.getByText('Datos Flota'));
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('0');
   });
 
@@ -132,7 +132,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
 
     expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-green-400');
 
-    fireEvent.click(screen.getByText('DATA'));
+    fireEvent.click(screen.getByText('Datos Flota'));
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('2');
     expect(screen.getByText('Corrupt/Fail').nextSibling?.textContent).toBe('1');
     expect(screen.getByText('Stats Total:').nextElementSibling?.textContent).toBe('2');
@@ -154,7 +154,7 @@ describe('ArchonDoctor — global error capture and log rendering', () => {
     expect(screen.getByText(/CRASH: Segfault in the matrix/i)).toBeInTheDocument();
     expect(screen.queryByText(/Listening for network events/i)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('ERR'));
+    fireEvent.click(screen.getByText('Errores y Logs'));
     expect(screen.getByText(/CRASH: Segfault in the matrix/i)).toBeInTheDocument();
     expect(screen.queryByText(/ZERO CRITICAL EXCEPTIONS DETECTED/i)).not.toBeInTheDocument();
   });
@@ -168,7 +168,7 @@ describe('ArchonDoctor — DATA tab export button', () => {
   it('logs the units dump to the console and records a data-type log entry', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
     render();
-    fireEvent.click(screen.getByText('DATA'));
+    fireEvent.click(screen.getByText('Datos Flota'));
 
     fireEvent.click(screen.getByText('Export JSON to Console'));
 
@@ -188,7 +188,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
     localStorage.setItem('archon_units', 'stale');
 
     render();
-    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Memoria y Caché'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
 
     expect(screen.getByText(/¿Confirmar borrado total\?/i)).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
     localStorage.setItem('archon_units', 'stale');
 
     render();
-    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Memoria y Caché'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
     fireEvent.click(screen.getByText('Cancelar'));
 
@@ -220,7 +220,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
     });
 
     render();
-    fireEvent.click(screen.getByText('CACHE'));
+    fireEvent.click(screen.getByText('Memoria y Caché'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
     fireEvent.click(screen.getByText('Confirmar'));
 

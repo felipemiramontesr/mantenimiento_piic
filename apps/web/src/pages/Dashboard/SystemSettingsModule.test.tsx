@@ -1,9 +1,7 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render as testRender, screen, fireEvent } from '../../test/testUtils';
+import { render, screen, fireEvent } from '../../test/testUtils';
 import SystemSettingsModule from './SystemSettingsModule';
 import usePermissions from '../../hooks/usePermissions';
-import { ArchonDoctorProvider } from '../../context/ArchonDoctorContext';
 
 /**
  * FC170 F1 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
@@ -13,9 +11,18 @@ import { ArchonDoctorProvider } from '../../context/ArchonDoctorContext';
  * ve Fleet, no a todo JWT) y R2 (Consola Soberana solo `isOmegaStrict()`).
  * Scenario 5 (responsividad 375px) queda cubierto por el gate RWD Playwright
  * permanente (FC074 F5, `e2e/responsive.spec.ts`) — no duplicado aquí.
+ * FC173 F1 — el tile de Consola Forense ya no abre un panel local (retirado
+ * de esta página, ver `ForensicConsoleModule.test.tsx`); aquí solo se
+ * verifica que dispara `navigate()` hacia la nueva ruta dedicada.
  */
 
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
+
+const navigateMock = vi.hoisted(() => vi.fn());
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>();
+  return { ...actual, useNavigate: vi.fn(() => navigateMock) };
+});
 
 const mockPerms = (opts: { fleet?: boolean; omega?: boolean } = {}): void => {
   vi.mocked(usePermissions).mockReturnValue({
@@ -25,13 +32,6 @@ const mockPerms = (opts: { fleet?: boolean; omega?: boolean } = {}): void => {
     isOmegaStrict: (): boolean => opts.omega ?? false,
   });
 };
-
-// FC171 F1 — `SovereignConsoleCard` ahora monta `<ArchonDoctor/>`, que lee de
-// `ArchonDoctorContext`; el `render` de `testUtils` no lo incluye (deliberado
-// — no todos los tests de esta suite mockean `isOmegaStrict`), así que esta
-// suite lo envuelve localmente.
-const render = (ui: React.ReactElement): ReturnType<typeof testRender> =>
-  testRender(<ArchonDoctorProvider>{ui}</ArchonDoctorProvider>);
 
 describe('SystemSettingsModule', () => {
   beforeEach(() => {
@@ -119,12 +119,14 @@ describe('SystemSettingsModule', () => {
     expect(screen.getAllByText('Próximamente')).toHaveLength(2);
   });
 
-  it('FC172 Scenario 3 — click en el tile de Doctor despliega el panel forense (NET/DATA/ERR/CACHE)', () => {
+  // FC173 F1 — Forensic_Console_Full_Page_Module, Scenario 1.
+  it('FC173 Scenario 1 — click en el tile de Doctor navega a /dashboard/system-settings/forensics, sin panel superpuesto', () => {
     mockPerms({ fleet: true, omega: true });
     render(<SystemSettingsModule />);
-    expect(screen.queryByText('Forensic Console V4')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('sovereign-console-doctor-trigger'));
-    expect(screen.getByText('Forensic Console V4')).toBeInTheDocument();
+
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/system-settings/forensics');
+    expect(screen.queryByText('Forensic Console V4')).not.toBeInTheDocument();
   });
 });

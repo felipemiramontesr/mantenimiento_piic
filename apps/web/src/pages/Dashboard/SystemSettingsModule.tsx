@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Globe,
   ShieldCheck,
@@ -10,17 +11,17 @@ import {
 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
-import ArchonDoctor from '../../ArchonDoctor';
 import ArchonAppTile from '../../components/Common/ArchonAppTile';
 
 /**
- * FC170/171/172 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
+ * FC170/171/172/173 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
  * Chasis Plug-and-Play para `/dashboard/system-settings`: tarjeta Universo
  * FMS (gate: mismo permiso que ve Fleet — Cond.R-170 R3) + Consola Soberana
  * GrayMan (gate: `isOmegaStrict()` — Cond.R-170 R2). FC172 F1: las opciones
  * de cada tarjeta se presentan como grid de `ArchonAppTile` (estilo Odoo
- * App-Launcher) en vez de texto plano — scaffolding extensible para fases
- * futuras.
+ * App-Launcher). FC173 F1: el tile activo de Consola Forense navega a su
+ * propia página (`/dashboard/system-settings/forensics`) en vez de abrir un
+ * panel flotante — patrón general para futuras tiles activas.
  */
 
 function useSystemSettingsSectionHeader(): void {
@@ -88,11 +89,13 @@ function FmsUniverseCard(): React.ReactElement {
 }
 
 interface SovereignConsoleTilesProps {
-  readonly onOpenDoctor: () => void;
+  readonly onOpenForensics: () => void;
 }
 
 /** Grid de tiles de la Consola Soberana — extraído para que `SovereignConsoleCard` se mantenga bajo presupuesto (Gate 2). */
-function SovereignConsoleTiles({ onOpenDoctor }: SovereignConsoleTilesProps): React.ReactElement {
+function SovereignConsoleTiles({
+  onOpenForensics,
+}: SovereignConsoleTilesProps): React.ReactElement {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <ArchonAppTile
@@ -101,7 +104,7 @@ function SovereignConsoleTiles({ onOpenDoctor }: SovereignConsoleTilesProps): Re
         description="Diagnóstico de red, memoria y errores en vivo"
         icon={Stethoscope}
         status="active"
-        onClick={onOpenDoctor}
+        onClick={onOpenForensics}
         dataTestId="sovereign-console-doctor-trigger"
       />
       <ArchonAppTile
@@ -124,7 +127,7 @@ function SovereignConsoleTiles({ onOpenDoctor }: SovereignConsoleTilesProps): Re
 
 /** Tarjeta Consola Soberana — visible SOLO si `isOmegaStrict()` (Cond.R-170 R2). */
 function SovereignConsoleCard(): React.ReactElement {
-  const [isDoctorOpen, setIsDoctorOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="card-archon-sovereign space-y-4" data-testid="system-settings-sovereign-card">
@@ -141,8 +144,11 @@ function SovereignConsoleCard(): React.ReactElement {
           </p>
         </div>
       </div>
-      <SovereignConsoleTiles onOpenDoctor={(): void => setIsDoctorOpen(true)} />
-      <ArchonDoctor isOpen={isDoctorOpen} onClose={(): void => setIsDoctorOpen(false)} />
+      <SovereignConsoleTiles
+        onOpenForensics={(): void => {
+          navigate('/dashboard/system-settings/forensics');
+        }}
+      />
     </div>
   );
 }
