@@ -24,7 +24,7 @@ function RepairConfirm({ onCancel }: RepairConfirmProps): React.JSX.Element {
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs font-bold uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] px-4 py-2"
+          className="inline-flex items-center justify-center h-11 px-4 text-xs font-bold uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44]"
         >
           Cancelar
         </button>
@@ -32,7 +32,7 @@ function RepairConfirm({ onCancel }: RepairConfirmProps): React.JSX.Element {
           type="button"
           onClick={handleRepair}
           data-testid="cache-repair-confirm-button"
-          className="btn-sentinel-amber-static text-xs h-auto py-2 px-4"
+          className="btn-sentinel-amber-static text-xs"
         >
           Sí, reparar
         </button>
@@ -69,7 +69,7 @@ export default function CacheRepairSection(): React.JSX.Element {
           type="button"
           onClick={(): void => setConfirming(true)}
           data-testid="cache-repair-trigger"
-          className="text-sm font-bold text-[#0f2a44]/60 hover:text-[#0f2a44] underline underline-offset-2"
+          className="inline-flex items-center h-11 text-sm font-bold text-[#0f2a44]/60 hover:text-[#0f2a44] underline underline-offset-2"
         >
           Reparar Caché Local
         </button>

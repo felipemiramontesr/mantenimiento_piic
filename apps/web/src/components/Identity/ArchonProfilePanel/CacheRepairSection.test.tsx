@@ -52,4 +52,25 @@ describe('CacheRepairSection', () => {
 
     Object.defineProperty(window, 'location', { configurable: true, value: original });
   });
+
+  // Regresión FC074/I-RWD (gate permanente e2e/responsive.spec.ts): el
+  // disparador quedó sin altura explícita (~20px) y rompió el gate de
+  // touch-target ≥44px en las 6 celdas de /dashboard/settings. h-11 = 44px.
+  it('AT-IRWD-REGR-1: el disparador "Reparar Caché Local" usa h-11 (touch-target ≥44px)', () => {
+    render(<CacheRepairSection />);
+    expect(screen.getByTestId('cache-repair-trigger').className).toMatch(/\bh-11\b/);
+  });
+
+  it('AT-IRWD-REGR-2: Cancelar usa h-11 explícito; "Sí, reparar" hereda h-11 de btn-sentinel-amber-static', () => {
+    render(<CacheRepairSection />);
+    fireEvent.click(screen.getByTestId('cache-repair-trigger'));
+
+    expect(screen.getByText('Cancelar').className).toMatch(/\bh-11\b/);
+    // btn-sentinel-amber-static define h-11 vía @apply en index.css (no se
+    // repite en el className del DOM) -- se verifica la clase, no el literal.
+    expect(screen.getByTestId('cache-repair-confirm-button').className).toContain(
+      'btn-sentinel-amber-static'
+    );
+    expect(screen.getByTestId('cache-repair-confirm-button').className).not.toMatch(/h-auto/);
+  });
 });
