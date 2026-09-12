@@ -1,16 +1,26 @@
-import React, { useEffect } from 'react';
-import { Globe, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  Globe,
+  ShieldCheck,
+  Wrench,
+  BellRing,
+  Navigation,
+  Stethoscope,
+  ClipboardCheck,
+} from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import ArchonDoctor from '../../ArchonDoctor';
+import ArchonAppTile from '../../components/Common/ArchonAppTile';
 
 /**
- * FC170 F1 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
+ * FC170/171/172 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
  * Chasis Plug-and-Play para `/dashboard/system-settings`: tarjeta Universo
  * FMS (gate: mismo permiso que ve Fleet — Cond.R-170 R3) + Consola Soberana
- * GrayMan (gate: `isOmegaStrict()` — Cond.R-170 R2). F1 es display-only, sin
- * formularios de mutación (Cond.R-170 R6) — las tarjetas listan las áreas de
- * capacidad como scaffolding extensible para fases futuras.
+ * GrayMan (gate: `isOmegaStrict()` — Cond.R-170 R2). FC172 F1: las opciones
+ * de cada tarjeta se presentan como grid de `ArchonAppTile` (estilo Odoo
+ * App-Launcher) en vez de texto plano — scaffolding extensible para fases
+ * futuras.
  */
 
 function useSystemSettingsSectionHeader(): void {
@@ -23,11 +33,26 @@ function useSystemSettingsSectionHeader(): void {
   }, [setSectionData]);
 }
 
-const FMS_CAPABILITY_AREAS = [
-  'Umbrales de mantenimiento preventivo',
-  'Parámetros de alertas de flota',
-  'Configuración de rutas y checkpoints',
-];
+const FMS_CAPABILITY_TILES = [
+  {
+    id: 'preventive-maintenance',
+    title: 'Mantenimiento Preventivo',
+    description: 'Umbrales y calendarios de servicio de flota',
+    icon: Wrench,
+  },
+  {
+    id: 'fleet-alerts',
+    title: 'Alertas y Telemetría',
+    description: 'Parámetros de notificación operativa',
+    icon: BellRing,
+  },
+  {
+    id: 'routes-checkpoints',
+    title: 'Rutas y Checkpoints',
+    description: 'Configuración de itinerarios y control',
+    icon: Navigation,
+  },
+] as const;
 
 /** Tarjeta Universo FMS — visible con el mismo gate de permiso que el nav-item Unidades. */
 function FmsUniverseCard(): React.ReactElement {
@@ -46,23 +71,61 @@ function FmsUniverseCard(): React.ReactElement {
           </p>
         </div>
       </div>
-      <ul className="space-y-2 text-archon-base text-pinnacle-navy/70">
-        {FMS_CAPABILITY_AREAS.map((area) => (
-          <li key={area} className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-pinnacle-yellow shrink-0" />
-            {area}
-          </li>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {FMS_CAPABILITY_TILES.map((tile) => (
+          <ArchonAppTile
+            key={tile.id}
+            id={tile.id}
+            title={tile.title}
+            description={tile.description}
+            icon={tile.icon}
+            status="coming_soon"
+          />
         ))}
-      </ul>
-      <p className="text-[11px] uppercase tracking-widest font-bold text-pinnacle-navy/30">
-        Próximamente — fase de configuración editable
-      </p>
+      </div>
+    </div>
+  );
+}
+
+interface SovereignConsoleTilesProps {
+  readonly onOpenDoctor: () => void;
+}
+
+/** Grid de tiles de la Consola Soberana — extraído para que `SovereignConsoleCard` se mantenga bajo presupuesto (Gate 2). */
+function SovereignConsoleTiles({ onOpenDoctor }: SovereignConsoleTilesProps): React.ReactElement {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <ArchonAppTile
+        id="archon-doctor-console"
+        title="Consola Forense Archon Doctor"
+        description="Diagnóstico de red, memoria y errores en vivo"
+        icon={Stethoscope}
+        status="active"
+        onClick={onOpenDoctor}
+        dataTestId="sovereign-console-doctor-trigger"
+      />
+      <ArchonAppTile
+        id="cosmology"
+        title="Cosmología"
+        description="Gobernanza de universos y cúmulos"
+        icon={Globe}
+        status="coming_soon"
+      />
+      <ArchonAppTile
+        id="protocol-audit"
+        title="Auditoría de Protocolo"
+        description="Trazabilidad del Protocolo L"
+        icon={ClipboardCheck}
+        status="coming_soon"
+      />
     </div>
   );
 }
 
 /** Tarjeta Consola Soberana — visible SOLO si `isOmegaStrict()` (Cond.R-170 R2). */
 function SovereignConsoleCard(): React.ReactElement {
+  const [isDoctorOpen, setIsDoctorOpen] = useState(false);
+
   return (
     <div className="card-archon-sovereign space-y-4" data-testid="system-settings-sovereign-card">
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
@@ -78,19 +141,8 @@ function SovereignConsoleCard(): React.ReactElement {
           </p>
         </div>
       </div>
-      <p className="text-archon-base text-pinnacle-navy/70">
-        Exclusivo de Ω (role_id = 0) — gobernanza de plataforma, cosmología y auditoría de
-        protocolo, extensible en fases futuras del Chasis Modular.
-      </p>
-      <div
-        className="pt-2 border-t border-slate-100"
-        data-testid="sovereign-console-doctor-trigger"
-      >
-        <p className="text-[11px] uppercase tracking-widest font-bold text-pinnacle-navy/40 mb-2">
-          Consola Forense Archon Doctor
-        </p>
-        <ArchonDoctor />
-      </div>
+      <SovereignConsoleTiles onOpenDoctor={(): void => setIsDoctorOpen(true)} />
+      <ArchonDoctor isOpen={isDoctorOpen} onClose={(): void => setIsDoctorOpen(false)} />
     </div>
   );
 }

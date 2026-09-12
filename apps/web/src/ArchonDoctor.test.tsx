@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { render as rtlRender, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ArchonDoctor from './ArchonDoctor';
@@ -6,9 +6,11 @@ import { ArchonDoctorProvider } from './context/ArchonDoctorContext';
 import usePermissions from './hooks/usePermissions';
 
 /**
- * FC171 F1 — ArchonDoctor solo se monta hoy dentro de la Consola Soberana
- * (`isOmegaStrict()`-gated) — estos tests representan siempre esa vista, por
- * lo que `usePermissions` se mockea a Ω para toda la suite.
+ * FC171/172 F1 — ArchonDoctor solo se monta hoy dentro de la Consola
+ * Soberana (`isOmegaStrict()`-gated), controlado desde afuera vía
+ * `isOpen`/`onClose` (el tile "Consola Forense" de FC172 dispara la
+ * apertura) — estos tests representan siempre esa vista, por lo que
+ * `usePermissions` se mockea a Ω para toda la suite.
  */
 vi.mock('./hooks/usePermissions', () => ({ default: vi.fn() }));
 
@@ -21,33 +23,18 @@ beforeEach(() => {
   });
 });
 
-const render = (ui: React.ReactElement): ReturnType<typeof rtlRender> =>
-  rtlRender(<ArchonDoctorProvider>{ui}</ArchonDoctorProvider>);
+/** Harness de estado controlado: `onClose` cierra localmente, como lo haría el consumidor real (`SovereignConsoleCard`). */
+function DoctorHarness({ initialOpen }: { readonly initialOpen: boolean }): React.ReactElement {
+  const [isOpen, setIsOpen] = useState(initialOpen);
+  return <ArchonDoctor isOpen={isOpen} onClose={(): void => setIsOpen(false)} />;
+}
 
-/**
- * FC 074 F2 — Navegación Soberana Móvil.
- * Cobertura mínima y acotada al hallazgo de F1 (074_AN): el badge
- * "ARCHON DOCTOR" medía 213×30 (altura <44px) en las 54 celdas auditadas.
- * No amplía cobertura del resto del componente (fuera de scope de FC 074).
- */
-describe('ArchonDoctor — FC 074 F2 touch-target', () => {
-  it('AT-FC074-F2-AD-1: el badge cerrado usa min-h-11 (44px) en vez de py-2 (~30px)', () => {
-    render(<ArchonDoctor />);
-    const badge = screen.getByRole('button', { name: /ARCHON DOCTOR/i });
-    expect(badge.className).toMatch(/\bmin-h-11\b/);
-  });
-});
-
-/**
- * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — the panel open/close,
- * tab navigation, the window.__ARCHON_FLEET_CONTEXT__ polling bridge, the
- * global error listener, log rendering (empty + populated), the JSON export
- * button and the CACHE wipe button never had direct coverage — the only
- * pre-existing test only ever renders the closed badge.
- */
-const openPanel = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: /ARCHON DOCTOR/i }));
-};
+const render = (initialOpen = true): ReturnType<typeof rtlRender> =>
+  rtlRender(
+    <ArchonDoctorProvider>
+      <DoctorHarness initialOpen={initialOpen} />
+    </ArchonDoctorProvider>
+  );
 
 const FLEET_CONTEXT_KEY = '__ARCHON_FLEET_CONTEXT__';
 
@@ -59,14 +46,18 @@ const clearFleetContextBridge = (): void => {
   delete (window as unknown as Record<string, unknown>)[FLEET_CONTEXT_KEY];
 };
 
-describe('ArchonDoctor — panel open/close and tab navigation', () => {
+describe('ArchonDoctor — controlled open/close (FC172)', () => {
   afterEach(() => {
     cleanup();
   });
 
-  it('opens the panel on badge click and closes it via the ✕ button', () => {
-    render(<ArchonDoctor />);
-    openPanel();
+  it('AT-FC172-AD-1: isOpen=false no renderiza nada', () => {
+    const { container } = render(false);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders the panel when isOpen=true and closes it via the ✕ button', () => {
+    render(true);
     expect(screen.getByText('Forensic Console V4')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('✕'));
@@ -74,8 +65,7 @@ describe('ArchonDoctor — panel open/close and tab navigation', () => {
   });
 
   it('defaults to the NET tab and switches to DATA/ERR/CACHE on click', () => {
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
 
     expect(screen.getByText(/Listening for network events/i)).toBeInTheDocument();
 
@@ -105,8 +95,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
   });
 
   it('shows fallback zeros in the DATA tab when no context is present yet', () => {
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
     fireEvent.click(screen.getByText('DATA'));
 
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('0');
@@ -116,8 +105,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
 
   // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 26 (interval bridge falsy guard) ──
   it('the polling interval is a no-op while the fleet context bridge is unset', async () => {
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
@@ -129,8 +117,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
   });
 
   it('reflects window.__ARCHON_FLEET_CONTEXT__ once the polling interval ticks', async () => {
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
 
     setFleetContextBridge({
       units: [{ id: 'U-1' }, { id: 'U-2' }],
@@ -158,8 +145,7 @@ describe('ArchonDoctor — global error capture and log rendering', () => {
   });
 
   it('captures a window error event and lists it on both the NET and ERR tabs', () => {
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
 
     act(() => {
       window.dispatchEvent(new ErrorEvent('error', { message: 'Segfault in the matrix' }));
@@ -181,8 +167,7 @@ describe('ArchonDoctor — DATA tab export button', () => {
 
   it('logs the units dump to the console and records a data-type log entry', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
     fireEvent.click(screen.getByText('DATA'));
 
     fireEvent.click(screen.getByText('Export JSON to Console'));
@@ -202,8 +187,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
   it('AT-FC171-AD-1: un solo click NO wipea -- pide confirmación explícita primero', () => {
     localStorage.setItem('archon_units', 'stale');
 
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
     fireEvent.click(screen.getByText('CACHE'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
 
@@ -214,8 +198,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
   it('AT-FC171-AD-2: Cancelar vuelve al botón inicial sin wipear', () => {
     localStorage.setItem('archon_units', 'stale');
 
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
     fireEvent.click(screen.getByText('CACHE'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
     fireEvent.click(screen.getByText('Cancelar'));
@@ -236,8 +219,7 @@ describe('ArchonDoctor — CACHE tab emergency wipe', () => {
       value: { ...original, reload },
     });
 
-    render(<ArchonDoctor />);
-    openPanel();
+    render();
     fireEvent.click(screen.getByText('CACHE'));
     fireEvent.click(screen.getByText('Emergency Wipe & Reload'));
     fireEvent.click(screen.getByText('Confirmar'));

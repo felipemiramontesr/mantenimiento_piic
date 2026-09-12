@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { SYSTEM_VERSION } from './constants/versionConstants';
 import { useArchonDoctorContext } from './context/ArchonDoctorContext';
 import type { DoctorFleetContext, TelemetryLog } from './hooks/useArchonDoctorTelemetry';
 
@@ -258,38 +257,26 @@ function DoctorFooter(): React.JSX.Element {
   );
 }
 
-/** Botón colapsado (dock) — extraído del mismo motivo (Gate 2); mismo JSX
- * verbatim. */
-function DoctorLaunchButton({ onOpen }: { readonly onOpen: () => void }): React.JSX.Element {
-  return (
-    <button
-      onClick={onOpen}
-      className="relative z-[9999] min-h-11 bg-pinnacle-navy text-pinnacle-yellow px-4 py-2 rounded-full font-display font-black text-archon-base shadow-pinnacle hover:scale-105 transition-all flex items-center gap-2 border border-pinnacle-yellow/20 uppercase tracking-widest"
-    >
-      <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pinnacle-yellow opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-pinnacle-yellow"></span>
-      </span>
-      ARCHON DOCTOR {SYSTEM_VERSION}
-    </button>
-  );
+interface ArchonDoctorProps {
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
-/** Panel forense flotante (NET/DATA/ERR/CACHE) montado por `SovereignFooter`
- * — telemetría en vivo del bridge `__ARCHON_FLEET_CONTEXT__` + captura global
+/** Panel forense flotante (NET/DATA/ERR/CACHE), controlado desde afuera —
+ * FC172 F1: el disparador ahora es el tile "Consola Forense Archon Doctor"
+ * en `SovereignConsoleCard`, no un botón propio (retirado, era el hallazgo
+ * de touch-target de FC074 F1 — ese invariante ahora lo cubre el tile).
+ * Telemetría en vivo del bridge `__ARCHON_FLEET_CONTEXT__` + captura global
  * de errores + purga de caché local. */
-const ArchonDoctor: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const ArchonDoctor: React.FC<ArchonDoctorProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<DoctorTab>('NET');
   const { logs, context, addLog } = useArchonDoctorContext();
 
-  if (!isOpen) {
-    return <DoctorLaunchButton onOpen={() => setIsOpen(true)} />;
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] w-[450px] h-[600px] bg-pinnacle-navy border border-pinnacle-yellow/30 shadow-2xl rounded-lg flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-      <DoctorHeader onClose={() => setIsOpen(false)} />
+      <DoctorHeader onClose={onClose} />
       <DoctorTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
       {/* Content */}

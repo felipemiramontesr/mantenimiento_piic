@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render as testRender, screen } from '../../test/testUtils';
+import { render as testRender, screen, fireEvent } from '../../test/testUtils';
 import SystemSettingsModule from './SystemSettingsModule';
 import usePermissions from '../../hooks/usePermissions';
 import { ArchonDoctorProvider } from '../../context/ArchonDoctorContext';
@@ -88,13 +88,43 @@ describe('SystemSettingsModule', () => {
     render(<SystemSettingsModule />);
     const trigger = screen.getByTestId('sovereign-console-doctor-trigger');
     expect(trigger).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /ARCHON DOCTOR/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Consola Forense Archon Doctor/i })
+    ).toBeInTheDocument();
   });
 
   it('FC171 Scenario 3 — un usuario regular (no Ω) NO ve el disparador de la Consola Forense', () => {
     mockPerms({ fleet: true, omega: false });
     render(<SystemSettingsModule />);
     expect(screen.queryByTestId('sovereign-console-doctor-trigger')).toBeNull();
-    expect(screen.queryByRole('button', { name: /ARCHON DOCTOR/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Consola Forense Archon Doctor/i })).toBeNull();
+  });
+
+  // FC172 F1 — System_Settings_App_Launcher_Tiles.
+  it('FC172 Scenario 2 — Universo FMS muestra 3 tiles de capacidad, todos "Próximamente"', () => {
+    mockPerms({ fleet: true, omega: false });
+    render(<SystemSettingsModule />);
+    expect(screen.getByTestId('app-tile-preventive-maintenance')).toBeInTheDocument();
+    expect(screen.getByTestId('app-tile-fleet-alerts')).toBeInTheDocument();
+    expect(screen.getByTestId('app-tile-routes-checkpoints')).toBeInTheDocument();
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3);
+  });
+
+  it('FC172 — Consola Soberana muestra 2 tiles "Próximamente" (Cosmología/Auditoría) además del de Doctor', () => {
+    // fleet:false aísla la Consola Soberana (sin la tarjeta FMS también en pantalla).
+    mockPerms({ fleet: false, omega: true });
+    render(<SystemSettingsModule />);
+    expect(screen.getByTestId('app-tile-cosmology')).toBeInTheDocument();
+    expect(screen.getByTestId('app-tile-protocol-audit')).toBeInTheDocument();
+    expect(screen.getAllByText('Próximamente')).toHaveLength(2);
+  });
+
+  it('FC172 Scenario 3 — click en el tile de Doctor despliega el panel forense (NET/DATA/ERR/CACHE)', () => {
+    mockPerms({ fleet: true, omega: true });
+    render(<SystemSettingsModule />);
+    expect(screen.queryByText('Forensic Console V4')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('sovereign-console-doctor-trigger'));
+    expect(screen.getByText('Forensic Console V4')).toBeInTheDocument();
   });
 });
