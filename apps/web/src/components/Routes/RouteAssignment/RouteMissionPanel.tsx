@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, Home, Hash, LucideIcon } from 'lucide-react';
+import ArchonField from '../../ArchonField';
 import ArchonSelect from '../../ArchonSelect';
 import ArchonGeoSelector from './ArchonGeoSelector';
 import { RouteAssignmentPanelProps } from './types';
@@ -13,18 +14,11 @@ interface RouteMissionPanelProps extends RouteAssignmentPanelProps {
 /** Encabezado de fase II: misión y destino (FC163 F2B5). */
 function MissionPanelHeader(): React.JSX.Element {
   return (
-    <div className="flex items-center gap-3">
-      <div className="bg-[#f2b705] p-2 rounded-[4px]">
-        <MapPin size={20} className="text-[#0f2a44]" />
-      </div>
-      <div>
-        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-          Fase II
-        </span>
-        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
-          Misión y Destino
-        </h3>
-      </div>
+    <div className="card-sovereign-header">
+      <MapPin size={22} className="text-[var(--card-accent)]" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">
+        Fase II — Misión y Destino
+      </h3>
     </div>
   );
 }
@@ -38,17 +32,13 @@ interface OriginFieldProps {
 /** Selector de origen, insertado como originNode del ArchonGeoSelector (FC163 F2B5). */
 function OriginField({ origins, origin, onOriginChange }: OriginFieldProps): React.JSX.Element {
   return (
-    <>
-      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-        Origen
-      </span>
+    <ArchonField label="Origen" icon={MapPin}>
       <ArchonSelect
         options={origins.map((o) => ({ value: o.label, label: o.label }))}
         value={origin}
         onChange={onOriginChange}
-        icon={MapPin}
       />
-    </>
+    </ArchonField>
   );
 }
 
@@ -69,32 +59,20 @@ function AddressInputField({
   placeholder: fieldPlaceholder,
   value,
   onChange,
-  icon: Icon,
+  icon,
   colSpanClassName,
 }: AddressInputFieldProps): React.JSX.Element {
   return (
-    <div className={`${colSpanClassName} space-y-1.5`}>
-      <label
-        htmlFor={id}
-        className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type="text"
-          placeholder={fieldPlaceholder}
-          value={value}
-          onChange={(e): void => onChange(e.target.value)}
-          className="peer w-full h-11 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pl-10 text-archon-lg font-bold text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-all duration-300 rounded-[4px]"
-        />
-        <Icon
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 peer-focus:text-[#f2b705] transition-colors pointer-events-none"
-        />
-      </div>
-    </div>
+    <ArchonField label={label} icon={icon} className={colSpanClassName}>
+      <input
+        id={id}
+        type="text"
+        placeholder={fieldPlaceholder}
+        value={value}
+        onChange={(e): void => onChange(e.target.value)}
+        className="archon-input"
+      />
+    </ArchonField>
   );
 }
 

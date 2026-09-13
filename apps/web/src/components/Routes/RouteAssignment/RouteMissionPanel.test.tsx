@@ -55,7 +55,7 @@ describe('RouteMissionPanel', () => {
         origins={[{ value: 'MINA', label: 'Mina Norte' }]}
       />
     );
-    expect(screen.getByText('Misión y Destino')).toBeInTheDocument();
+    expect(screen.getByText('Fase II — Misión y Destino')).toBeInTheDocument();
     expect(screen.getByText('Origen')).toBeInTheDocument();
     expect(screen.getByText('Seleccionar...')).toBeInTheDocument();
   });

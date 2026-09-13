@@ -50,7 +50,7 @@ const UNIT: FleetUnit = {
 describe('RouteIdentityPanel', () => {
   it('renders the Fase I header and both selectors', () => {
     render(<RouteIdentityPanel {...BASE_PROPS} />);
-    expect(screen.getByText('Identidad del Servicio')).toBeInTheDocument();
+    expect(screen.getByText('Fase I — Identidad del Servicio')).toBeInTheDocument();
     expect(screen.getByText('Clave o modelo...')).toBeInTheDocument();
     expect(screen.getByText('Buscar por nombre o nómina...')).toBeInTheDocument();
   });

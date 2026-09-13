@@ -1,24 +1,25 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Droplets } from 'lucide-react';
+import {
+  Camera,
+  Droplets,
+  DollarSign,
+  Gauge,
+  Image as ImageIcon,
+  MessageSquare,
+} from 'lucide-react';
+import ArchonField from '../../ArchonField';
 import ArchonImageUploader from '../../ArchonImageUploader';
 import { RouteClosurePanelProps } from './types';
 
 /** Encabezado de fase IV: evidencia y cierre (FC163 F2B5). */
 function ClosurePanelHeader(): React.JSX.Element {
   return (
-    <div className="flex items-center gap-3">
-      <div className="bg-[#f2b705] p-2 rounded-[4px]">
-        <Camera size={20} className="text-[#0f2a44]" />
-      </div>
-      <div>
-        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-amber-600 opacity-50">
-          Fase IV
-        </span>
-        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
-          Evidencia y Cierre
-        </h3>
-      </div>
+    <div className="card-sovereign-header">
+      <Camera size={22} className="text-[var(--card-accent)]" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">
+        Fase IV — Evidencia y Cierre
+      </h3>
     </div>
   );
 }
@@ -76,32 +77,20 @@ function FuelLoadedField({
   consumedLiters,
 }: FuelLoadedFieldProps): React.JSX.Element {
   return (
-    <div className="space-y-1.5">
-      <label
-        htmlFor="route-fuel-liters-loaded"
-        className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50"
-      >
-        Litros de Combustible Cargados
-      </label>
-      <div className="relative">
-        <Droplets
-          size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30"
-        />
-        <input
-          id="route-fuel-liters-loaded"
-          type="text"
-          inputMode="decimal"
-          placeholder="0.00"
-          value={value}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-            onChange(e.target.value.replace(/[^0-9.]/g, ''))
-          }
-          className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
-        />
-      </div>
+    <ArchonField label="Litros de Combustible Cargados" icon={Droplets}>
+      <input
+        id="route-fuel-liters-loaded"
+        type="text"
+        inputMode="decimal"
+        placeholder="0.00"
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+          onChange(e.target.value.replace(/[^0-9.]/g, ''))
+        }
+        className="archon-input"
+      />
       <FuelConsumptionIndicator tankCapacity={tankCapacity} consumedLiters={consumedLiters} />
-    </div>
+    </ArchonField>
   );
 }
 
@@ -113,34 +102,22 @@ interface FuelAmountFieldProps {
 /** Campo de monto total del ticket de combustible (FC163 F2B5). */
 function FuelAmountField({ value, onChange }: FuelAmountFieldProps): React.JSX.Element {
   return (
-    <div className="space-y-1.5">
-      <label
-        htmlFor="route-fuel-amount"
-        className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between"
-      >
-        {'Monto Total del Ticket'}
-        <span className="text-amber-600 font-black">$</span>
-      </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/40 font-black text-archon-base">
-          $
-        </span>
-        <input
-          id="route-fuel-amount"
-          type="text"
-          inputMode="decimal"
-          placeholder="0.00"
-          value={value}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-            onChange(e.target.value.replace(/[^0-9.]/g, ''))
-          }
-          className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
-        />
-      </div>
+    <ArchonField label="Monto Total del Ticket" icon={DollarSign}>
+      <input
+        id="route-fuel-amount"
+        type="text"
+        inputMode="decimal"
+        placeholder="0.00"
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+          onChange(e.target.value.replace(/[^0-9.]/g, ''))
+        }
+        className="archon-input"
+      />
       <p className="text-archon-xs font-bold text-[#0f2a44]/40 italic">
         * Incluye combustible, aditivos y otros insumos del ticket.
       </p>
-    </div>
+    </ArchonField>
   );
 }
 
@@ -180,10 +157,7 @@ function TirePressureFields({
   onUpdateTire,
 }: TirePressureFieldsProps): React.JSX.Element {
   return (
-    <div className="space-y-2">
-      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-        Presión de Neumáticos (PSI)
-      </span>
+    <ArchonField label="Presión de Neumáticos (PSI)" icon={Gauge}>
       <div className="grid grid-cols-4 gap-2">
         {['DI', 'DD', 'TI', 'TD'].map((pos) => (
           <div key={pos} className="space-y-1">
@@ -202,7 +176,7 @@ function TirePressureFields({
           </div>
         ))}
       </div>
-    </div>
+    </ArchonField>
   );
 }
 
@@ -214,21 +188,17 @@ interface ObservationsFieldProps {
 /** Campo de observaciones de la misión (FC163 F2B5). */
 function ObservationsField({ value, onChange }: ObservationsFieldProps): React.JSX.Element {
   return (
-    <div className="space-y-2 pt-4 border-t border-[#0f2a44]/5">
-      <label
-        htmlFor="route-closure-observations"
-        className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50"
-      >
-        Observaciones de la misión
-      </label>
-      <textarea
-        id="route-closure-observations"
-        rows={3}
-        placeholder="Observaciones de la misión..."
-        value={value}
-        onChange={(e): void => onChange(e.target.value)}
-        className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
-      />
+    <div className="pt-4 border-t border-[#0f2a44]/5">
+      <ArchonField label="Observaciones de la misión" icon={MessageSquare}>
+        <textarea
+          id="route-closure-observations"
+          rows={3}
+          placeholder="Observaciones de la misión..."
+          value={value}
+          onChange={(e): void => onChange(e.target.value)}
+          className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
+        />
+      </ArchonField>
     </div>
   );
 }
@@ -266,10 +236,7 @@ function FuelEvidenceSection({
   onChange,
 }: FuelEvidenceSectionProps): React.JSX.Element {
   return (
-    <div className="space-y-1.5">
-      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-        Ticket de Combustible (Evidencia)
-      </span>
+    <ArchonField label="Ticket de Combustible (Evidencia)" icon={ImageIcon}>
       <ArchonImageUploader
         images={fuelImages}
         onChange={onChange}
@@ -277,7 +244,7 @@ function FuelEvidenceSection({
         maxImages={4}
         reducedHeight={true}
       />
-    </div>
+    </ArchonField>
   );
 }
 

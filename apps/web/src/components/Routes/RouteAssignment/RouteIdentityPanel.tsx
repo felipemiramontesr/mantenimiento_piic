@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Truck, User, AlertCircle } from 'lucide-react';
+import ArchonField from '../../ArchonField';
 import ArchonSelect from '../../ArchonSelect';
 import { RouteIdentityPanelProps } from './types';
 import type { FleetUnit } from '../../../types/fleet';
@@ -8,18 +9,11 @@ import type { FleetUnit } from '../../../types/fleet';
 /** Encabezado de fase I: identidad del servicio (FC163 F2B5). */
 function IdentityPanelHeader(): React.JSX.Element {
   return (
-    <div className="flex items-center gap-3">
-      <div className="bg-[#f2b705] p-2 rounded-[4px]">
-        <ShieldCheck size={20} className="text-[#0f2a44]" />
-      </div>
-      <div>
-        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-          Fase I
-        </span>
-        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
-          Identidad del Servicio
-        </h3>
-      </div>
+    <div className="card-sovereign-header">
+      <ShieldCheck size={22} className="text-[var(--card-accent)]" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">
+        Fase I — Identidad del Servicio
+      </h3>
     </div>
   );
 }
@@ -131,32 +125,24 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
   <div className="space-y-4">
     <IdentityPanelHeader />
 
-    <div className="space-y-2">
-      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-        Seleccionar Unidad
-      </span>
+    <ArchonField label="Seleccionar Unidad" icon={Truck}>
       <ArchonSelect
         options={availableUnits}
         value={formData.unitId}
         onChange={(val): void => updateForm({ unitId: val })}
-        icon={Truck}
         placeholder="Clave o modelo..."
       />
       {selectedUnitData && <UnitPreviewCard unit={selectedUnitData} isEdit={isEdit} />}
-    </div>
+    </ArchonField>
 
-    <div className="space-y-2">
-      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-        Operador Asignado
-      </span>
+    <ArchonField label="Operador Asignado" icon={User}>
       <ArchonSelect
         options={operatorOptions}
         value={formData.operatorId}
         onChange={(val): void => updateForm({ operatorId: val })}
-        icon={User}
         placeholder="Buscar por nombre o nómina..."
       />
-    </div>
+    </ArchonField>
 
     {!isFinished && <ValidationHint isEdit={isEdit} endReading={formData.endReading} />}
   </div>
