@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Globe, Plus, AlertTriangle } from 'lucide-react';
+import { Globe, Plus, AlertTriangle, Tag, Layers, Users } from 'lucide-react';
 import api from '../../../api/client';
 import ArchonModal from '../../../components/UI/ArchonModal';
+import ArchonField from '../../../components/ArchonField';
+import ArchonSelect from '../../../components/ArchonSelect';
 
 /**
  * FC161 F1 — extracted from `CosmologyModule.tsx` (Gate 1 max-lines:400):
@@ -43,46 +45,6 @@ interface CreateUniverseFormProps {
   readonly onCreated: () => void;
 }
 
-const FIELD_LABEL_CLASS =
-  'text-archon-xs font-bold text-pinnacle-navy/60 uppercase tracking-widest';
-const FIELD_INPUT_CLASS =
-  'mt-1 w-full border border-slate-300 rounded-[4px] px-3 py-2 text-sm font-normal normal-case';
-
-interface SelectFieldProps {
-  readonly label: string;
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-  readonly testId: string;
-  readonly options: Array<{ value: string; label: string }>;
-}
-
-/** One labeled `<select>` — reused for `universeTypeCode`/`ownerTypeCode`. */
-function SelectField({
-  label,
-  value,
-  onChange,
-  testId,
-  options,
-}: SelectFieldProps): React.JSX.Element {
-  return (
-    <label className={FIELD_LABEL_CLASS}>
-      {label}
-      <select
-        value={value}
-        onChange={(e): void => onChange(e.target.value)}
-        data-testid={testId}
-        className={FIELD_INPUT_CLASS}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 interface CreateUniverseFieldsProps {
   readonly label: string;
   readonly onLabel: (v: string) => void;
@@ -103,30 +65,29 @@ function CreateUniverseFields({
 }: CreateUniverseFieldsProps): React.JSX.Element {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <label className={FIELD_LABEL_CLASS}>
-        {'Nombre'}
+      <ArchonField label="Nombre" icon={Tag} required>
         <input
           required
           value={label}
           onChange={(e): void => onLabel(e.target.value)}
           data-testid="create-universe-label"
-          className={FIELD_INPUT_CLASS}
+          className="archon-input"
         />
-      </label>
-      <SelectField
-        label="Tipo de Universo"
-        value={universeTypeCode}
-        onChange={onUniverseTypeCode}
-        testId="create-universe-type"
-        options={UNIVERSE_TYPE_OPTIONS}
-      />
-      <SelectField
-        label="Tipo de Owner"
-        value={ownerTypeCode}
-        onChange={onOwnerTypeCode}
-        testId="create-universe-owner-type"
-        options={OWNER_TYPE_OPTIONS}
-      />
+      </ArchonField>
+      <ArchonField label="Tipo de Universo" icon={Layers} required>
+        <ArchonSelect
+          options={UNIVERSE_TYPE_OPTIONS}
+          value={universeTypeCode}
+          onChange={onUniverseTypeCode}
+        />
+      </ArchonField>
+      <ArchonField label="Tipo de Owner" icon={Users} required>
+        <ArchonSelect
+          options={OWNER_TYPE_OPTIONS}
+          value={ownerTypeCode}
+          onChange={onOwnerTypeCode}
+        />
+      </ArchonField>
     </div>
   );
 }
@@ -134,18 +95,9 @@ function CreateUniverseFields({
 /** Header block for `CreateUniverseForm` — extracted to keep it under budget. */
 function CreateUniverseHeader(): React.JSX.Element {
   return (
-    <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
-      <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
-        <Globe size={16} className="text-pinnacle-navy" />
-      </div>
-      <div>
-        <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
-          Crear Universo
-        </h2>
-        <p className="text-archon-base text-pinnacle-navy/50 font-medium">
-          Archon — instancia un nuevo Universo (§24.5 AUTORIDAD_Ω)
-        </p>
-      </div>
+    <div className="card-sovereign-header">
+      <Globe size={22} className="text-[var(--card-accent)]" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">Crear Universo</h3>
     </div>
   );
 }
@@ -175,7 +127,7 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
   return (
     <form
       onSubmit={handleSubmit}
-      className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="card-archon-sovereign bg-white p-10 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 [--card-accent:#0f2a44]"
       data-testid="create-universe-form"
     >
       <CreateUniverseHeader />
@@ -195,7 +147,7 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
         type="submit"
         disabled={submitting || label.trim().length === 0}
         data-testid="create-universe-submit"
-        className="btn-sentinel-emerald text-sm disabled:opacity-50 flex items-center gap-2"
+        className="btn-sentinel-emerald text-sm disabled:opacity-50"
       >
         <Plus size={14} />
         {submitting ? 'Creando…' : 'Crear Universo'}

@@ -155,9 +155,8 @@ describe('CosmologyModule', () => {
     fireEvent.change(screen.getByTestId('create-universe-label'), {
       target: { value: 'Nuevo Universo' },
     });
-    fireEvent.change(screen.getByTestId('create-universe-owner-type'), {
-      target: { value: 'PRIVATE' },
-    });
+    fireEvent.click(screen.getByText('Propietario de Flotilla'));
+    fireEvent.click(screen.getByText('Propietario Privado'));
     fireEvent.click(screen.getByTestId('create-universe-submit'));
 
     await waitFor(() => {

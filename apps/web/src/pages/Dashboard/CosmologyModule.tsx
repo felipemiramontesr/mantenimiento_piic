@@ -158,21 +158,12 @@ function UniversesDirectoryCard({
 }: UniversesDirectoryCardProps): React.JSX.Element {
   return (
     <div
-      className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="card-archon-sovereign bg-white p-10 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 [--card-accent:#0f2a44]"
       data-testid="cosmology-universes-directory"
     >
-      <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
-        <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
-          <Globe size={16} className="text-pinnacle-navy" />
-        </div>
-        <div>
-          <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
-            Universos Registrados
-          </h2>
-          <p className="text-archon-base text-pinnacle-navy/50 font-medium">
-            Archon — Directorio de Universos activos
-          </p>
-        </div>
+      <div className="card-sovereign-header">
+        <Globe size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Universos Registrados</h3>
       </div>
       <UniversesTable universes={universes} loading={loading} error={error} onDestroy={onDestroy} />
     </div>
