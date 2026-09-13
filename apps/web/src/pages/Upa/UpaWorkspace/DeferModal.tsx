@@ -1,5 +1,7 @@
 import React from 'react';
+import { Clock } from 'lucide-react';
 import type { UpaDeferredType } from '../../../types/upa';
+import ArchonField from '../../../components/ArchonField';
 
 interface DeferTypeSelectProps {
   readonly deferType: UpaDeferredType;
@@ -12,24 +14,18 @@ function DeferTypeSelect({
   onDeferTypeChange,
 }: DeferTypeSelectProps): React.ReactElement {
   return (
-    <div className="space-y-1.5">
-      <label
-        htmlFor="defer-type-select"
-        className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50"
-      >
-        Tipo de diferimiento
-      </label>
+    <ArchonField label="Tipo de diferimiento" icon={Clock}>
       <select
         id="defer-type-select"
         value={deferType}
         onChange={(e): void => onDeferTypeChange(e.target.value as UpaDeferredType)}
         data-testid="defer-type-select"
-        className="w-full px-3 py-2.5 text-sm font-bold text-[#0f2a44] border border-slate-200 rounded-[4px] bg-white focus:outline-none"
+        className="archon-input"
       >
         <option value="DEFERRED_FINANCIAL">Diferimiento Financiero</option>
         <option value="N_A_STRUCTURAL">No Aplica — Estructural</option>
       </select>
-    </div>
+    </ArchonField>
   );
 }
 
@@ -50,7 +46,7 @@ function DeferModalActions({
       <button
         type="button"
         onClick={onCancel}
-        className="flex-1 py-2.5 font-bold text-sm uppercase tracking-wider text-[#0f2a44] border border-slate-200 rounded-[4px] hover:bg-slate-50 transition-colors"
+        className="inline-flex flex-1 items-center justify-center h-11 text-xs font-bold uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44]"
       >
         Cancelar
       </button>
@@ -59,7 +55,7 @@ function DeferModalActions({
         onClick={onConfirm}
         disabled={loading}
         data-testid="defer-confirm-btn"
-        className="flex-1 py-2.5 font-bold text-sm uppercase tracking-wider text-white bg-[#ef4444] rounded-[4px] hover:brightness-110 transition-all disabled:opacity-50"
+        className="btn-sentinel-red-static flex-1 text-xs"
       >
         {loading ? 'Diferiendo...' : 'Confirmar'}
       </button>
@@ -89,8 +85,11 @@ const DeferModal: React.FC<DeferModalProps> = ({
     data-testid="defer-modal"
     className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
   >
-    <div className="bg-white rounded-[4px] shadow-xl w-full max-w-md p-6 space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-      <h3 className="font-black uppercase tracking-tight text-[#0f2a44] text-lg">Diferir Tarea</h3>
+    <div className="bg-white border-t-4 border-solid border-pinnacle-navy rounded-[4px] shadow-xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="card-sovereign-header !mb-2">
+        <Clock size={22} className="text-pinnacle-navy" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Diferir Tarea</h3>
+      </div>
       <p className="text-sm font-bold text-[#0f2a44]/60 uppercase tracking-wide line-clamp-2">
         {taskDescription}
       </p>

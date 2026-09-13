@@ -18,7 +18,7 @@ function EvidenceUrlRow({ url, idx, onUpdate, onRemove }: EvidenceUrlRowProps): 
         value={url}
         onChange={(e): void => onUpdate(idx, e.target.value)}
         data-testid={`evidence-url-input-${idx}`}
-        className="flex-1 px-3 py-2 text-sm font-medium text-[#0f2a44] border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#10b981]/50"
+        className="flex-1 archon-input"
       />
       <button
         type="button"
@@ -100,7 +100,7 @@ const EvidenceInput: React.FC<EvidenceInputProps> = ({
         onChange={(e): void => onNotesChange(e.target.value)}
         rows={2}
         data-testid="evidence-notes-input"
-        className="w-full px-3 py-2 text-sm font-medium text-[#0f2a44] border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#10b981]/50 resize-none"
+        className="w-full archon-input resize-none"
       />
     </div>
   );

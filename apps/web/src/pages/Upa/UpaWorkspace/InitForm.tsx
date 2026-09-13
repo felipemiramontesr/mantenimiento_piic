@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
+import { ClipboardList, Truck } from 'lucide-react';
+import ArchonField from '../../../components/ArchonField';
 
 /** Encabezado del formulario de inicio de orden UPA (FC163 F2B5). */
 function InitFormHeader(): React.JSX.Element {
   return (
-    <div>
-      <h2 className="text-[#0f2a44] font-black text-2xl tracking-tight uppercase">
-        Nueva Orden UPA
-      </h2>
-      <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50 mt-1">
-        Proceso Universal Archon — Iniciar Pipeline
-      </p>
+    <div className="card-sovereign-header">
+      <ClipboardList size={22} className="text-[var(--card-accent)]" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">Nueva Orden UPA</h3>
     </div>
   );
 }
@@ -31,17 +29,11 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
 
   return (
     <div className="animate-in fade-in duration-700 flex items-center justify-center min-h-[55vh]">
-      <div className="w-full max-w-md space-y-6">
+      <div className="card-archon-sovereign bg-white p-10 w-full max-w-md space-y-6 [--card-accent:#0f2a44]">
         <InitFormHeader />
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="vehicle-id-input"
-              className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/60"
-            >
-              ID de Unidad
-            </label>
+          <ArchonField label="ID de Unidad" icon={Truck} required>
             <input
               id="vehicle-id-input"
               type="text"
@@ -50,9 +42,9 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
               placeholder="Ej: ASM-001"
               required
               data-testid="vehicle-id-input"
-              className="w-full px-4 py-3 font-bold text-[#0f2a44] border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#10b981]/50 text-sm"
+              className="archon-input"
             />
-          </div>
+          </ArchonField>
 
           {error && (
             <p data-testid="init-error" className="text-red-600 text-sm font-bold">
@@ -64,7 +56,7 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
             type="submit"
             disabled={loading || !vehicleId.trim()}
             data-testid="init-submit-btn"
-            className="w-full py-4 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="btn-sentinel-amber-static w-full"
           >
             {loading ? 'Iniciando...' : 'Iniciar Proceso UPA'}
           </button>

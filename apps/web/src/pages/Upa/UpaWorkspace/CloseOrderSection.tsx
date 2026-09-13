@@ -21,7 +21,7 @@ function CloseOrderButton({
         onClick={onClose}
         disabled={closing || loading}
         data-testid="close-order-btn"
-        className="w-full md:w-auto px-8 py-4 font-black text-sm uppercase tracking-widest text-white bg-[#0f2a44] rounded-[4px] hover:brightness-125 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+        className="btn-sentinel-emerald w-full md:w-auto"
       >
         {closing ? 'Cerrando Orden...' : 'Cerrar Orden UPA'}
       </button>
@@ -49,7 +49,7 @@ function ClosedStateView({ wo, onReturn, onResetOrder }: ClosedStateViewProps): 
           type="button"
           onClick={onReturn}
           data-testid="new-order-btn"
-          className="px-8 py-3 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all shadow-md"
+          className="btn-sentinel-amber-static"
         >
           Volver a Mantenimiento
         </button>
@@ -58,7 +58,7 @@ function ClosedStateView({ wo, onReturn, onResetOrder }: ClosedStateViewProps): 
           type="button"
           onClick={onResetOrder}
           data-testid="new-order-btn"
-          className="px-8 py-3 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all shadow-md"
+          className="btn-sentinel-amber-static"
         >
           Nueva Orden UPA
         </button>
