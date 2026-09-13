@@ -198,7 +198,7 @@ function AreaCreateForm({
       <input
         type="text"
         placeholder="Nombre del área (ej: Mantenimiento)"
-        className="flex-1 h-10 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] px-4 rounded-[4px] text-sm font-medium text-[#0f2a44] outline-none transition-all"
+        className="flex-1 archon-input"
         value={newAreaName}
         onChange={(e): void => setNewAreaName(e.target.value)}
         onKeyDown={(e): void => {
@@ -210,7 +210,7 @@ function AreaCreateForm({
         type="button"
         onClick={createArea}
         disabled={isCreating || !newAreaName.trim()}
-        className="flex items-center gap-2 px-4 py-2 bg-[#0f2a44] text-white rounded-md text-sm font-semibold disabled:opacity-50 hover:bg-[#0f2a44]/90 transition-colors"
+        className="btn-sentinel-emerald text-xs"
         data-testid="create-area-btn"
       >
         <Plus size={14} />
@@ -428,10 +428,10 @@ const AreasPanel: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-        <Building2 size={20} className="text-[#0f2a44]" />
-        <h3 className="text-[#0f2a44] font-bold text-lg">Gestión de Áreas</h3>
+    <div className="card-archon-sovereign bg-white p-6 space-y-6 [--card-accent:#0f2a44]">
+      <div className="card-sovereign-header">
+        <Building2 size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Gestión de Áreas</h3>
       </div>
 
       {error && (

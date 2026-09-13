@@ -108,11 +108,9 @@ export default function PersonalDataCard({
 }: PersonalDataCardProps): React.JSX.Element {
   return (
     <div className="card-archon-sovereign bg-white p-6 space-y-5 [--card-accent:#10b981]">
-      <div className="archon-card-header-pro">
-        <Contact size={20} className="text-[#10b981]" />
-        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Información Personal
-        </h3>
+      <div className="card-sovereign-header">
+        <Contact size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Información Personal</h3>
       </div>
       <div className="space-y-4">
         <IdentityFields

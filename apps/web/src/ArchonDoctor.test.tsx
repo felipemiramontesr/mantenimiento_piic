@@ -111,7 +111,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-yellow-400');
+    expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-amber-600');
     fireEvent.click(screen.getByText('Datos Flota'));
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('0');
   });
@@ -130,7 +130,7 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-green-400');
+    expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-emerald-600');
 
     fireEvent.click(screen.getByText('Datos Flota'));
     expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('2');

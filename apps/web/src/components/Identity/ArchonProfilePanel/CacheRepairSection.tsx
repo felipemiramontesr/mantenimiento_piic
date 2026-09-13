@@ -56,11 +56,9 @@ export default function CacheRepairSection(): React.JSX.Element {
       className="card-archon-sovereign bg-white p-6 space-y-3 [--card-accent:#0f2a44]"
       data-testid="cache-repair-section"
     >
-      <div className="archon-card-header-pro">
-        <RefreshCw size={20} className="text-[#0f2a44]" />
-        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Mantenimiento Local
-        </h3>
+      <div className="card-sovereign-header">
+        <RefreshCw size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Mantenimiento Local</h3>
       </div>
       {confirming ? (
         <RepairConfirm onCancel={(): void => setConfirming(false)} />

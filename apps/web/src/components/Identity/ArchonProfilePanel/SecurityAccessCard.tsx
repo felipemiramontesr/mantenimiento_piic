@@ -22,11 +22,9 @@ export default function SecurityAccessCard({
 }: SecurityAccessCardProps): React.JSX.Element {
   return (
     <div className="card-archon-sovereign bg-white p-6 space-y-5 [--card-accent:#0f2a44]">
-      <div className="archon-card-header-pro">
-        <ShieldCheck size={20} className="text-[#0f2a44]" />
-        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Seguridad y Acceso
-        </h3>
+      <div className="card-sovereign-header">
+        <ShieldCheck size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">Seguridad y Acceso</h3>
       </div>
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

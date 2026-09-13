@@ -27,30 +27,30 @@ function DoctorNetTab({ context, logs }: DoctorNetTabProps): React.JSX.Element {
   const errLogs = logs.filter((l) => l.type !== 'data');
   return (
     <div className="space-y-4">
-      <div className="p-3 bg-black/30 rounded border border-white/5">
-        <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2 tracking-tighter">
+      <div className="p-3 bg-[#0f2a44]/5 rounded border border-slate-200">
+        <p className="text-[#0f2a44]/50 uppercase text-archon-sm mb-2 tracking-tighter">
           Gateway Status
         </p>
-        <div className="grid grid-cols-2 gap-2 text-pinnacle-white/80">
-          <span>API_URL:</span> <span className="text-blue-400">localhost:3001</span>
-          <span>SYNC_MODE:</span> <span className="text-green-400">SILK (SWR)</span>
+        <div className="grid grid-cols-2 gap-2 text-[#0f2a44]/80">
+          <span>API_URL:</span> <span className="text-blue-600">localhost:3001</span>
+          <span>SYNC_MODE:</span> <span className="text-emerald-600">SILK (SWR)</span>
           <span>JWT_AUTH:</span>{' '}
-          <span className={context?.isSyncing ? 'text-green-400' : 'text-yellow-400'}>
+          <span className={context?.isSyncing ? 'text-emerald-600' : 'text-amber-600'}>
             DETECTOR ACTIVE
           </span>
         </div>
       </div>
       <div className="space-y-1">
         {errLogs.length === 0 ? (
-          <p className="text-pinnacle-white/20 italic">Listening for network events...</p>
+          <p className="text-[#0f2a44]/30 italic">Listening for network events...</p>
         ) : (
           // addLog() en este componente solo produce type 'err' o 'data'
           // (ver handleError/el boton "Export JSON to Console") -- filtrado
           // 'data' arriba, todo lo que llega aqui es siempre 'err' (FC165 F3
           // Slice3.2 Batch2, purga de ternario muerto).
           errLogs.map((log) => (
-            <div key={log.id} className="flex gap-2 text-red-400">
-              <span className="opacity-30">[{log.ts}]</span>
+            <div key={log.id} className="flex gap-2 text-red-600">
+              <span className="opacity-40">[{log.ts}]</span>
               <span>{log.msg}</span>
             </div>
           ))
@@ -70,27 +70,25 @@ function DoctorDataTab({ context, addLog }: DoctorDataTabProps): React.JSX.Eleme
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
-        <div className="p-3 bg-black/30 rounded border border-green-500/20">
-          <p className="text-archon-sm text-green-400 font-bold uppercase">Valid Units</p>
-          <p className="text-2xl font-black text-pinnacle-white">{context?.units?.length || 0}</p>
+        <div className="p-3 bg-emerald-50 rounded border border-emerald-200">
+          <p className="text-archon-sm text-emerald-600 font-bold uppercase">Valid Units</p>
+          <p className="text-2xl font-black text-[#0f2a44]">{context?.units?.length || 0}</p>
         </div>
-        <div className="p-3 bg-black/30 rounded border border-red-500/20">
-          <p className="text-archon-sm text-red-400 font-bold uppercase">Corrupt/Fail</p>
-          <p className="text-2xl font-black text-pinnacle-white">
-            {context?.integrity?.corrupt || 0}
-          </p>
+        <div className="p-3 bg-red-50 rounded border border-red-200">
+          <p className="text-archon-sm text-red-600 font-bold uppercase">Corrupt/Fail</p>
+          <p className="text-2xl font-black text-[#0f2a44]">{context?.integrity?.corrupt || 0}</p>
         </div>
       </div>
 
-      <div className="p-3 bg-black/30 rounded border border-white/5">
-        <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2">Structure Integrity</p>
-        <div className="space-y-1 text-pinnacle-white/60">
-          <div className="flex justify-between border-b border-white/5 pb-1">
-            <span>Engine:</span> <span className="text-pinnacle-white">Silk Hydration</span>
+      <div className="p-3 bg-[#0f2a44]/5 rounded border border-slate-200">
+        <p className="text-[#0f2a44]/50 uppercase text-archon-sm mb-2">Structure Integrity</p>
+        <div className="space-y-1 text-[#0f2a44]/60">
+          <div className="flex justify-between border-b border-slate-200 pb-1">
+            <span>Engine:</span> <span className="text-[#0f2a44]">Silk Hydration</span>
           </div>
-          <div className="flex justify-between border-b border-white/5 pb-1">
+          <div className="flex justify-between border-b border-slate-200 pb-1">
             <span>Stats Total:</span>{' '}
-            <span className="text-pinnacle-white">{context?.stats?.total || 0}</span>
+            <span className="text-[#0f2a44]">{context?.stats?.total || 0}</span>
           </div>
         </div>
       </div>
@@ -101,7 +99,7 @@ function DoctorDataTab({ context, addLog }: DoctorDataTabProps): React.JSX.Eleme
           console.log('🔱 ARCHON DATA DUMP:', context?.units);
           addLog('DATA: Memory dump sent to browser console', 'data');
         }}
-        className="w-full py-2 bg-pinnacle-yellow/10 text-pinnacle-yellow border border-pinnacle-yellow/20 rounded font-black text-archon-base uppercase hover:bg-pinnacle-yellow/20 transition-all"
+        className="w-full btn-sentinel-sky-static"
       >
         Export JSON to Console
       </button>
@@ -115,15 +113,12 @@ function DoctorErrTab({ logs }: { readonly logs: TelemetryLog[] }): React.JSX.El
   return (
     <div className="space-y-2">
       {errLogs.length === 0 ? (
-        <p className="text-green-400/40 text-center py-10 tracking-widest">
+        <p className="text-emerald-600/60 text-center py-10 tracking-widest">
           ZERO CRITICAL EXCEPTIONS DETECTED
         </p>
       ) : (
         errLogs.map((log) => (
-          <div
-            key={log.id}
-            className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400"
-          >
+          <div key={log.id} className="p-3 bg-red-50 border border-red-200 rounded text-red-700">
             <p className="font-bold mb-1">[{log.ts}] SYSTEM_CRASH</p>
             <p className="opacity-80 leading-relaxed">{log.msg}</p>
           </div>
@@ -150,18 +145,15 @@ interface WipeConfirmProps {
 function WipeConfirm({ onCancel, onConfirm }: WipeConfirmProps): React.JSX.Element {
   return (
     <div className="space-y-2">
-      <p className="text-red-400 text-archon-sm text-center">¿Confirmar borrado total?</p>
+      <p className="text-red-600 text-archon-sm text-center">¿Confirmar borrado total?</p>
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onCancel}
-          className="py-2 bg-white/5 text-pinnacle-white/60 border border-white/10 rounded font-black text-archon-base uppercase hover:bg-white/10 transition-all"
+          className="inline-flex items-center justify-center h-11 text-xs font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44]"
         >
           Cancelar
         </button>
-        <button
-          onClick={onConfirm}
-          className="py-2 bg-red-500 text-white border border-red-500 rounded font-black text-archon-base uppercase hover:brightness-90 transition-all"
-        >
+        <button onClick={onConfirm} className="btn-sentinel-red-static text-xs">
           Confirmar
         </button>
       </div>
@@ -176,13 +168,13 @@ function DoctorCacheTab(): React.JSX.Element {
 
   return (
     <div className="space-y-4">
-      <div className="p-3 bg-black/30 rounded border border-white/5">
-        <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2 tracking-tighter">
+      <div className="p-3 bg-[#0f2a44]/5 rounded border border-slate-200">
+        <p className="text-[#0f2a44]/50 uppercase text-archon-sm mb-2 tracking-tighter">
           Persistence Layer
         </p>
-        <p className="text-pinnacle-white/80">
+        <p className="text-[#0f2a44]/80">
           <span>Prefix: </span>
-          <span className="text-blue-400">archon_</span>
+          <span className="text-blue-600">archon_</span>
         </p>
       </div>
       {confirming ? (
@@ -191,10 +183,7 @@ function DoctorCacheTab(): React.JSX.Element {
           onConfirm={wipeArchonCacheAndReload}
         />
       ) : (
-        <button
-          onClick={(): void => setConfirming(true)}
-          className="w-full py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded font-black text-archon-base uppercase hover:bg-red-500/20 transition-all"
-        >
+        <button onClick={(): void => setConfirming(true)} className="w-full btn-sentinel-red">
           Emergency Wipe & Reload
         </button>
       )}
@@ -206,14 +195,14 @@ function DoctorCacheTab(): React.JSX.Element {
  * (Gate 2); mismo JSX verbatim en cada uno. */
 function DoctorHeader({ onClose }: { readonly onClose: () => void }): React.JSX.Element {
   return (
-    <div className="p-4 bg-pinnacle-navy border-b border-pinnacle-yellow/10 flex items-center justify-between">
+    <div className="p-4 bg-white border-b border-slate-100 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="h-3 w-3 bg-pinnacle-yellow rounded-full animate-pulse" />
-        <h2 className="text-pinnacle-white font-display font-black text-sm uppercase tracking-widest">
+        <h2 className="text-[#0f2a44] font-display font-black text-sm uppercase tracking-widest">
           Forensic Console V4
         </h2>
       </div>
-      <button onClick={onClose} className="text-pinnacle-white/40 hover:text-pinnacle-white">
+      <button onClick={onClose} className="text-[#0f2a44]/40 hover:text-[#0f2a44]">
         ✕
       </button>
     </div>
@@ -237,15 +226,15 @@ const TAB_LABELS: Record<DoctorTab, string> = {
 
 function DoctorTabs({ activeTab, onSelectTab }: DoctorTabsProps): React.JSX.Element {
   return (
-    <div className="flex bg-pinnacle-navy/50 border-b border-pinnacle-yellow/5">
+    <div className="flex bg-[#0f2a44]/5 border-b border-slate-200">
       {(['NET', 'DATA', 'ERR', 'CACHE'] as DoctorTab[]).map((tab) => (
         <button
           key={tab}
           onClick={() => onSelectTab(tab)}
           className={`flex-1 py-2 text-archon-base font-black tracking-widest transition-all ${
             activeTab === tab
-              ? 'bg-pinnacle-yellow text-pinnacle-navy'
-              : 'text-pinnacle-white/40 hover:text-pinnacle-white hover:bg-white/5'
+              ? 'bg-pinnacle-yellow text-[#0f2a44]'
+              : 'text-[#0f2a44]/40 hover:text-[#0f2a44] hover:bg-white'
           }`}
         >
           {TAB_LABELS[tab]}
@@ -257,10 +246,10 @@ function DoctorTabs({ activeTab, onSelectTab }: DoctorTabsProps): React.JSX.Elem
 
 function DoctorFooter(): React.JSX.Element {
   return (
-    <div className="p-3 bg-black/20 text-archon-sm text-pinnacle-white/30 flex justify-between items-center border-t border-pinnacle-yellow/5">
+    <div className="p-3 bg-[#0f2a44]/5 text-archon-sm text-[#0f2a44]/40 flex justify-between items-center border-t border-slate-200">
       <span>SOVEREIGN CORE V.78.100.184</span>
       <span className="flex items-center gap-1">
-        <span className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+        <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full" />
         <span>STABLE</span>
       </span>
     </div>
@@ -286,7 +275,7 @@ const ArchonDoctor: React.FC<ArchonDoctorProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="w-full min-h-[600px] bg-pinnacle-navy border border-pinnacle-yellow/30 shadow-2xl rounded-lg flex flex-col overflow-hidden">
+    <div className="card-archon-sovereign bg-white p-0 min-h-[600px] [--card-accent:#0f2a44]">
       <DoctorHeader onClose={onClose} />
       <DoctorTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
