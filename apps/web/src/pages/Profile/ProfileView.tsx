@@ -23,7 +23,7 @@ function ProfileHeaderActions({
         type="button"
         data-testid="profile-refresh-btn"
         onClick={onRefresh}
-        className="flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 h-11 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
         Actualizar
@@ -32,7 +32,7 @@ function ProfileHeaderActions({
         type="button"
         data-testid="profile-edit-btn"
         onClick={onEditClick}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0f2a44]/10 hover:bg-[#0f2a44]/20 text-[#0f2a44] text-archon-sm font-black uppercase tracking-widest rounded-lg border border-[#0f2a44]/20 transition-colors"
+        className="btn-sentinel-sky-static text-[10px]"
       >
         <Edit className="w-3 h-3" />
         Editar perfil
@@ -61,13 +61,11 @@ function NewPostForm({
     <form
       data-testid="post-create-form"
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 p-4 bg-[#0a1929]/5 border border-[#0f2a44]/10 rounded-xl"
+      className="card-archon-sovereign bg-white p-6 space-y-3 [--card-accent:#0f2a44]"
     >
-      <div className="flex items-center gap-2 mb-1">
-        <MessageSquare className="w-4 h-4 text-slate-400" />
-        <span className="text-archon-sm font-black uppercase tracking-widest text-slate-400">
-          {username}
-        </span>
+      <div className="card-sovereign-header !mb-0">
+        <MessageSquare size={22} className="text-[var(--card-accent)]" />
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">{username}</h3>
       </div>
       <textarea
         data-testid="post-content-input"
@@ -75,12 +73,12 @@ function NewPostForm({
         onChange={(e): void => onContentChange(e.target.value)}
         placeholder="Comparte una actualización del taller…"
         rows={3}
-        className="w-full px-3 py-2 text-archon-md text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-[#0f2a44]/30 placeholder:text-slate-300"
+        className="w-full archon-input resize-none"
       />
       {postError && (
         <div
           data-testid="post-create-error"
-          className="flex items-center gap-2 text-red-500 text-archon-sm font-black"
+          className="flex items-center gap-2 text-red-600 text-archon-sm font-black"
         >
           <AlertCircle className="w-3.5 h-3.5" />
           {postError}
@@ -91,7 +89,7 @@ function NewPostForm({
           type="submit"
           data-testid="post-submit-btn"
           disabled={!newContent.trim()}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-archon-blue text-white text-archon-sm font-black uppercase tracking-widest rounded-lg hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="btn-sentinel-sky text-xs"
         >
           <PlusCircle className="w-3.5 h-3.5" />
           Publicar
@@ -127,7 +125,7 @@ function PostsList({
     return (
       <div
         data-testid="profile-posts-empty"
-        className="flex flex-col items-center gap-2 py-10 text-slate-400"
+        className="flex flex-col items-center gap-2 py-10 text-[#0f2a44]/40"
       >
         <MessageSquare className="w-6 h-6 opacity-30" />
         <span className={AT.sectionDescription}>Sin publicaciones aún</span>
@@ -157,7 +155,7 @@ function PostsWall(props: PostsWallProps): React.JSX.Element {
   if (isLoading) {
     return (
       <div data-testid="profile-loading" className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-archon-blue border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-pinnacle-navy border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -165,7 +163,7 @@ function PostsWall(props: PostsWallProps): React.JSX.Element {
     return (
       <div
         data-testid="profile-error"
-        className="flex items-center gap-2 text-red-400 text-archon-sm font-black"
+        className="flex items-center gap-2 text-red-600 text-archon-sm font-black"
       >
         <AlertCircle className="w-4 h-4" />
         {error}
@@ -248,7 +246,7 @@ function ProfileWallHeader({ onRefresh, onEditClick }: ProfileWallHeaderProps): 
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Users className="w-4 h-4 text-archon-blue" />
+        <Users className="w-4 h-4 text-pinnacle-navy" />
         <span className={AT.sectionTitle}>Muro Social</span>
       </div>
       <ProfileHeaderActions onRefresh={onRefresh} onEditClick={onEditClick} />

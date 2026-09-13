@@ -46,19 +46,19 @@ function DirectoryFilterHeader({
   return (
     <form data-testid="directory-search-form" onSubmit={onSearch} className="flex gap-2">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#0f2a44]/30" />
         <input
           data-testid="directory-search-input"
           value={q}
           onChange={(e): void => onQChange(e.target.value)}
           placeholder="Buscar taller o nombre…"
-          className="w-full pl-9 pr-3 py-2 text-archon-sm text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0f2a44]/30 placeholder:text-slate-300"
+          className="archon-input pl-9"
         />
       </div>
       <button
         type="submit"
         data-testid="directory-search-btn"
-        className="flex items-center gap-1.5 px-3 py-2 bg-[#0f2a44]/10 hover:bg-[#0f2a44]/20 text-[#0f2a44] text-archon-xs font-black uppercase tracking-widest rounded-lg transition-all"
+        className="btn-sentinel-sky-static text-xs"
       >
         Buscar
       </button>
@@ -73,7 +73,7 @@ function WorkshopCardHeader({ taller }: { readonly taller: TallerEntry }): React
       <div className="flex flex-col gap-0.5">
         <span className={AT.sectionTitle}>{taller.label}</span>
         {taller.razonSocial && (
-          <span className="text-archon-xs text-slate-400 uppercase tracking-widest">
+          <span className="text-archon-xs text-[#0f2a44]/40 uppercase tracking-widest">
             {taller.razonSocial}
           </span>
         )}
@@ -92,7 +92,7 @@ function WorkshopCardHeader({ taller }: { readonly taller: TallerEntry }): React
 function WorkshopContactRow({ taller }: { readonly taller: TallerEntry }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between gap-2 mt-1">
-      <div className="flex items-center gap-3 text-slate-400">
+      <div className="flex items-center gap-3 text-[#0f2a44]/40">
         {taller.telefono && (
           <div className="flex items-center gap-1">
             <Phone className="w-3 h-3" />
@@ -124,7 +124,7 @@ function WorkshopCardItem({ taller }: { readonly taller: TallerEntry }): React.J
   return (
     <div
       data-testid={`taller-card-${taller.id}`}
-      className="flex flex-col gap-2 p-4 bg-white border border-[#0f2a44]/10 rounded-xl hover:shadow-sm transition-shadow"
+      className="flex flex-col gap-2 p-4 bg-white border border-[#0f2a44]/10 rounded-[4px] hover:shadow-sm transition-shadow"
     >
       <WorkshopCardHeader taller={taller} />
 
@@ -161,7 +161,7 @@ function DirectoryResults({
   if (isLoading) {
     return (
       <div data-testid="directory-loading" className="flex justify-center py-12">
-        <div className="w-5 h-5 border-2 border-archon-blue border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-pinnacle-navy border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -169,7 +169,7 @@ function DirectoryResults({
     return (
       <div
         data-testid="directory-error"
-        className="flex items-center gap-2 text-red-400 text-archon-sm font-black"
+        className="flex items-center gap-2 text-red-600 text-archon-sm font-black"
       >
         <AlertCircle className="w-4 h-4" />
         {error}
@@ -181,7 +181,7 @@ function DirectoryResults({
       {talleres.length === 0 && (
         <p
           data-testid="directory-empty"
-          className="text-archon-xs text-slate-400 uppercase tracking-widest text-center py-10"
+          className="text-archon-xs text-[#0f2a44]/40 uppercase tracking-widest text-center py-10"
         >
           Sin resultados
         </p>

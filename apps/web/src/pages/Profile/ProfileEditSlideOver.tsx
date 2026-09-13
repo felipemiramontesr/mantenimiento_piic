@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Mail, Save, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
+import ArchonField from '../../components/ArchonField';
 
 interface ProfileEditSlideOverProps {
   isOpen: boolean;
@@ -32,17 +33,15 @@ interface ProfileSlideOverHeaderProps {
 /** Cabecera con título y botón de cierre (FC163 F1B-1, split Alfa 219_AN). */
 const ProfileSlideOverHeader: React.FC<ProfileSlideOverHeaderProps> = ({ onClose }) => (
   <div className="flex items-center justify-between px-6 py-5 border-b border-[#0f2a44]/10">
-    <div className="flex items-center gap-2">
-      <User className="w-4 h-4 text-[#0f2a44]/50" />
-      <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44]/50">
-        Editar Perfil
-      </span>
+    <div className="card-sovereign-header !mb-0">
+      <User size={22} className="text-pinnacle-navy" />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">Editar Perfil</h3>
     </div>
     <button
       type="button"
       onClick={onClose}
       data-testid="profile-edit-close"
-      className="text-slate-400 hover:text-[#0f2a44] transition-colors"
+      className="text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors"
     >
       <X className="w-4 h-4" />
     </button>
@@ -55,19 +54,15 @@ interface ProfileUsernameFieldProps {
 
 /** Campo de username inalterable (FC163 F1B-1, split Alfa 219_AN — sub-split de ProfileEditForm). */
 const ProfileUsernameField: React.FC<ProfileUsernameFieldProps> = ({ username }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-archon-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-      <User className="w-3 h-3" />
-      Nombre de usuario (Inalterable)
-    </label>
+  <ArchonField label="Nombre de usuario (Inalterable)" icon={User}>
     <input
       data-testid="profile-edit-username"
       type="text"
       disabled
       value={username}
-      className="px-3 py-2 text-archon-md text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg opacity-50 cursor-not-allowed"
+      className="archon-input opacity-50 cursor-not-allowed"
     />
-  </div>
+  </ArchonField>
 );
 
 interface ProfileEmailFieldProps {
@@ -77,19 +72,15 @@ interface ProfileEmailFieldProps {
 
 /** Campo de correo editable (FC163 F1B-1, split Alfa 219_AN — sub-split de ProfileEditForm). */
 const ProfileEmailField: React.FC<ProfileEmailFieldProps> = ({ email, setEmail }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-archon-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-      <Mail className="w-3 h-3" />
-      Correo electrónico
-    </label>
+  <ArchonField label="Correo electrónico" icon={Mail}>
     <input
       data-testid="profile-edit-email"
       type="email"
       value={email}
       onChange={(e): void => setEmail(e.target.value)}
-      className="px-3 py-2 text-archon-md text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0f2a44]/30"
+      className="archon-input"
     />
-  </div>
+  </ArchonField>
 );
 
 interface ProfileFormStatusProps {
@@ -101,12 +92,12 @@ interface ProfileFormStatusProps {
 const ProfileFormStatus: React.FC<ProfileFormStatusProps> = ({ error, success }) => (
   <>
     {error && (
-      <p data-testid="profile-edit-error" className="text-red-500 text-archon-sm font-black">
+      <p data-testid="profile-edit-error" className="text-red-600 text-archon-sm font-black">
         {error}
       </p>
     )}
     {success && (
-      <p data-testid="profile-edit-success" className="text-green-600 text-archon-sm font-black">
+      <p data-testid="profile-edit-success" className="text-emerald-600 text-archon-sm font-black">
         Perfil actualizado correctamente.
       </p>
     )}
@@ -124,7 +115,7 @@ const ProfileFormSaveButton: React.FC<ProfileFormSaveButtonProps> = ({ isSaving 
       type="submit"
       data-testid="profile-edit-save"
       disabled={isSaving}
-      className="flex items-center gap-1.5 px-4 py-2 bg-[#0f2a44] text-white text-archon-sm font-black uppercase tracking-widest rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      className="btn-sentinel-emerald text-xs"
     >
       {isSaving ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
