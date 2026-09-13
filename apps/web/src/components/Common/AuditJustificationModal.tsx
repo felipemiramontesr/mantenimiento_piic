@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare } from 'lucide-react';
 import ArchonModal from '../UI/ArchonModal';
+import ArchonField from '../ArchonField';
 
 interface AuditJustificationModalProps {
   readonly isOpen: boolean;
@@ -19,15 +21,15 @@ interface ModalHeaderCopyProps {
 function ModalHeaderCopy({ title, isDelete }: ModalHeaderCopyProps): React.JSX.Element {
   return (
     <div>
-      <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-        <span className={isDelete ? 'text-red-500' : 'text-blue-500'}>
+      <h3 className="text-xl font-bold text-[#0f2a44] mb-3 flex items-center gap-2">
+        <span className={isDelete ? 'text-red-600' : 'text-blue-600'}>
           {isDelete ? '🚨 Confirmar Eliminación' : '📝 Justificar Cambio'}
         </span>
       </h3>
-      <p className="text-gray-400 text-sm mb-6">
+      <p className="text-[#0f2a44]/60 text-sm mb-6">
         {title}
         <br />
-        <span className="text-xs italic text-gray-500 block mt-1.5">
+        <span className="text-xs italic text-[#0f2a44]/40 block mt-1.5">
           * Esta acción quedará registrada permanentemente en la Bóveda de Auditoría.
         </span>
       </p>
@@ -51,26 +53,18 @@ function ReasonField({ reason, onReasonChange }: ReasonFieldProps): React.JSX.El
   }, []);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label
-          htmlFor="audit-justification-reason"
-          className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
-        >
-          Motivo del Cambio / Justificación
-        </label>
-        <textarea
-          id="audit-justification-reason"
-          ref={textareaRef}
-          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors min-h-[220px] resize-none"
-          placeholder="Ej: Corrección de error en kilometraje inicial..."
-          value={reason}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
-            onReasonChange(e.target.value)
-          }
-        />
-      </div>
-    </div>
+    <ArchonField label="Motivo del Cambio / Justificación" icon={MessageSquare}>
+      <textarea
+        id="audit-justification-reason"
+        ref={textareaRef}
+        className="w-full bg-[#0f2a44]/5 border-0 border-b-2 border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white rounded-[4px] p-3 text-[#0f2a44] text-sm outline-none transition-all min-h-[220px] resize-none"
+        placeholder="Ej: Corrección de error en kilometraje inicial..."
+        value={reason}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
+          onReasonChange(e.target.value)
+        }
+      />
+    </ArchonField>
   );
 }
 

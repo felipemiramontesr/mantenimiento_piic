@@ -159,7 +159,7 @@
   }
 
   .archon-modal-container {
-    @apply bg-[#0A0F1E] border border-white/10 rounded-xl w-full shadow-2xl overflow-hidden;
+    @apply bg-white border-t-4 border-solid border-pinnacle-navy rounded-[4px] w-full shadow-2xl overflow-hidden;
     animation: archon-modal-in 200ms ease-out both;
   }
 

@@ -103,7 +103,7 @@ function AuditFilterBar({ filters, setFilters, onApply }: AuditFilterBarProps): 
       <button
         type="button"
         onClick={onApply}
-        className="col-span-2 lg:col-span-4 w-full h-11 flex items-center justify-center rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all cursor-pointer"
+        className="btn-sentinel-sky col-span-2 lg:col-span-4 w-full"
         data-testid="filter-apply"
       >
         Aplicar Filtros

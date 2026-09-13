@@ -179,12 +179,12 @@ function ZeroStateBlockersList({
   return (
     <div
       data-testid="destroy-universe-blockers"
-      className="bg-red-500/10 border border-red-500/40 rounded-lg p-4 space-y-1"
+      className="bg-red-50 border border-red-200 rounded-[4px] p-4 space-y-1"
     >
-      <p className="text-red-400 text-sm font-bold flex items-center gap-2">
+      <p className="text-red-700 text-sm font-bold flex items-center gap-2">
         <AlertTriangle size={14} /> El Universo no está vacío:
       </p>
-      <ul className="text-red-300 text-sm list-disc list-inside">
+      <ul className="text-red-600 text-sm list-disc list-inside">
         {Object.entries(blockers).map(([bucket, count]) => (
           <li key={bucket}>
             {BUCKET_LABELS[bucket] ?? bucket}: {count}
@@ -213,20 +213,24 @@ function DestroyUniverseFields({
 }: DestroyUniverseFieldsProps): React.JSX.Element {
   return (
     <>
-      <input
-        value={typedLabel}
-        onChange={(e): void => onTypedLabel(e.target.value)}
-        placeholder={expectedLabel}
-        data-testid="destroy-universe-confirm-label"
-        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm"
-      />
-      <textarea
-        value={reason}
-        onChange={(e): void => onReason(e.target.value)}
-        placeholder="Razón (opcional)"
-        data-testid="destroy-universe-reason"
-        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm min-h-[80px] resize-none"
-      />
+      <ArchonField label="Nombre del Universo" icon={Globe}>
+        <input
+          value={typedLabel}
+          onChange={(e): void => onTypedLabel(e.target.value)}
+          placeholder={expectedLabel}
+          data-testid="destroy-universe-confirm-label"
+          className="archon-input"
+        />
+      </ArchonField>
+      <ArchonField label="Razón (opcional)" icon={AlertTriangle}>
+        <textarea
+          value={reason}
+          onChange={(e): void => onReason(e.target.value)}
+          placeholder="Razón (opcional)"
+          data-testid="destroy-universe-reason"
+          className="w-full bg-[#0f2a44]/5 border-0 border-b-2 border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white rounded-[4px] p-3 text-[#0f2a44] text-sm outline-none transition-all min-h-[80px] resize-none"
+        />
+      </ArchonField>
     </>
   );
 }
@@ -345,12 +349,12 @@ function DestroyUniverseModalContent({
       ariaLabel="Confirmar destrucción de Universo"
     >
       <div className="p-8 space-y-4">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="text-red-500">🚨 Destruir Universo</span>
+        <h3 className="text-xl font-bold text-[#0f2a44] flex items-center gap-2">
+          <span className="text-red-600">🚨 Destruir Universo</span>
         </h3>
-        <p className="text-gray-400 text-sm">
+        <p className="text-[#0f2a44]/60 text-sm">
           Esta acción es irreversible. Escribe{' '}
-          <strong className="text-white">{universe.label}</strong> para confirmar.
+          <strong className="text-[#0f2a44]">{universe.label}</strong> para confirmar.
         </p>
 
         <ZeroStateBlockersList blockers={blockers} />

@@ -27,15 +27,15 @@ function NhtsaModalHeader({
 }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between">
-      <h3 className="text-xl font-bold text-white flex items-center gap-2">
-        <Globe size={18} className="text-sky-400" />
+      <h3 className="text-xl font-bold text-[#0f2a44] flex items-center gap-2">
+        <Globe size={18} className="text-sky-600" />
         Recalls NHTSA — {make} {model} {year}
       </h3>
       <button
         type="button"
         onClick={onClose}
         aria-label="Cerrar"
-        className="text-gray-400 hover:text-white transition-colors"
+        className="text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors"
       >
         <XCircle size={20} />
       </button>
@@ -51,7 +51,7 @@ function NhtsaModalTabs({
   readonly onTabChange: (tab: 'nhtsa' | 'patterns') => void;
 }): React.JSX.Element {
   return (
-    <div className="flex gap-1 border-b border-white/10">
+    <div className="flex gap-1 border-b border-slate-200">
       {(['nhtsa', 'patterns'] as const).map((tab) => (
         <button
           type="button"
@@ -59,8 +59,8 @@ function NhtsaModalTabs({
           onClick={(): void => onTabChange(tab)}
           className={`px-4 py-2 text-archon-sm font-black uppercase tracking-widest transition-colors rounded-t-[4px] ${
             activeTab === tab
-              ? 'text-sky-400 border-b-2 border-sky-400'
-              : 'text-gray-500 hover:text-gray-300'
+              ? 'text-sky-600 border-b-2 border-sky-600'
+              : 'text-[#0f2a44]/40 hover:text-[#0f2a44]'
           }`}
         >
           {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones de Falla'}
@@ -80,20 +80,20 @@ function NhtsaResultRow({
   readonly onImport: (r: NhtsaRecall) => void;
 }): React.JSX.Element {
   return (
-    <div className="flex items-start justify-between gap-3 p-3 bg-white/5 rounded-[4px]">
+    <div className="flex items-start justify-between gap-3 p-3 bg-[#0f2a44]/5 rounded-[4px]">
       <div className="flex-1 min-w-0">
-        <p className="text-archon-xs font-black text-sky-300 uppercase tracking-widest">
+        <p className="text-archon-xs font-black text-sky-600 uppercase tracking-widest">
           {r.campaignNumber}
         </p>
-        <p className="text-sm text-white mt-0.5 line-clamp-2">{r.subject}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{r.component}</p>
+        <p className="text-sm text-[#0f2a44] mt-0.5 line-clamp-2">{r.subject}</p>
+        <p className="text-xs text-[#0f2a44]/50 mt-0.5">{r.component}</p>
       </div>
       <button
         type="button"
         title={`Importar recall ${r.campaignNumber}`}
         onClick={(): void => onImport(r)}
         disabled={importingCode === r.campaignNumber}
-        className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-xs font-black uppercase tracking-widest"
+        className="btn-sentinel-sky flex-shrink-0 text-[10px]"
       >
         {importingCode === r.campaignNumber ? '…' : 'Importar'}
       </button>
@@ -116,10 +116,10 @@ function NhtsaResultsList({
 }): React.JSX.Element {
   return (
     <div>
-      {loading && <p className="text-gray-400 text-sm text-center py-4">Consultando NHTSA…</p>}
-      {error && <p className="text-red-400 text-sm text-center py-4">{error}</p>}
+      {loading && <p className="text-[#0f2a44]/50 text-sm text-center py-4">Consultando NHTSA…</p>}
+      {error && <p className="text-red-600 text-sm text-center py-4">{error}</p>}
       {!loading && !error && results.length === 0 && (
-        <p className="text-gray-400 text-sm text-center py-4">
+        <p className="text-[#0f2a44]/50 text-sm text-center py-4">
           No se encontraron recalls para este modelo/año.
         </p>
       )}
