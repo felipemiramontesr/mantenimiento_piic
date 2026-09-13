@@ -6,6 +6,9 @@ import ArchonAppTile from './ArchonAppTile';
 /**
  * FC172 F1 — System_Settings_App_Launcher_Tiles.
  * Cobertura del primitivo `ArchonAppTile`: estados, accesibilidad, clicks y badges.
+ * Nota S6819 (fix SonarCloud): el tile es un `<button>` nativo, por lo que los
+ * estados no-interactivos se expresan como `disabled` (el rol "button" sigue
+ * presente en el árbol de accesibilidad) en vez de la ausencia del rol.
  */
 describe('ArchonAppTile', () => {
   it('Scenario 1 — status="active" con onClick: click ejecuta la acción', () => {
@@ -20,47 +23,13 @@ describe('ArchonAppTile', () => {
         onClick={onClick}
       />
     );
-    fireEvent.click(screen.getByRole('button', { name: /Consola Forense/i }));
+    const tile = screen.getByRole('button', { name: /Consola Forense/i });
+    expect(tile).toBeEnabled();
+    fireEvent.click(tile);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('responde a Enter y Espacio en teclado cuando es interactivo', () => {
-    const onClick = vi.fn();
-    render(
-      <ArchonAppTile
-        id="doctor"
-        title="Consola Forense"
-        description="Diagnóstico en vivo"
-        icon={Wrench}
-        status="active"
-        onClick={onClick}
-      />
-    );
-    const tile = screen.getByRole('button', { name: /Consola Forense/i });
-    fireEvent.keyDown(tile, { key: 'Enter' });
-    fireEvent.keyDown(tile, { key: ' ' });
-    expect(onClick).toHaveBeenCalledTimes(2);
-  });
-
-  it('un tercer key (ej. Escape) no dispara onClick', () => {
-    const onClick = vi.fn();
-    render(
-      <ArchonAppTile
-        id="doctor"
-        title="Consola Forense"
-        description="Diagnóstico en vivo"
-        icon={Wrench}
-        status="active"
-        onClick={onClick}
-      />
-    );
-    fireEvent.keyDown(screen.getByRole('button', { name: /Consola Forense/i }), {
-      key: 'Escape',
-    });
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
-  it('Scenario 2 — status="coming_soon": muestra el badge "Próximamente" y NO es interactivo', () => {
+  it('Scenario 2 — status="coming_soon": muestra el badge "Próximamente" y el botón queda deshabilitado', () => {
     const onClick = vi.fn();
     render(
       <ArchonAppTile
@@ -73,12 +42,13 @@ describe('ArchonAppTile', () => {
       />
     );
     expect(screen.getByText('Próximamente')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).toBeNull();
-    fireEvent.click(screen.getByTestId('app-tile-routes'));
+    const tile = screen.getByTestId('app-tile-routes');
+    expect(tile).toBeDisabled();
+    fireEvent.click(tile);
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('status="disabled" muestra el badge "Deshabilitado" y NO es interactivo aunque tenga onClick', () => {
+  it('status="disabled" muestra el badge "Deshabilitado" y el botón queda deshabilitado aunque tenga onClick', () => {
     const onClick = vi.fn();
     render(
       <ArchonAppTile
@@ -91,12 +61,12 @@ describe('ArchonAppTile', () => {
       />
     );
     expect(screen.getByText('Deshabilitado')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByRole('button', { name: /X/i })).toBeDisabled();
   });
 
   it('status="active" SIN onClick tampoco es interactivo (no hay acción que ejecutar)', () => {
     render(<ArchonAppTile id="x" title="X" description="Y" icon={Wrench} status="active" />);
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByRole('button', { name: /X/i })).toBeDisabled();
   });
 
   it('un badge explícito sobrescribe el badge por defecto del status', () => {

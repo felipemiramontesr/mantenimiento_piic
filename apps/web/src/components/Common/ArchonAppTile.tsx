@@ -48,7 +48,14 @@ function TileBadge({ text }: TileBadgeProps): React.JSX.Element {
   );
 }
 
-/** Tarjeta-tile de capacidad/app, estilo Odoo App-Launcher (FC172). */
+/**
+ * Tarjeta-tile de capacidad/app, estilo Odoo App-Launcher (FC172).
+ * S6819 (SonarCloud) — usa `<button>` nativo en vez de `role="button"` sobre
+ * un `<div>`: un `<button disabled>` ya es focuseable-cero, teclado-inerte y
+ * 0-click de forma nativa, así que no hace falta `tabIndex`/`aria-disabled`/
+ * manejo manual de Enter-Espacio — el navegador lo hace gratis y de forma
+ * más accesible.
+ */
 export default function ArchonAppTile({
   id,
   title,
@@ -62,23 +69,13 @@ export default function ArchonAppTile({
   const interactive = status === 'active' && Boolean(onClick);
   const resolvedBadge = badge ?? DEFAULT_BADGE[status];
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (!interactive) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick?.();
-    }
-  };
-
   return (
-    <div
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? onClick : undefined}
-      onKeyDown={handleKeyDown}
+    <button
+      type="button"
+      disabled={!interactive}
+      onClick={onClick}
       className={tileClassName(interactive)}
       data-testid={dataTestId ?? `app-tile-${id}`}
-      aria-disabled={!interactive}
     >
       <div className="w-10 h-10 rounded-[4px] bg-pinnacle-navy/5 flex items-center justify-center transition-colors group-hover:bg-pinnacle-yellow/10">
         <Icon size={20} className="text-pinnacle-navy" />
@@ -88,6 +85,6 @@ export default function ArchonAppTile({
         <p className="text-xs text-pinnacle-navy/60">{description}</p>
       </div>
       {resolvedBadge && <TileBadge text={resolvedBadge} />}
-    </div>
+    </button>
   );
 }
