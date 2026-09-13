@@ -19,7 +19,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[4px] shadow-2xl w-full max-w-md mx-4 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-white border-t-4 border-solid border-pinnacle-navy rounded-[4px] shadow-2xl w-full max-w-md mx-4 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
         <EgressModalHeader onClose={onClose} />
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">

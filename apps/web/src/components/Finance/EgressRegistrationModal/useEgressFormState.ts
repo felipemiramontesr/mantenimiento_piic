@@ -26,11 +26,7 @@ export function useEgressFormState(): UseEgressFormStateResult {
   };
 
   const inputCls = (field: string): string =>
-    `w-full text-archon-label font-bold text-pinnacle-navy bg-white border rounded-[4px] px-3 py-2.5 focus:outline-none transition-colors duration-200 ${
-      fieldError?.field === field
-        ? 'border-sentinel-red focus:border-sentinel-red'
-        : 'border-slate-200 focus:border-pinnacle-navy/30'
-    }`;
+    `archon-input ${fieldError?.field === field ? '!border-b-red-500' : ''}`;
 
   return { form, setForm, fieldError, setFieldError, handleChange, inputCls };
 }

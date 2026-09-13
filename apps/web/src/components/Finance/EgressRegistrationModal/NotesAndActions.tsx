@@ -1,5 +1,7 @@
 import React from 'react';
+import { MessageSquare } from 'lucide-react';
 import { EgressFormData, FieldError } from './types';
+import ArchonField from '../../ArchonField';
 
 export interface NotesAndActionsProps {
   form: EgressFormData;
@@ -22,13 +24,7 @@ export const NotesAndActions: React.FC<NotesAndActionsProps> = ({
   onClose,
 }) => (
   <>
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor="egress-notes"
-        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-      >
-        Notas
-      </label>
+    <ArchonField label="Notas" icon={MessageSquare}>
       <textarea
         id="egress-notes"
         name="notes"
@@ -39,10 +35,10 @@ export const NotesAndActions: React.FC<NotesAndActionsProps> = ({
         maxLength={1000}
         className={`${inputCls('notes')} resize-none`}
       />
-    </div>
+    </ArchonField>
 
     {fieldError && !['unitId', 'category', 'amount'].includes(fieldError.field) && (
-      <p className="text-archon-md text-sentinel-red font-bold bg-red-50 px-3 py-2 rounded-[4px]">
+      <p className="text-archon-md text-red-700 font-bold bg-red-50 px-3 py-2 rounded-[4px]">
         {fieldError.message}
       </p>
     )}
@@ -51,15 +47,11 @@ export const NotesAndActions: React.FC<NotesAndActionsProps> = ({
       <button
         type="button"
         onClick={onClose}
-        className="flex-1 h-10 text-archon-base font-black uppercase tracking-widest text-pinnacle-navy/60 bg-slate-100 hover:bg-slate-200 rounded-[4px] transition-all duration-200"
+        className="inline-flex flex-1 items-center justify-center h-11 text-xs font-black uppercase tracking-widest text-pinnacle-navy/50 hover:text-pinnacle-navy"
       >
         Cancelar
       </button>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="flex-1 h-10 text-archon-base font-black uppercase tracking-widest text-white bg-pinnacle-navy hover:brightness-110 rounded-[4px] transition-all duration-200 disabled:opacity-50"
-      >
+      <button type="submit" disabled={submitting} className="btn-sentinel-emerald flex-1 text-xs">
         {submitting ? 'Registrando...' : 'Registrar Egreso'}
       </button>
     </div>

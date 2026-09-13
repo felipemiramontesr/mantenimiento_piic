@@ -1,7 +1,9 @@
 import React from 'react';
+import { Truck, Tag } from 'lucide-react';
 import { CATEGORY_LABELS } from '../../../types/finance';
 import { FleetUnit } from '../../../types/fleet';
 import { ALL_CATEGORIES, EgressFormData, FieldError } from './types';
+import ArchonField from '../../ArchonField';
 
 type EgressChangeHandler = (
   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -23,13 +25,7 @@ const UnitField: React.FC<UnitFieldProps> = ({
   handleChange,
   inputCls,
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <label
-      htmlFor="egress-unit-id"
-      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-    >
-      Unidad *
-    </label>
+  <ArchonField label="Unidad" icon={Truck} required>
     <select
       id="egress-unit-id"
       name="unitId"
@@ -45,9 +41,9 @@ const UnitField: React.FC<UnitFieldProps> = ({
       ))}
     </select>
     {fieldError?.field === 'unitId' && (
-      <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
+      <p className="text-archon-base text-red-600 font-bold">{fieldError.message}</p>
     )}
-  </div>
+  </ArchonField>
 );
 
 interface CategoryFieldProps {
@@ -64,13 +60,7 @@ const CategoryField: React.FC<CategoryFieldProps> = ({
   handleChange,
   inputCls,
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <label
-      htmlFor="egress-category"
-      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-    >
-      Categoría *
-    </label>
+  <ArchonField label="Categoría" icon={Tag} required>
     <select
       id="egress-category"
       name="category"
@@ -86,9 +76,9 @@ const CategoryField: React.FC<CategoryFieldProps> = ({
       ))}
     </select>
     {fieldError?.field === 'category' && (
-      <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
+      <p className="text-archon-base text-red-600 font-bold">{fieldError.message}</p>
     )}
-  </div>
+  </ArchonField>
 );
 
 export interface UnitCategoryFieldsProps {

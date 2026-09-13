@@ -1,5 +1,7 @@
 import React from 'react';
+import { DollarSign, Building2, FileText } from 'lucide-react';
 import { EgressFormData, FieldError } from './types';
+import ArchonField from '../../ArchonField';
 
 type EgressChangeHandler = (
   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -26,13 +28,7 @@ const AmountField: React.FC<AmountFieldProps> = ({
   handleChange,
   inputCls,
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <label
-      htmlFor="egress-amount"
-      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-    >
-      Monto (MXN) *
-    </label>
+  <ArchonField label="Monto (MXN)" icon={DollarSign} required>
     <input
       id="egress-amount"
       type="number"
@@ -45,9 +41,9 @@ const AmountField: React.FC<AmountFieldProps> = ({
       className={inputCls('amount')}
     />
     {fieldError?.field === 'amount' && (
-      <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
+      <p className="text-archon-base text-red-600 font-bold">{fieldError.message}</p>
     )}
-  </div>
+  </ArchonField>
 );
 
 interface VendorInvoiceFieldsProps {
@@ -65,13 +61,7 @@ const VendorInvoiceFields: React.FC<VendorInvoiceFieldsProps> = ({
   inputCls,
 }) => (
   <div className="grid grid-cols-2 gap-3">
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor="egress-vendor"
-        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-      >
-        Proveedor
-      </label>
+    <ArchonField label="Proveedor" icon={Building2}>
       <input
         id="egress-vendor"
         type="text"
@@ -82,14 +72,8 @@ const VendorInvoiceFields: React.FC<VendorInvoiceFieldsProps> = ({
         maxLength={150}
         className={inputCls('vendor')}
       />
-    </div>
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor="egress-invoice-ref"
-        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
-      >
-        No. Factura
-      </label>
+    </ArchonField>
+    <ArchonField label="No. Factura" icon={FileText}>
       <input
         id="egress-invoice-ref"
         type="text"
@@ -100,7 +84,7 @@ const VendorInvoiceFields: React.FC<VendorInvoiceFieldsProps> = ({
         maxLength={80}
         className={inputCls('invoiceRef')}
       />
-    </div>
+    </ArchonField>
   </div>
 );
 
