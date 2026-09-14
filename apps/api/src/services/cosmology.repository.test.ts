@@ -25,6 +25,11 @@ import {
   countZeroStateBuckets,
   destroyUniverseRow,
   listUniverses,
+  findMuCosmonautRoleId,
+  usernameExists,
+  insertSeedUser,
+  insertTenantUserMembership,
+  insertCosmonautRoleAssignment,
 } from './cosmology.repository';
 
 /**
@@ -301,5 +306,65 @@ describe('Universe_Create_And_Destroy (Fase 2)', () => {
     const rows = await listUniverses(mockExecutor);
     expect(rows).toHaveLength(1);
     expect(rows[0].universeTypeCode).toBe('FMS');
+  });
+});
+
+describe('Universe_Seed_Admin_Endpoint (Fase 2b — FC176 F2)', () => {
+  it('findMuCosmonautRoleId returns the R_global MU role id when migración 170 has run', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[{ id: 9 }], []]);
+    expect(await findMuCosmonautRoleId(mockExecutor)).toBe(9);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.stringContaining("tenant_id IS NULL AND name = 'MU'"),
+      []
+    );
+  });
+
+  it('findMuCosmonautRoleId returns null — fail-closed signal when the seed is absent', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[], []]);
+    expect(await findMuCosmonautRoleId(mockExecutor)).toBeNull();
+  });
+
+  it('usernameExists returns true when a row matches', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[{ id: 1 }], []]);
+    expect(await usernameExists('taken@piic.mx', mockExecutor)).toBe(true);
+  });
+
+  it('usernameExists returns false when no row matches', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[], []]);
+    expect(await usernameExists('free@piic.mx', mockExecutor)).toBe(false);
+  });
+
+  it('insertSeedUser issues the INSERT and returns the new users.id', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ insertId: 77 }, []]);
+    const id = await insertSeedUser(
+      'mu@piic.mx',
+      'MU Seed',
+      'enc_mu@piic.mx',
+      'argon2hash',
+      mockExecutor
+    );
+    expect(id).toBe(77);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO users'),
+      ['mu@piic.mx', 'MU Seed', 'enc_mu@piic.mx', 'argon2hash']
+    );
+  });
+
+  it('insertTenantUserMembership issues the (user_id, owner_id) INSERT', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ affectedRows: 1 }, []]);
+    await insertTenantUserMembership(77, 900, mockExecutor);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO tenant_user_memberships'),
+      [77, 900]
+    );
+  });
+
+  it('insertCosmonautRoleAssignment issues the RBAC grant scoped to the Universo', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ affectedRows: 1 }, []]);
+    await insertCosmonautRoleAssignment(77, 9, 900, 1, mockExecutor);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO cosmonaut_role_assignments'),
+      [77, 9, 900, 1]
+    );
   });
 });

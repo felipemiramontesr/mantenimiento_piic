@@ -50,10 +50,19 @@ const superclusterParamSchema = tenantIdParamSchema.extend({ superclusterCode: z
 const clusterParamSchema = tenantIdParamSchema.extend({ clusterCode: z.string().min(1) });
 const addSuperclusterBodySchema = z.object({ superclusterCode: z.string().min(1) });
 const addClusterBodySchema = z.object({ clusterCode: z.string().min(1) });
+/** FC176 F2 — optional first-admin seed. Email capped at 100 (not the users.email column's
+ *  255) so it also fits `users.username` — this endpoint sets username = email (Scenario 2,
+ *  `login()`'s existing email-fallback already accepts either as the identifier). */
+const initialAdminBodySchema = z.object({
+  fullName: z.string().min(1).max(255),
+  email: z.string().email().max(100),
+  password: z.string().min(8).max(255),
+});
 const createUniverseBodySchema = z.object({
   label: z.string().min(1).max(255),
   universeTypeCode: z.string().min(1),
   ownerTypeCode: z.string().min(1),
+  initialAdmin: initialAdminBodySchema.optional(),
 });
 /** FC161 R4 — optional, backward-compatible: absent body / no `reason` keeps prior behavior. */
 const destroyUniverseBodySchema = z.object({ reason: z.string().min(5).optional() }).optional();
@@ -174,7 +183,8 @@ async function handleCreateUniverse(
     body.data.label,
     body.data.universeTypeCode,
     body.data.ownerTypeCode,
-    callerId(request)
+    callerId(request),
+    body.data.initialAdmin
   );
   return sendCreateUniverseResult(reply, result);
 }

@@ -365,6 +365,74 @@ export async function destroyUniverseRow(tenantId: number, executor: Executor = 
   );
 }
 
+// ─── Fase 2b — Universe_Seed_Admin_Endpoint (FC176 F2) ─────────────────────
+
+export interface CosmonautRoleIdRow extends RowDataPacket {
+  id: number;
+}
+
+/** R_global 'MU' role lookup (seeded by migración 170) — null means that seed hasn't run in
+ *  this environment, the fail-closed signal FC176's Cond.R-176 R1 (Bravo) requires. */
+export async function findMuCosmonautRoleId(executor: Executor = db): Promise<number | null> {
+  const [rows] = await executor.execute<CosmonautRoleIdRow[]>(
+    "SELECT id FROM cosmonaut_roles WHERE tenant_id IS NULL AND name = 'MU' LIMIT 1",
+    []
+  );
+  return rows.length > 0 ? rows[0].id : null;
+}
+
+/** True if `username` is already taken — guards the seed INSERT before opening its TX. */
+export async function usernameExists(username: string, executor: Executor = db): Promise<boolean> {
+  const [rows] = await executor.execute<RowDataPacket[]>(
+    'SELECT id FROM users WHERE username = ?',
+    [username]
+  );
+  return rows.length > 0;
+}
+
+/** F2-I6(a) — inserts the seed admin's `users` row. Password/email arrive already hashed
+ *  (argon2)/encrypted (AES) by the caller — Cero Plaintext invariant, this layer is zero-crypto. */
+export async function insertSeedUser(
+  username: string,
+  fullName: string,
+  encryptedEmail: string,
+  passwordHash: string,
+  executor: Executor = db
+): Promise<number> {
+  const [result] = await executor.execute<ResultSetHeader>(
+    'INSERT INTO users (username, full_name, email, password_hash) VALUES (?, ?, ?, ?)',
+    [username, fullName, encryptedEmail, passwordHash]
+  );
+  return result.insertId;
+}
+
+/** F2-I6(b) — formal membership row; `cosmonaut_type` is set right after by
+ *  `designateMasterOfUniverse` (FC062 F6 `universeBootstrap.ts`), not here. */
+export async function insertTenantUserMembership(
+  userId: number,
+  tenantId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'INSERT INTO tenant_user_memberships (user_id, owner_id) VALUES (?, ?)',
+    [userId, tenantId]
+  );
+}
+
+/** F2-I6(c) — grants the RBAC 'MU' role (never a sovereign role) scoped to this Universo. */
+export async function insertCosmonautRoleAssignment(
+  userId: number,
+  roleId: number,
+  tenantId: number,
+  assignedBy: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'INSERT INTO cosmonaut_role_assignments (user_id, role_id, tenant_id, assigned_by) VALUES (?, ?, ?, ?)',
+    [userId, roleId, tenantId, assignedBy]
+  );
+}
+
 export interface UniverseListRow extends RowDataPacket {
   id: number;
   label: string;

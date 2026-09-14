@@ -2,6 +2,12 @@ import { randomBytes } from 'node:crypto';
 import db from './db';
 import * as CosmologyRepository from './cosmology.repository';
 import { recordAuditLog } from './auditService';
+import {
+  prepareInitialAdminSeed,
+  seedInitialAdminInTx,
+  InitialAdminInput,
+  PreparedAdminSeed,
+} from './universeAdminSeed';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -245,12 +251,14 @@ async function validateUniverseCreateTypes(
   return { ok: true, universeTypeId: universeType.id, ownerTypeId: ownerType.id };
 }
 
-/** F2-I3 — the single TX: mint id → insert tenant → seed SC+Cúmulo blueprint. */
+/** F2-I3 — the single TX: mint id → insert tenant → seed SC+Cúmulo blueprint → (FC176 F2)
+ *  optionally seed the Universo's first admin, same TX (Cond.R-176 "MISMA TX que tenant"). */
 async function runCreateUniverseTransaction(
   label: string,
   universeTypeId: number,
   ownerTypeId: number,
-  callerId: number
+  callerId: number,
+  adminSeed?: PreparedAdminSeed
 ): Promise<number> {
   const connection = await db.getConnection();
   try {
@@ -271,6 +279,9 @@ async function runCreateUniverseTransaction(
       connection
     );
     await CosmologyRepository.seedClusterBlueprint(tenantId, callerId, connection);
+    if (adminSeed) {
+      await seedInitialAdminInTx(connection, tenantId, callerId, adminSeed);
+    }
     await connection.commit();
     return tenantId;
   } catch (e) {
@@ -281,26 +292,43 @@ async function runCreateUniverseTransaction(
   }
 }
 
-/** T5 — CREATE_UNIVERSE. Single TX: mint id → insert tenant → seed SC+Cúmulo blueprint → audit. */
+/** T5 — CREATE_UNIVERSE. Single TX: mint id → insert tenant → seed SC+Cúmulo blueprint →
+ *  (FC176 F2) optionally seed initial admin → audit. `initialAdmin` absent preserves FC160 F1
+ *  behavior exactly (Scenario "Ausente" of FC176's truth table). */
 export async function createUniverse(
   label: string,
   universeTypeCode: string,
   ownerTypeCode: string,
-  callerId: number
+  callerId: number,
+  initialAdmin?: InitialAdminInput
 ): Promise<CreateUniverseResult> {
   const types = await validateUniverseCreateTypes(universeTypeCode, ownerTypeCode);
   if (!('universeTypeId' in types)) return types;
+
+  let adminSeed: PreparedAdminSeed | undefined;
+  if (initialAdmin) {
+    const prepared = await prepareInitialAdminSeed(initialAdmin);
+    if (!('muRoleId' in prepared)) return prepared;
+    adminSeed = prepared;
+  }
+
   const tenantId = await runCreateUniverseTransaction(
     label,
     types.universeTypeId,
     types.ownerTypeId,
-    callerId
+    callerId,
+    adminSeed
   );
   await recordAuditLog({
     entity_type: 'universe',
     entity_id: String(tenantId),
     action: 'CREATE',
-    snapshot_after: { label, universeTypeCode, ownerTypeCode },
+    snapshot_after: {
+      label,
+      universeTypeCode,
+      ownerTypeCode,
+      initialAdminSeeded: Boolean(adminSeed),
+    },
     reason: 'CREATE_UNIVERSE (§24.5)',
     user_id: callerId,
   });
