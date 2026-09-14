@@ -4,11 +4,7 @@ import api from '../../../api/client';
 import ArchonModal from '../../../components/UI/ArchonModal';
 import ArchonField from '../../../components/ArchonField';
 import ArchonSelect from '../../../components/ArchonSelect';
-import {
-  InitialAdminSection,
-  useInitialAdminState,
-  InitialAdminPayload,
-} from './InitialAdminSection';
+import { LinkedUserSection, useLinkedUserState } from './LinkedUserSection';
 
 /**
  * FC161 F1 — extracted from `CosmologyModule.tsx` (Gate 1 max-lines:400):
@@ -107,18 +103,19 @@ function CreateUniverseHeader(): React.JSX.Element {
   );
 }
 
-/** FC176 F2's payload shape — `initialAdmin` omitted entirely when absent/incomplete. */
+/** FC177 F4 — `linkedUserId` omitted entirely when the toggle is off / nothing picked yet (same
+ *  optionality FC176 F2's `initialAdmin` had — Universo puede crearse sin vincular a nadie). */
 function buildCreateUniversePayload(
   label: string,
   universeTypeCode: string,
   ownerTypeCode: string,
-  adminPayload: InitialAdminPayload | null
+  linkedUserId: number | null
 ): Record<string, unknown> {
   return {
     label,
     universeTypeCode,
     ownerTypeCode,
-    ...(adminPayload ? { initialAdmin: adminPayload } : {}),
+    ...(linkedUserId !== null ? { linkedUserId } : {}),
   };
 }
 
@@ -150,15 +147,15 @@ function CreateUniverseSubmitFooter({
   );
 }
 
-/** Formulario de alta — T5 `POST /v1/cosmology/universes`, con semilla opcional del primer
- *  administrador del Universo (FC176 F2/F3, payload `initialAdmin`). */
+/** Formulario de alta — T5 `POST /v1/cosmology/universes`, con vinculación opcional de un usuario
+ *  pendiente como Administrador del Universo (FC177 F3/F4, payload `linkedUserId`). */
 export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): React.JSX.Element {
   const [label, setLabel] = useState('');
   const [universeTypeCode, setUniverseTypeCode] = useState(UNIVERSE_TYPE_OPTIONS[0].value);
   const [ownerTypeCode, setOwnerTypeCode] = useState(OWNER_TYPE_OPTIONS[0].value);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const admin = useInitialAdminState();
+  const linking = useLinkedUserState();
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -167,18 +164,18 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
     api
       .post(
         '/cosmology/universes',
-        buildCreateUniversePayload(label, universeTypeCode, ownerTypeCode, admin.payload)
+        buildCreateUniversePayload(label, universeTypeCode, ownerTypeCode, linking.linkedUserId)
       )
       .then(() => {
         setLabel('');
-        admin.reset();
+        linking.reset();
         onCreated();
       })
       .catch(() => setError('No se pudo crear el Universo. Intenta de nuevo.'))
       .finally(() => setSubmitting(false));
   };
 
-  const adminIncomplete = admin.props.includeAdmin && admin.payload === null;
+  const linkingIncomplete = linking.props.includeLink && linking.linkedUserId === null;
 
   return (
     <form
@@ -197,12 +194,12 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
         onOwnerTypeCode={setOwnerTypeCode}
       />
 
-      <InitialAdminSection {...admin.props} />
+      <LinkedUserSection {...linking.props} />
 
       <CreateUniverseSubmitFooter
         error={error}
         submitting={submitting}
-        disabled={submitting || label.trim().length === 0 || adminIncomplete}
+        disabled={submitting || label.trim().length === 0 || linkingIncomplete}
       />
     </form>
   );

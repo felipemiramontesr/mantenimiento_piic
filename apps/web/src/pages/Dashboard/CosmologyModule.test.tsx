@@ -30,6 +30,18 @@ const MOCK_UNIVERSES = [
   { id: 1, label: 'FMS Base', universeTypeCode: 'FMS', activeSuperclusters: 5, activeClusters: 1 },
 ];
 
+// FC177 F4 — candidate pool `LinkedUserSection` fetches from `/cosmology/pending-users`.
+const MOCK_PENDING_USERS = [
+  {
+    id: 501,
+    username: 'cliente.pendiente',
+    fullName: 'Juan Pérez',
+    email: 'juan@example.com',
+    rfc: 'ABC010101AB9',
+    razonSocial: 'Cliente Ejemplo SA de CV',
+  },
+];
+
 describe('CosmologyModule', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +52,12 @@ describe('CosmologyModule', () => {
       if (url === '/auth/refresh') throw new Error('no session');
       throw new Error(`unmocked: ${url}`);
     });
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: MOCK_UNIVERSES } });
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return { data: { success: true, data: MOCK_PENDING_USERS } };
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
   });
 
   it('COSMOLOGY-UI-ACCESS-1: no-Ω sees the access-denied fallback, no API call', async () => {
@@ -168,28 +185,28 @@ describe('CosmologyModule', () => {
     });
   });
 
-  it('FC176 F3: initialAdmin toggle is unchecked by default — fields hidden, payload unchanged', async () => {
+  it('FC177 F4: link-user toggle is unchecked by default — picker hidden, payload unchanged', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
     await waitFor(() =>
       expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
     );
-    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('linked-user-fields')).not.toBeInTheDocument();
   });
 
-  it('FC176 F3: checking the toggle reveals the 3 admin fields; unchecking hides them again', async () => {
+  it('FC177 F4: checking the toggle reveals the picker; unchecking hides it again', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
     await waitFor(() =>
       expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
     );
-    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
-    expect(screen.getByTestId('initial-admin-fields')).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
-    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    expect(screen.getByTestId('linked-user-fields')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    expect(screen.queryByTestId('linked-user-fields')).not.toBeInTheDocument();
   });
 
-  it('FC176 F3 (Scenario 1): Ω creates a Universe WITH initialAdmin — payload includes the seed admin', async () => {
+  it('FC177 F4 (Scenario 3): Ω creates a Universe WITH linkedUserId — payload includes the picked candidate', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
     await waitFor(() =>
@@ -197,39 +214,29 @@ describe('CosmologyModule', () => {
     );
 
     fireEvent.change(screen.getByTestId('create-universe-label'), {
-      target: { value: 'Universo Con Admin' },
+      target: { value: 'Universo Vinculado' },
     });
-    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
-    fireEvent.change(screen.getByTestId('initial-admin-fullname'), {
-      target: { value: 'Admin Semilla' },
-    });
-    fireEvent.change(screen.getByTestId('initial-admin-email'), {
-      target: { value: 'admin.semilla@piic.mx' },
-    });
-    fireEvent.change(screen.getByTestId('initial-admin-password'), {
-      target: { value: 'PasswordTemporal123' },
-    });
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    await waitFor(() => expect(screen.getByText('Seleccionar usuario…')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Seleccionar usuario…'));
+    fireEvent.click(screen.getByText('Juan Pérez — Cliente Ejemplo SA de CV'));
 
     vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, data: { tenantId: 3 } } });
     fireEvent.click(screen.getByTestId('create-universe-submit'));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/cosmology/universes', {
-        label: 'Universo Con Admin',
+        label: 'Universo Vinculado',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: {
-          fullName: 'Admin Semilla',
-          email: 'admin.semilla@piic.mx',
-          password: 'PasswordTemporal123',
-        },
+        linkedUserId: 501,
       });
     });
-    // toggle + fields reset after a successful create
-    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+    // toggle + picker reset after a successful create
+    expect(screen.queryByTestId('linked-user-fields')).not.toBeInTheDocument();
   });
 
-  it('FC176 F3: toggle checked but an admin field is incomplete — submit stays disabled', async () => {
+  it('FC177 F4: toggle checked but no candidate picked yet — submit stays disabled', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
     await waitFor(() =>
@@ -239,12 +246,25 @@ describe('CosmologyModule', () => {
     fireEvent.change(screen.getByTestId('create-universe-label'), {
       target: { value: 'Universo Incompleto' },
     });
-    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
-    fireEvent.change(screen.getByTestId('initial-admin-fullname'), {
-      target: { value: 'Admin Semilla' },
-    });
-    // email/password left empty
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    await waitFor(() => expect(screen.getByText('Seleccionar usuario…')).toBeInTheDocument());
+    // no candidate selected
     expect(screen.getByTestId('create-universe-submit')).toBeDisabled();
+  });
+
+  it('FC177 F4: the picker shows a fallback message when /cosmology/pending-users fails', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+    vi.mocked(api.get).mockImplementationOnce(async () => {
+      throw new Error('network error');
+    });
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    await waitFor(() => {
+      expect(screen.getByTestId('linked-user-error')).toBeInTheDocument();
+    });
   });
 
   it('shows an error message and re-enables the form when creation fails', async () => {
