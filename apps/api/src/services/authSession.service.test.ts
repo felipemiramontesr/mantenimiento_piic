@@ -89,3 +89,55 @@ describe('FC176 F1 — authSession.service login() via cosmonautMiddleware real'
     expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('FC177 F1 — login() hard-gates is_active (Cond.R-177 R2, Bravo)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (argon2Verify as Mock).mockResolvedValue(true);
+  });
+
+  it('AT-FC177-F1-1: is_active=0 con password correcto → 403 ACCOUNT_PENDING_ACTIVATION, 0 llamada a resolveAuthContext', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([
+      [{ ...TENANT_USER_ROW, is_active: 0 }],
+      undefined,
+    ]); // findUserWithRoleAndDepartmentByUsername
+
+    const result = await login('arc_tenant', 'password123');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(403);
+    expect(result.errorCode).toBe('ACCOUNT_PENDING_ACTIVATION');
+    // el gate corre tras verificar password y ANTES de tocar el chasis cosmonauta —
+    // 1 sola query (el lookup del usuario), 0 llamadas a resolvePrimaryTenant/etc.
+    expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('AT-FC177-F1-2: password incorrecto en cuenta is_active=0 → 401 L4, no 403 (anti-enumeración)', async () => {
+    (argon2Verify as Mock).mockResolvedValue(false);
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([
+      [{ ...TENANT_USER_ROW, is_active: 0 }],
+      undefined,
+    ]);
+
+    const result = await login('arc_tenant', 'wrong-password');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(401);
+    expect(result.errorCode).toBe('L4');
+  });
+
+  it('AT-FC177-F1-3: is_active=1 no se ve afectado — el gate no introduce falsos positivos', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined])
+      .mockResolvedValueOnce([[{ owner_id: 4 }], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined])
+      .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined])
+      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]);
+
+    const result = await login('arc_tenant', 'password123');
+
+    expect(result.ok).toBe(true);
+  });
+});

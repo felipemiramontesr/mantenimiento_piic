@@ -128,6 +128,7 @@ describe('authIntegration.test', () => {
           role_id: 1,
           role_name: 'Admin',
           profile_picture_url: 'avatar.png',
+          is_active: 1,
         },
       ],
       undefined,
@@ -147,6 +148,7 @@ describe('authIntegration.test', () => {
           role_id: 1,
           role_name: 'Admin',
           profile_picture_url: 'data:image/jpeg;base64,/9j/test',
+          is_active: 1,
         },
       ],
       undefined,
@@ -169,6 +171,7 @@ describe('authIntegration.test', () => {
             roleId: 2,
             roleName: 'U',
             imageUrl: 'pic.jpg',
+            is_active: 1,
           },
         ],
         undefined,
@@ -432,6 +435,9 @@ describe('authIntegration.test', () => {
   });
 
   it('Edge: Validation & Atomic Fallbacks', async () => {
+    // FC177 F1 — is_active=0 now hard-blocks login (Scenario 2 of FC177's Gherkin),
+    // even for a role_id=0 row (this scenario is synthetic — the real GrayMan row is
+    // always is_active=1 — it exercises the gate itself, not a realistic Ω state).
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -450,10 +456,8 @@ describe('authIntegration.test', () => {
       url: '/v1/auth/login',
       payload: { username: 'GrayMan', password: 'p' },
     });
-    expect(r1.statusCode).toBe(200);
-    const body1 = JSON.parse(r1.body);
-    expect(body1.user.is_active).toBe(false);
-    expect(body1.user.employeeNumber).toBe('E-001');
+    expect(r1.statusCode).toBe(403);
+    expect(JSON.parse(r1.body)).toEqual({ error: 'ACCOUNT_PENDING_ACTIVATION' });
 
     (db.execute as Mock).mockResolvedValueOnce(null);
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
@@ -961,6 +965,7 @@ describe('authIntegration.test', () => {
           role_id: 1,
           role_name: 'Admin',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1556,6 +1561,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
           role_id: 1,
           role_name: 'Admin',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1585,6 +1591,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
           role_id: 2,
           role_name: 'Arc',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1612,6 +1619,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
           role_id: 2,
           role_name: 'MU',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1645,6 +1653,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
           role_id: 2,
           role_name: 'Arc',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1675,6 +1684,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
           role_id: 2,
           role_name: 'Arc',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,
@@ -1761,6 +1771,7 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
           role_id: 1,
           role_name: 'Admin',
           profile_picture_url: null,
+          is_active: 1,
         },
       ],
       undefined,

@@ -109,7 +109,8 @@ async function handleLogin(
   try {
     const result = await SessionService.login(username, password);
     if (!result.ok) {
-      return reply.code(401).send({ error: result.errorCode });
+      // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
+      return reply.code(result.status).send({ error: result.errorCode });
     }
     return issueSessionResponse(request, reply, result);
   } catch (e) {

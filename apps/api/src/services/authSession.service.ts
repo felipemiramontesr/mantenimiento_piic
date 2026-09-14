@@ -93,9 +93,13 @@ export type LoginResult =
       ownerType: string | null;
       availableTenants: number[];
     }
-  | { ok: false; status: 401; errorCode: 'L3' | 'L4' };
+  | { ok: false; status: 401; errorCode: 'L3' | 'L4' }
+  | { ok: false; status: 403; errorCode: 'ACCOUNT_PENDING_ACTIVATION' };
 
-/** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly. */
+/** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly.
+ *  FC177 F1 — the `is_active` gate runs AFTER password verification (Cond.R-177 R2, Bravo):
+ *  checking it earlier would leak "this account exists and is pending" to a caller who never
+ *  proved they know the password, the same anti-enumeration posture as L3/L4 already have. */
 export async function login(username: string, password: string): Promise<LoginResult> {
   let user = await SessionRepository.findUserWithRoleAndDepartmentByUsername(username);
   user ??= await findUserByEmail(username);
@@ -105,6 +109,9 @@ export async function login(username: string, password: string): Promise<LoginRe
   const hash = user.password_hash || user.passwordHash;
   if (!hash || !(await argon2Verify(hash, password))) {
     return { ok: false, status: 401, errorCode: 'L4' };
+  }
+  if (!user.is_active) {
+    return { ok: false, status: 403, errorCode: 'ACCOUNT_PENDING_ACTIVATION' };
   }
   const mapped = mapUserResponse(user);
   // FC 082 F3b — cutover al chasis cosmonauta (089_AN §9, O✓Alfa/R✓Bravo). Ω
