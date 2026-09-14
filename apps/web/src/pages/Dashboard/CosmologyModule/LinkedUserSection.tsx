@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { UserCheck } from 'lucide-react';
 import api from '../../../api/client';
 import ArchonField from '../../../components/ArchonField';
-import ArchonSelect, { type SelectOption } from '../../../components/ArchonSelect';
+import { Combobox } from '../../../components/Routes/RouteAssignment/ArchonGeoSelector/Combobox';
 
 /**
- * FC177 F4 — Cosmology_UI_User_Linking_Refactor. Replaces `InitialAdminSection.tsx` (FC176 F3,
- * inline capture of a brand-new admin's name/email/password) — Cosmología no longer captures
- * anyone's data by hand (Cond.R-177 R3, Bravo). GrayMan instead picks an existing, self-registered,
- * quarantined user (`GET /v1/cosmology/pending-users`, FC177 F3) to link as the new Universo's MU.
+ * FC178 — LinkedUserSection_Predictive_Combobox_UX. Swaps the `ArchonSelect` client-side-filter
+ * combobox FC177 F4 shipped for the canonical `Combobox<T>` (`ArchonGeoSelector`, already used by
+ * the Estado/Municipio/Colonia pickers in Rutas) — same async `onSearch` contract, 300ms debounce,
+ * but wired to filter in-memory over the already-fetched `GET /pending-users` pool, same precedent
+ * as `useGeoActions.ts`'s `searchStates` (small, bounded catalog — 0 new backend surface).
  */
 
 interface PendingUser {
@@ -20,9 +21,34 @@ interface PendingUser {
   razonSocial: string;
 }
 
-/** Candidate pool for `linkedUserId` — same fetch-on-mount shape as `useUniverses`
- *  (`CosmologyModule.tsx`); only mounted once the toggle reveals the picker. */
-function usePendingUsers(): { options: SelectOption[]; loading: boolean; error: boolean } {
+interface PendingUserCandidate extends PendingUser {
+  matchLabel?: string;
+  matchValue?: string;
+}
+
+/** Same priority-order multi-field match as `matchFieldInUser` (`UsersGridView.tsx`) — first field
+ *  that contains `query` wins, so the Combobox can show *why* a candidate matched. */
+function matchFieldInPendingUser(
+  u: PendingUser,
+  query: string
+): { label: string; value: string } | null {
+  if (u.rfc.toLowerCase().includes(query)) return { label: 'RFC', value: u.rfc };
+  if (u.razonSocial.toLowerCase().includes(query))
+    return { label: 'Razón Social', value: u.razonSocial };
+  if (u.email.toLowerCase().includes(query)) return { label: 'Email', value: u.email };
+  if (u.fullName.toLowerCase().includes(query)) return { label: 'Nombre', value: u.fullName };
+  if (u.username.toLowerCase().includes(query)) return { label: 'Usuario', value: u.username };
+  return null;
+}
+
+const getPendingUserLabel = (c: PendingUserCandidate): string => `${c.fullName} — ${c.razonSocial}`;
+const getPendingUserValue = (c: PendingUserCandidate): number => c.id;
+const getPendingUserSecondary = (c: PendingUserCandidate): string | undefined =>
+  c.matchLabel ? `${c.matchLabel}: ${c.matchValue}` : undefined;
+
+/** Candidate pool for `linkedUserId` — single fetch-on-mount (only once the toggle mounts the
+ *  picker), same shape as `useUniverses` (`CosmologyModule.tsx`). */
+function usePendingUsers(): { users: PendingUser[]; loading: boolean; error: boolean } {
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -45,24 +71,34 @@ function usePendingUsers(): { options: SelectOption[]; loading: boolean; error: 
     };
   }, []);
 
-  const options: SelectOption[] = users.map((u) => ({
-    value: String(u.id),
-    label: `${u.fullName} — ${u.razonSocial}`,
-    secondaryLabel: u.rfc,
-    searchTerms: `${u.username} ${u.email} ${u.razonSocial} ${u.rfc}`,
-  }));
-
-  return { options, loading, error };
+  return { users, loading, error };
 }
 
 interface LinkedUserPickerProps {
-  readonly userId: string;
-  readonly onUserId: (v: string) => void;
+  readonly userId: number | undefined;
+  readonly onUserId: (id: number) => void;
 }
 
-/** The candidate selector — extracted to keep `LinkedUserSection` under budget. */
+/** The candidate selector — `Combobox<PendingUserCandidate>`'s `onSearch` filters `users` in
+ *  memory (precedent: `searchStates`), no network call per keystroke. Extracted to keep
+ *  `LinkedUserSection` under budget. */
 function LinkedUserPicker({ userId, onUserId }: LinkedUserPickerProps): React.JSX.Element {
-  const { options, loading, error } = usePendingUsers();
+  const { users, loading, error } = usePendingUsers();
+
+  const onSearch = useCallback(
+    async (query: string): Promise<PendingUserCandidate[]> => {
+      const term = query.toLowerCase().trim();
+      if (!term) return users;
+      return users
+        .map((u): PendingUserCandidate | null => {
+          const match = matchFieldInPendingUser(u, term);
+          return match ? { ...u, matchLabel: match.label, matchValue: match.value } : null;
+        })
+        .filter((c): c is PendingUserCandidate => c !== null);
+    },
+    [users]
+  );
+
   if (error) {
     return (
       <p className="text-red-500 text-sm" data-testid="linked-user-error">
@@ -72,12 +108,16 @@ function LinkedUserPicker({ userId, onUserId }: LinkedUserPickerProps): React.JS
   }
   return (
     <ArchonField label="Usuario Pendiente" icon={UserCheck} required>
-      <ArchonSelect
-        options={options}
+      <Combobox<PendingUserCandidate>
         value={userId}
-        onChange={onUserId}
-        placeholder={loading ? 'Cargando…' : 'Seleccionar usuario…'}
+        onChange={(id): void => onUserId(id)}
+        onSearch={onSearch}
+        initialOptions={users}
         disabled={loading}
+        placeholder={loading ? 'Cargando…' : 'Buscar por nombre, RFC, razón social o email…'}
+        getOptionLabel={getPendingUserLabel}
+        getOptionValue={getPendingUserValue}
+        getOptionSecondary={getPendingUserSecondary}
       />
     </ArchonField>
   );
@@ -89,8 +129,7 @@ interface LinkedUserToggleProps {
 }
 
 /** Reveals `LinkedUserPicker`; unchecked by default so the payload omits `linkedUserId` unless
- *  GrayMan opts in (same optionality FC176 F3's `initialAdmin` toggle had — truth table row 2 of
- *  FC177: Ω sin `linkedUserId` → 201, solo tenant). */
+ *  GrayMan opts in (truth table row 2 of FC177: Ω sin `linkedUserId` → 201, solo tenant). */
 function LinkedUserToggle({ checked, onChange }: LinkedUserToggleProps): React.JSX.Element {
   return (
     <label className="flex items-center gap-2 text-sm font-medium text-[#0f2a44]/70 cursor-pointer">
@@ -110,8 +149,8 @@ function LinkedUserToggle({ checked, onChange }: LinkedUserToggleProps): React.J
 export interface LinkedUserSectionProps {
   readonly includeLink: boolean;
   readonly onToggle: (v: boolean) => void;
-  readonly userId: string;
-  readonly onUserId: (v: string) => void;
+  readonly userId: number | undefined;
+  readonly onUserId: (id: number) => void;
 }
 
 /** Toggle + conditional picker, grouped so `CreateUniverseForm`'s JSX stays under budget. */
@@ -144,14 +183,14 @@ export function useLinkedUserState(): {
   reset: () => void;
 } {
   const [includeLink, setIncludeLink] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState<number | undefined>(undefined);
 
   const reset = (): void => {
     setIncludeLink(false);
-    setUserId('');
+    setUserId(undefined);
   };
 
-  const linkedUserId = includeLink && userId !== '' ? Number(userId) : null;
+  const linkedUserId = includeLink && userId !== undefined ? userId : null;
 
   return {
     props: {

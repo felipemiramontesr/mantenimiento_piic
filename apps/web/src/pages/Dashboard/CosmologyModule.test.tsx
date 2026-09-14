@@ -217,9 +217,9 @@ describe('CosmologyModule', () => {
       target: { value: 'Universo Vinculado' },
     });
     fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
-    await waitFor(() => expect(screen.getByText('Seleccionar usuario…')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('Seleccionar usuario…'));
-    fireEvent.click(screen.getByText('Juan Pérez — Cliente Ejemplo SA de CV'));
+    const trigger = await screen.findByText('Buscar por nombre, RFC, razón social o email…');
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByText('Juan Pérez — Cliente Ejemplo SA de CV'));
 
     vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, data: { tenantId: 3 } } });
     fireEvent.click(screen.getByTestId('create-universe-submit'));
@@ -236,6 +236,23 @@ describe('CosmologyModule', () => {
     expect(screen.queryByTestId('linked-user-fields')).not.toBeInTheDocument();
   });
 
+  it('FC178 (Scenario 1): searching by RFC shows the matched-field badge on the candidate', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    const trigger = await screen.findByText('Buscar por nombre, RFC, razón social o email…');
+    fireEvent.click(trigger);
+    fireEvent.change(screen.getByPlaceholderText('Buscar...'), {
+      target: { value: 'ABC010101AB9' },
+    });
+
+    expect(await screen.findByText('RFC: ABC010101AB9')).toBeInTheDocument();
+  });
+
   it('FC177 F4: toggle checked but no candidate picked yet — submit stays disabled', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
@@ -247,7 +264,7 @@ describe('CosmologyModule', () => {
       target: { value: 'Universo Incompleto' },
     });
     fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
-    await waitFor(() => expect(screen.getByText('Seleccionar usuario…')).toBeInTheDocument());
+    await screen.findByText('Buscar por nombre, RFC, razón social o email…');
     // no candidate selected
     expect(screen.getByTestId('create-universe-submit')).toBeDisabled();
   });
