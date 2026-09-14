@@ -168,6 +168,85 @@ describe('CosmologyModule', () => {
     });
   });
 
+  it('FC176 F3: initialAdmin toggle is unchecked by default — fields hidden, payload unchanged', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+  });
+
+  it('FC176 F3: checking the toggle reveals the 3 admin fields; unchecking hides them again', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
+    expect(screen.getByTestId('initial-admin-fields')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
+    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+  });
+
+  it('FC176 F3 (Scenario 1): Ω creates a Universe WITH initialAdmin — payload includes the seed admin', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.change(screen.getByTestId('create-universe-label'), {
+      target: { value: 'Universo Con Admin' },
+    });
+    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
+    fireEvent.change(screen.getByTestId('initial-admin-fullname'), {
+      target: { value: 'Admin Semilla' },
+    });
+    fireEvent.change(screen.getByTestId('initial-admin-email'), {
+      target: { value: 'admin.semilla@piic.mx' },
+    });
+    fireEvent.change(screen.getByTestId('initial-admin-password'), {
+      target: { value: 'PasswordTemporal123' },
+    });
+
+    vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, data: { tenantId: 3 } } });
+    fireEvent.click(screen.getByTestId('create-universe-submit'));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/cosmology/universes', {
+        label: 'Universo Con Admin',
+        universeTypeCode: 'FMS',
+        ownerTypeCode: 'FLOTILLA',
+        initialAdmin: {
+          fullName: 'Admin Semilla',
+          email: 'admin.semilla@piic.mx',
+          password: 'PasswordTemporal123',
+        },
+      });
+    });
+    // toggle + fields reset after a successful create
+    expect(screen.queryByTestId('initial-admin-fields')).not.toBeInTheDocument();
+  });
+
+  it('FC176 F3: toggle checked but an admin field is incomplete — submit stays disabled', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.change(screen.getByTestId('create-universe-label'), {
+      target: { value: 'Universo Incompleto' },
+    });
+    fireEvent.click(screen.getByTestId('create-universe-with-admin-toggle'));
+    fireEvent.change(screen.getByTestId('initial-admin-fullname'), {
+      target: { value: 'Admin Semilla' },
+    });
+    // email/password left empty
+    expect(screen.getByTestId('create-universe-submit')).toBeDisabled();
+  });
+
   it('shows an error message and re-enables the form when creation fails', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);

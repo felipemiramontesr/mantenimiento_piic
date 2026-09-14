@@ -4,6 +4,11 @@ import api from '../../../api/client';
 import ArchonModal from '../../../components/UI/ArchonModal';
 import ArchonField from '../../../components/ArchonField';
 import ArchonSelect from '../../../components/ArchonSelect';
+import {
+  InitialAdminSection,
+  useInitialAdminState,
+  InitialAdminPayload,
+} from './InitialAdminSection';
 
 /**
  * FC161 F1 — extracted from `CosmologyModule.tsx` (Gate 1 max-lines:400):
@@ -102,27 +107,78 @@ function CreateUniverseHeader(): React.JSX.Element {
   );
 }
 
-/** Formulario de alta — T5 `POST /v1/cosmology/universes`. */
+/** FC176 F2's payload shape — `initialAdmin` omitted entirely when absent/incomplete. */
+function buildCreateUniversePayload(
+  label: string,
+  universeTypeCode: string,
+  ownerTypeCode: string,
+  adminPayload: InitialAdminPayload | null
+): Record<string, unknown> {
+  return {
+    label,
+    universeTypeCode,
+    ownerTypeCode,
+    ...(adminPayload ? { initialAdmin: adminPayload } : {}),
+  };
+}
+
+interface CreateUniverseSubmitFooterProps {
+  readonly error: string | null;
+  readonly submitting: boolean;
+  readonly disabled: boolean;
+}
+
+/** Error text + submit button — extracted to keep `CreateUniverseForm` under budget. */
+function CreateUniverseSubmitFooter({
+  error,
+  submitting,
+  disabled,
+}: CreateUniverseSubmitFooterProps): React.JSX.Element {
+  return (
+    <>
+      {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+      <button
+        type="submit"
+        disabled={disabled}
+        data-testid="create-universe-submit"
+        className="btn-sentinel-emerald text-sm disabled:opacity-50"
+      >
+        <Plus size={14} />
+        {submitting ? 'Creando…' : 'Crear Universo'}
+      </button>
+    </>
+  );
+}
+
+/** Formulario de alta — T5 `POST /v1/cosmology/universes`, con semilla opcional del primer
+ *  administrador del Universo (FC176 F2/F3, payload `initialAdmin`). */
 export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): React.JSX.Element {
   const [label, setLabel] = useState('');
   const [universeTypeCode, setUniverseTypeCode] = useState(UNIVERSE_TYPE_OPTIONS[0].value);
   const [ownerTypeCode, setOwnerTypeCode] = useState(OWNER_TYPE_OPTIONS[0].value);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const admin = useInitialAdminState();
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     api
-      .post('/cosmology/universes', { label, universeTypeCode, ownerTypeCode })
+      .post(
+        '/cosmology/universes',
+        buildCreateUniversePayload(label, universeTypeCode, ownerTypeCode, admin.payload)
+      )
       .then(() => {
         setLabel('');
+        admin.reset();
         onCreated();
       })
       .catch(() => setError('No se pudo crear el Universo. Intenta de nuevo.'))
       .finally(() => setSubmitting(false));
   };
+
+  const adminIncomplete = admin.props.includeAdmin && admin.payload === null;
 
   return (
     <form
@@ -141,17 +197,13 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
         onOwnerTypeCode={setOwnerTypeCode}
       />
 
-      {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+      <InitialAdminSection {...admin.props} />
 
-      <button
-        type="submit"
-        disabled={submitting || label.trim().length === 0}
-        data-testid="create-universe-submit"
-        className="btn-sentinel-emerald text-sm disabled:opacity-50"
-      >
-        <Plus size={14} />
-        {submitting ? 'Creando…' : 'Crear Universo'}
-      </button>
+      <CreateUniverseSubmitFooter
+        error={error}
+        submitting={submitting}
+        disabled={submitting || label.trim().length === 0 || adminIncomplete}
+      />
     </form>
   );
 }
