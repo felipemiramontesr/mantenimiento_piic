@@ -390,18 +390,21 @@ export async function usernameExists(username: string, executor: Executor = db):
   return rows.length > 0;
 }
 
-/** F2-I6(a) — inserts the seed admin's `users` row. Password/email arrive already hashed
- *  (argon2)/encrypted (AES) by the caller — Cero Plaintext invariant, this layer is zero-crypto. */
+/** F2-I6(a) — inserts a `users` row. Password/email arrive already hashed (argon2)/encrypted
+ *  (AES) by the caller — Cero Plaintext invariant, this layer is zero-crypto. `isActive` is
+ *  required (not defaulted) — FC177 F2 reuses this for quarantined public-signup users
+ *  (`isActive: false`), so the caller must always be explicit about which it means. */
 export async function insertSeedUser(
   username: string,
   fullName: string,
   encryptedEmail: string,
   passwordHash: string,
+  isActive: boolean,
   executor: Executor = db
 ): Promise<number> {
   const [result] = await executor.execute<ResultSetHeader>(
-    'INSERT INTO users (username, full_name, email, password_hash) VALUES (?, ?, ?, ?)',
-    [username, fullName, encryptedEmail, passwordHash]
+    'INSERT INTO users (username, full_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?)',
+    [username, fullName, encryptedEmail, passwordHash, isActive ? 1 : 0]
   );
   return result.insertId;
 }

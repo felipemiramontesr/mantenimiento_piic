@@ -52,6 +52,7 @@ import {
 import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
+import publicSignupRoutes from './routes/publicSignup';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -269,6 +270,12 @@ function registerCosmologyRoutes(fastify: FastifyInstance): void {
   fastify.register(cosmologyRoutes, { prefix: '/v1/cosmology' });
 }
 
+/** FC177 F2 — the one unauthenticated write surface in the API (global; not duplicated under
+ *  universePrefix — signup precedes any tenant relationship, so it can't be tenant-scoped). */
+function registerPublicRoutes(fastify: FastifyInstance): void {
+  fastify.register(publicSignupRoutes, { prefix: '/v1/public' });
+}
+
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
 function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   // Diagnostic Root V2 (Secure)
@@ -333,6 +340,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   registerUniverseRoutes(fastify);
   registerCosmonautRoutes(fastify);
   registerCosmologyRoutes(fastify);
+  registerPublicRoutes(fastify);
   registerDiagnosticRoutes(fastify);
 
   return fastify;

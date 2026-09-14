@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
@@ -184,20 +184,26 @@ function LoginCredentialFields({
   );
 }
 
-/** Botón de submit + link de contraseña olvidada (FC163 F2B4 Sub-Batch 4B-2). */
+/** Botón de submit + links de contraseña olvidada / autoregistro (FC163 F2B4; FC177 F2 — link a /signup). */
 function LoginSubmitButton({ loading }: { readonly loading: boolean }): React.JSX.Element {
   return (
     <div className="flex flex-col">
       <button type="submit" disabled={loading} className="btn-archon-primary w-full !md:w-full">
         {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
       </button>
-      <div className="text-left mt-[5px]">
+      <div className="flex items-center justify-between mt-[5px]">
         <button
           type="button"
           className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
         >
           ¿Olvidaste tu contraseña?
         </button>
+        <Link
+          to="/signup"
+          className="text-pinnacle-navy/50 font-display font-bold text-xs hover:opacity-80 transition-all"
+        >
+          Crear cuenta
+        </Link>
       </div>
     </div>
   );

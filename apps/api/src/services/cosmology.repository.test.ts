@@ -334,19 +334,37 @@ describe('Universe_Seed_Admin_Endpoint (Fase 2b — FC176 F2)', () => {
     expect(await usernameExists('free@piic.mx', mockExecutor)).toBe(false);
   });
 
-  it('insertSeedUser issues the INSERT and returns the new users.id', async () => {
+  it('insertSeedUser issues the INSERT (isActive=true) and returns the new users.id', async () => {
     vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ insertId: 77 }, []]);
     const id = await insertSeedUser(
       'mu@piic.mx',
       'MU Seed',
       'enc_mu@piic.mx',
       'argon2hash',
+      true,
       mockExecutor
     );
     expect(id).toBe(77);
     expect(mockExecutor.execute).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO users'),
-      ['mu@piic.mx', 'MU Seed', 'enc_mu@piic.mx', 'argon2hash']
+      ['mu@piic.mx', 'MU Seed', 'enc_mu@piic.mx', 'argon2hash', 1]
+    );
+  });
+
+  it('insertSeedUser issues the INSERT with is_active=0 when isActive=false (FC177 F2 quarantine)', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ insertId: 88 }, []]);
+    const id = await insertSeedUser(
+      'public@piic.mx',
+      'Public Signup',
+      'enc_public@piic.mx',
+      'argon2hash',
+      false,
+      mockExecutor
+    );
+    expect(id).toBe(88);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO users'),
+      ['public@piic.mx', 'Public Signup', 'enc_public@piic.mx', 'argon2hash', 0]
     );
   });
 

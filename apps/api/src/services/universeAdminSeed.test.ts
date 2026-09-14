@@ -109,6 +109,7 @@ describe('FC176 F2 — seedInitialAdminInTx', () => {
       'MU Seed',
       'enc_mu@piic.mx',
       'hashed_pw',
+      true,
       conn
     );
     expect(CosmologyRepository.insertTenantUserMembership).toHaveBeenCalledWith(501, 900, conn);

@@ -84,6 +84,7 @@ export async function seedInitialAdminInTx(
     adminSeed.fullName,
     adminSeed.emailEncrypted,
     adminSeed.passwordHash,
+    true, // Ω-seeded admins start active immediately — never the quarantine state
     connection
   );
   await CosmologyRepository.insertTenantUserMembership(userId, tenantId, connection);

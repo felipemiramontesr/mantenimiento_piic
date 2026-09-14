@@ -109,4 +109,14 @@ describe('PIIC ARCHON - App (root composition)', () => {
 
     expect(await screen.findByTestId('dashboard-shell')).toBeInTheDocument();
   });
+
+  it('FC177 F2 — /signup renders the public self-registration page (no auth required)', async () => {
+    window.history.pushState({}, '', '/signup');
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Crear Cuenta/i })).toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe('/signup');
+  });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
 import LoginPage from './pages/Auth/Login';
+import SignupPage from './pages/Auth/Signup';
 import DashboardLayout from './pages/Dashboard/Layout';
 import ArchonCenter from './pages/Dashboard/ArchonCenter';
 import FleetModule from './pages/Dashboard/FleetModule';
@@ -105,6 +106,7 @@ function AuthenticatedRoutes(): React.ReactElement {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/dashboard" element={DASHBOARD_ELEMENT}>
           {DashboardChildRoutes()}
         </Route>
