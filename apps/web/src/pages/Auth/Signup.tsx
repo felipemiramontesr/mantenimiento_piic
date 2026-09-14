@@ -48,12 +48,12 @@ function getSignupErrorMessage(err: unknown): string {
 }
 
 interface SignupFormState {
-  data: SignupFormData;
-  setField: (field: keyof SignupFormData, value: string) => void;
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-  handleSubmit: (e: React.FormEvent) => void;
+  readonly data: SignupFormData;
+  readonly setField: (field: keyof SignupFormData, value: string) => void;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly success: boolean;
+  readonly handleSubmit: (e: React.FormEvent) => void;
 }
 
 /** Estado + submit del formulario de autoregistro (FC177 F2). */
