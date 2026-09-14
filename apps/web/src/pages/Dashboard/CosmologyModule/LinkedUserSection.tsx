@@ -10,6 +10,14 @@ import { Combobox } from '../../../components/Routes/RouteAssignment/ArchonGeoSe
  * the Estado/Municipio/Colonia pickers in Rutas) — same async `onSearch` contract, 300ms debounce,
  * but wired to filter in-memory over the already-fetched `GET /pending-users` pool, same precedent
  * as `useGeoActions.ts`'s `searchStates` (small, bounded catalog — 0 new backend surface).
+ *
+ * FC179 — Pending_Users_Limit_And_Fixed_RFC_Disambiguation. The candidate pool has no natural
+ * ceiling (unlike `states`), so `GET /pending-users` now caps at 200 (FIFO by registration date)
+ * and returns `total`. Two consequences here: (1) the dynamic "which field matched" badge FC178
+ * built is replaced by a FIXED `RFC: ...` line, always visible — GrayMan needs a verifiable,
+ * SAT-unique identifier to tell homonyms apart at a glance, not just when he searches by RFC;
+ * (2) when `total` exceeds the returned rows, an overflow notice tells GrayMan he isn't seeing the
+ * whole queue.
  */
 
 interface PendingUser {
@@ -21,44 +29,49 @@ interface PendingUser {
   razonSocial: string;
 }
 
-interface PendingUserCandidate extends PendingUser {
-  matchLabel?: string;
-  matchValue?: string;
-}
+const getPendingUserLabel = (u: PendingUser): string => `${u.fullName} — ${u.razonSocial}`;
+const getPendingUserValue = (u: PendingUser): number => u.id;
+/** Fixed, always-visible RFC (FC179 D2, 317_AN) — not a dynamic "why did this match" badge:
+ *  the SAT-unique identifier GrayMan can verify against a real fiscal document, unlike an
+ *  internal DB id or a UUID. */
+const getPendingUserSecondary = (u: PendingUser): string => `RFC: ${u.rfc}`;
 
-/** Same priority-order multi-field match as `matchFieldInUser` (`UsersGridView.tsx`) — first field
- *  that contains `query` wins, so the Combobox can show *why* a candidate matched. */
-function matchFieldInPendingUser(
-  u: PendingUser,
-  query: string
-): { label: string; value: string } | null {
-  if (u.rfc.toLowerCase().includes(query)) return { label: 'RFC', value: u.rfc };
-  if (u.razonSocial.toLowerCase().includes(query))
-    return { label: 'Razón Social', value: u.razonSocial };
-  if (u.email.toLowerCase().includes(query)) return { label: 'Email', value: u.email };
-  if (u.fullName.toLowerCase().includes(query)) return { label: 'Nombre', value: u.fullName };
-  if (u.username.toLowerCase().includes(query)) return { label: 'Usuario', value: u.username };
-  return null;
+/** Multi-field match (nombre/razón social/email/RFC/username) — the search still spans every
+ *  field, only the *display* no longer needs to report which one matched (FC179 replaces that
+ *  with the fixed RFC line above). */
+function pendingUserMatchesQuery(u: PendingUser, query: string): boolean {
+  return (
+    u.fullName.toLowerCase().includes(query) ||
+    u.razonSocial.toLowerCase().includes(query) ||
+    u.email.toLowerCase().includes(query) ||
+    u.rfc.toLowerCase().includes(query) ||
+    u.username.toLowerCase().includes(query)
+  );
 }
-
-const getPendingUserLabel = (c: PendingUserCandidate): string => `${c.fullName} — ${c.razonSocial}`;
-const getPendingUserValue = (c: PendingUserCandidate): number => c.id;
-const getPendingUserSecondary = (c: PendingUserCandidate): string | undefined =>
-  c.matchLabel ? `${c.matchLabel}: ${c.matchValue}` : undefined;
 
 /** Candidate pool for `linkedUserId` — single fetch-on-mount (only once the toggle mounts the
- *  picker), same shape as `useUniverses` (`CosmologyModule.tsx`). */
-function usePendingUsers(): { users: PendingUser[]; loading: boolean; error: boolean } {
+ *  picker), same shape as `useUniverses` (`CosmologyModule.tsx`). FC179 adds `total`: the FIFO-
+ *  limited `users` array may be a truncated view of a larger backlog. */
+function usePendingUsers(): {
+  users: PendingUser[];
+  total: number;
+  loading: boolean;
+  error: boolean;
+} {
   const [users, setUsers] = useState<PendingUser[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     api
-      .get<{ success: boolean; data: PendingUser[] }>('/cosmology/pending-users')
+      .get<{ success: boolean; data: PendingUser[]; total: number }>('/cosmology/pending-users')
       .then((res) => {
-        if (!cancelled) setUsers(res.data.data ?? []);
+        if (!cancelled) {
+          setUsers(res.data.data ?? []);
+          setTotal(res.data.total ?? 0);
+        }
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -71,7 +84,7 @@ function usePendingUsers(): { users: PendingUser[]; loading: boolean; error: boo
     };
   }, []);
 
-  return { users, loading, error };
+  return { users, total, loading, error };
 }
 
 interface LinkedUserPickerProps {
@@ -79,22 +92,35 @@ interface LinkedUserPickerProps {
   readonly onUserId: (id: number) => void;
 }
 
-/** The candidate selector — `Combobox<PendingUserCandidate>`'s `onSearch` filters `users` in
- *  memory (precedent: `searchStates`), no network call per keystroke. Extracted to keep
+/** Overflow notice (FC179 Scenario 3, Cond.R-179 R2) — only when the FIFO-limited `users` array
+ *  is a truncated view of a larger `total`. Derives the shown count from `users.length` rather
+ *  than hardcoding 200, so it stays accurate even if the backend's LIMIT ever changes. */
+function PendingUsersOverflowNotice({
+  shown,
+  total,
+}: {
+  readonly shown: number;
+  readonly total: number;
+}): React.JSX.Element | null {
+  if (total <= shown) return null;
+  return (
+    <p className="text-xs text-[#0f2a44]/40 mt-1.5" data-testid="pending-users-overflow-notice">
+      Mostrando los primeros {shown} de {total} pendientes.
+    </p>
+  );
+}
+
+/** The candidate selector — `Combobox<PendingUser>`'s `onSearch` filters `users` in memory
+ *  (precedent: `searchStates`), no network call per keystroke. Extracted to keep
  *  `LinkedUserSection` under budget. */
 function LinkedUserPicker({ userId, onUserId }: LinkedUserPickerProps): React.JSX.Element {
-  const { users, loading, error } = usePendingUsers();
+  const { users, total, loading, error } = usePendingUsers();
 
   const onSearch = useCallback(
-    async (query: string): Promise<PendingUserCandidate[]> => {
+    async (query: string): Promise<PendingUser[]> => {
       const term = query.toLowerCase().trim();
       if (!term) return users;
-      return users
-        .map((u): PendingUserCandidate | null => {
-          const match = matchFieldInPendingUser(u, term);
-          return match ? { ...u, matchLabel: match.label, matchValue: match.value } : null;
-        })
-        .filter((c): c is PendingUserCandidate => c !== null);
+      return users.filter((u) => pendingUserMatchesQuery(u, term));
     },
     [users]
   );
@@ -107,19 +133,22 @@ function LinkedUserPicker({ userId, onUserId }: LinkedUserPickerProps): React.JS
     );
   }
   return (
-    <ArchonField label="Usuario Pendiente" icon={UserCheck} required>
-      <Combobox<PendingUserCandidate>
-        value={userId}
-        onChange={(id): void => onUserId(id)}
-        onSearch={onSearch}
-        initialOptions={users}
-        disabled={loading}
-        placeholder={loading ? 'Cargando…' : 'Buscar por nombre, RFC, razón social o email…'}
-        getOptionLabel={getPendingUserLabel}
-        getOptionValue={getPendingUserValue}
-        getOptionSecondary={getPendingUserSecondary}
-      />
-    </ArchonField>
+    <>
+      <ArchonField label="Usuario Pendiente" icon={UserCheck} required>
+        <Combobox<PendingUser>
+          value={userId}
+          onChange={(id): void => onUserId(id)}
+          onSearch={onSearch}
+          initialOptions={users}
+          disabled={loading}
+          placeholder={loading ? 'Cargando…' : 'Buscar por nombre, RFC, razón social o email…'}
+          getOptionLabel={getPendingUserLabel}
+          getOptionValue={getPendingUserValue}
+          getOptionSecondary={getPendingUserSecondary}
+        />
+      </ArchonField>
+      <PendingUsersOverflowNotice shown={users.length} total={total} />
+    </>
   );
 }
 

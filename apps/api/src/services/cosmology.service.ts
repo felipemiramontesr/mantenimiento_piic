@@ -416,13 +416,23 @@ export interface PendingUserView {
   razonSocial: string;
 }
 
+/** No `ok`-union like `ListResult<T>`/`CreateUniverseResult` — unlike its siblings, this read has
+ *  no failure path of its own (auth is `requireOmega()` at the route guard, before this ever
+ *  runs); a manufactured `ok: false` branch would just be permanently dead code under Zenith's
+ *  100% coverage invariant. */
+export interface PendingUsersListResult {
+  data: PendingUserView[];
+  total: number;
+}
+
 /** FC177 F3 — the candidate pool for `linkedUserId`: quarantined users with a billing snapshot
  *  and no tenant yet. Email is decrypted here (Ω-only listing) so GrayMan can identify who's
- *  who — the encrypted column alone isn't human-readable. */
-export async function listPendingUsers(): Promise<ListResult<PendingUserView>> {
-  const rows = await findPendingUsers();
+ *  who — the encrypted column alone isn't human-readable. FC179 adds `total`: the queue has no
+ *  natural ceiling (unlike a fixed catalog), so Ω needs to know if 200 rows is everyone or a
+ *  truncated view of a larger backlog. */
+export async function listPendingUsers(): Promise<PendingUsersListResult> {
+  const { rows, total } = await findPendingUsers();
   return {
-    ok: true,
     data: rows.map((r) => ({
       id: r.id,
       username: r.username,
@@ -431,5 +441,6 @@ export async function listPendingUsers(): Promise<ListResult<PendingUserView>> {
       rfc: r.rfc,
       razonSocial: r.razon_social,
     })),
+    total,
   };
 }

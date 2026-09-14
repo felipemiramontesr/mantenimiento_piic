@@ -695,26 +695,29 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(db.execute).not.toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-PENDING-1: GET /pending-users — 200, lists quarantined candidates with decrypted email', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([
-      [
-        {
-          id: 501,
-          username: 'cliente@ejemplo.mx',
-          full_name: 'Cliente Ejemplo',
-          email: 'enc_cliente@ejemplo.mx',
-          rfc: 'ABC010101AB9',
-          razon_social: 'Cliente Ejemplo SA de CV',
-        },
-      ],
-    ]);
+  it('COSMOLOGY-PENDING-1: GET /pending-users — 200, lists quarantined candidates with decrypted email, plus total', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 501,
+            username: 'cliente@ejemplo.mx',
+            full_name: 'Cliente Ejemplo',
+            email: 'enc_cliente@ejemplo.mx',
+            rfc: 'ABC010101AB9',
+            razon_social: 'Cliente Ejemplo SA de CV',
+          },
+        ],
+      ]) // findPendingUsers rows (FIFO-limited)
+      .mockResolvedValueOnce([[{ total: 1 }]]); // findPendingUsers COUNT
     const res = await app.inject({
       method: 'GET',
       url: '/v1/cosmology/pending-users',
       headers: omegaHeader(),
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).data).toEqual([
+    const body = JSON.parse(res.body);
+    expect(body.data).toEqual([
       {
         id: 501,
         username: 'cliente@ejemplo.mx',
@@ -724,6 +727,22 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         razonSocial: 'Cliente Ejemplo SA de CV',
       },
     ]);
+    expect(body.total).toBe(1);
+  });
+
+  it('COSMOLOGY-PENDING-OVERFLOW: GET /pending-users — total can exceed the returned rows (queue > LIMIT)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]]) // rows (none returned in this slice, for simplicity)
+      .mockResolvedValueOnce([[{ total: 350 }]]); // COUNT reflects the full backlog
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/pending-users',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toEqual([]);
+    expect(body.total).toBe(350);
   });
 
   it('COSMOLOGY-PENDING-BOLA: GET /pending-users — 403 for non-Ω actor', async () => {

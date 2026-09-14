@@ -6,6 +6,7 @@ import type {
   MutationResult,
   ListResult,
   CreateUniverseResult,
+  PendingUsersListResult,
 } from '../services/cosmology.service';
 
 /**
@@ -43,6 +44,17 @@ function sendListResult<T>(reply: FastifyReply, result: ListResult<T>): FastifyR
       .send({ success: false, code: result.code, message: result.message });
   }
   return reply.send({ success: true, data: result.data });
+}
+
+/** FC179 — `listPendingUsers` has no failure path of its own (unlike `ListResult<T>`'s other
+ *  producers), so there's no `ok:false` branch to map here — just the shape, plus `total`
+ *  (Cond.R-179 R2): Ω must be able to tell "these are all of them" from "this is a truncated
+ *  view of a bigger queue". */
+function sendPendingUsersListResult(
+  reply: FastifyReply,
+  result: PendingUsersListResult
+): FastifyReply {
+  return reply.send({ success: true, data: result.data, total: result.total });
 }
 
 const tenantIdParamSchema = z.object({ tenantId: z.coerce.number().int().positive() });
@@ -214,7 +226,7 @@ async function handleListPendingUsers(
   reply: FastifyReply
 ): Promise<FastifyReply> {
   const result = await CosmologyService.listPendingUsers();
-  return sendListResult(reply, result);
+  return sendPendingUsersListResult(reply, result);
 }
 
 /** Registers the 10 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3), all Ω-exclusive. */

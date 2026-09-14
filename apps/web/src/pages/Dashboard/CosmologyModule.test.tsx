@@ -42,6 +42,20 @@ const MOCK_PENDING_USERS = [
   },
 ];
 
+// FC179 — two candidates sharing the same fullName, used to prove the fixed-RFC line
+// disambiguates homonyms (Scenario 2) without needing a search first.
+const MOCK_HOMONYM_PENDING_USERS = [
+  MOCK_PENDING_USERS[0],
+  {
+    id: 502,
+    username: 'juan.perez2',
+    fullName: 'Juan Pérez',
+    email: 'juan2@example.com',
+    rfc: 'XYZ020202XY7',
+    razonSocial: 'Otra Empresa SA de CV',
+  },
+];
+
 describe('CosmologyModule', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +68,9 @@ describe('CosmologyModule', () => {
     });
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/cosmology/pending-users') {
-        return { data: { success: true, data: MOCK_PENDING_USERS } };
+        return {
+          data: { success: true, data: MOCK_PENDING_USERS, total: MOCK_PENDING_USERS.length },
+        };
       }
       return { data: { success: true, data: MOCK_UNIVERSES } };
     });
@@ -236,8 +252,20 @@ describe('CosmologyModule', () => {
     expect(screen.queryByTestId('linked-user-fields')).not.toBeInTheDocument();
   });
 
-  it('FC178 (Scenario 1): searching by RFC shows the matched-field badge on the candidate', async () => {
+  it('FC179 (Scenario 2): two homonyms are disambiguated by their fixed, always-visible RFC', async () => {
     mockPerms({ omega: true });
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return {
+          data: {
+            success: true,
+            data: MOCK_HOMONYM_PENDING_USERS,
+            total: MOCK_HOMONYM_PENDING_USERS.length,
+          },
+        };
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
     render(<CosmologyModule />);
     await waitFor(() =>
       expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
@@ -246,11 +274,42 @@ describe('CosmologyModule', () => {
     fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
     const trigger = await screen.findByText('Buscar por nombre, RFC, razón social o email…');
     fireEvent.click(trigger);
-    fireEvent.change(screen.getByPlaceholderText('Buscar...'), {
-      target: { value: 'ABC010101AB9' },
-    });
 
+    // Both "Juan Pérez" candidates are visible at once (no search typed yet) and each
+    // shows its own RFC — the fixed line, not a dynamic "matched field" badge.
     expect(await screen.findByText('RFC: ABC010101AB9')).toBeInTheDocument();
+    expect(screen.getByText('RFC: XYZ020202XY7')).toBeInTheDocument();
+  });
+
+  it('FC179 (Scenario 3): an overflow notice appears when the queue exceeds the FIFO-limited rows returned', async () => {
+    mockPerms({ omega: true });
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return { data: { success: true, data: MOCK_PENDING_USERS, total: 350 } };
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    expect(await screen.findByTestId('pending-users-overflow-notice')).toHaveTextContent(
+      'Mostrando los primeros 1 de 350 pendientes.'
+    );
+  });
+
+  it('no overflow notice appears when the full queue fits within the rows returned', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    await screen.findByText('Buscar por nombre, RFC, razón social o email…');
+    expect(screen.queryByTestId('pending-users-overflow-notice')).not.toBeInTheDocument();
   });
 
   it('FC177 F4: toggle checked but no candidate picked yet — submit stays disabled', async () => {

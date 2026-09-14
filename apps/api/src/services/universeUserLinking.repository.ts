@@ -19,19 +19,38 @@ export interface PendingUserRow extends RowDataPacket {
   razon_social: string;
 }
 
-/** F3-I1 — users in quarantine (`is_active=0`) with a billing snapshot and no tenant yet —
- *  exactly the candidate pool `GET /pending-users` offers Ω for linking. */
-export async function findPendingUsers(executor: Executor = db): Promise<PendingUserRow[]> {
+/** FC179 — the candidate pool has no natural ceiling (unlike a fixed catalog): a queue that
+ *  drains as Ω links candidates, but can back up (neglect, spam/bot signups). `PENDING_USERS_LIMIT`
+ *  caps memory/DOM exposure per request; `total` lets the UI say "showing 200 of N" instead of
+ *  silently truncating. */
+const PENDING_USERS_LIMIT = 200;
+
+const PENDING_USERS_WHERE = `WHERE u.is_active = 0
+       AND NOT EXISTS (SELECT 1 FROM tenant_user_memberships tum WHERE tum.user_id = u.id)`;
+
+/** F3-I1 (FC177), FIFO-limited + counted (FC179) — users in quarantine (`is_active=0`) with a
+ *  billing snapshot and no tenant yet, oldest registration first (`created_at ASC`) so nobody
+ *  waits indefinitely at the back of an unbounded queue. */
+export async function findPendingUsers(
+  executor: Executor = db
+): Promise<{ rows: PendingUserRow[]; total: number }> {
   const [rows] = await executor.execute<PendingUserRow[]>(
     `SELECT u.id, u.username, u.full_name, u.email, ubp.rfc, ubp.razon_social
      FROM users u
      JOIN user_billing_profiles ubp ON ubp.user_id = u.id
-     WHERE u.is_active = 0
-       AND NOT EXISTS (SELECT 1 FROM tenant_user_memberships tum WHERE tum.user_id = u.id)
-     ORDER BY u.id`,
+     ${PENDING_USERS_WHERE}
+     ORDER BY u.created_at ASC
+     LIMIT ?`,
+    [PENDING_USERS_LIMIT]
+  );
+  const [countRows] = await executor.execute<RowDataPacket[]>(
+    `SELECT COUNT(*) AS total
+     FROM users u
+     JOIN user_billing_profiles ubp ON ubp.user_id = u.id
+     ${PENDING_USERS_WHERE}`,
     []
   );
-  return rows;
+  return { rows, total: Number(countRows[0]?.total ?? 0) };
 }
 
 export interface BillingProfileRow extends RowDataPacket {

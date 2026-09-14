@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 describe('findPendingUsers', () => {
-  it('returns quarantined candidates with a billing snapshot and no tenant', async () => {
+  it('returns quarantined candidates (FIFO-limited) with a billing snapshot, no tenant, plus the total count', async () => {
     const row = {
       id: 501,
       username: 'cliente@ejemplo.mx',
@@ -31,12 +31,28 @@ describe('findPendingUsers', () => {
       rfc: 'ABC010101AB9',
       razon_social: 'Cliente Ejemplo SA de CV',
     };
-    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[row], []]);
-    const rows = await findPendingUsers(mockExecutor);
-    expect(rows).toEqual([row]);
-    const [sql] = vi.mocked(mockExecutor.execute).mock.calls[0];
-    expect(sql).toContain('is_active = 0');
-    expect(sql).toContain('NOT EXISTS');
+    vi.mocked(mockExecutor.execute)
+      .mockResolvedValueOnce([[row], []])
+      .mockResolvedValueOnce([[{ total: 1 }], []]);
+    const result = await findPendingUsers(mockExecutor);
+    expect(result).toEqual({ rows: [row], total: 1 });
+
+    const [rowsSql, rowsParams] = vi.mocked(mockExecutor.execute).mock.calls[0];
+    expect(rowsSql).toContain('is_active = 0');
+    expect(rowsSql).toContain('NOT EXISTS');
+    expect(rowsSql).toContain('ORDER BY u.created_at ASC');
+    expect(rowsSql).toContain('LIMIT ?');
+    expect(rowsParams).toEqual([200]);
+
+    const [countSql] = vi.mocked(mockExecutor.execute).mock.calls[1];
+    expect(countSql).toContain('COUNT(*)');
+    expect(countSql).toContain('is_active = 0');
+  });
+
+  it('total defaults to 0 when the COUNT query returns no row (defensive, should not happen)', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[], []]).mockResolvedValueOnce([[], []]);
+    const result = await findPendingUsers(mockExecutor);
+    expect(result).toEqual({ rows: [], total: 0 });
   });
 });
 
