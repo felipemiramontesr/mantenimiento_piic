@@ -6,9 +6,11 @@ import { resetBootstrapSchemaCache } from '../services/universeBootstrap';
 /**
  * FC160 F1 — Cosmology Core Admin Endpoints.
  * Covers: Cond.R-160-F1-R2 (Ω-only) · R3 (cascade) · R4 (precondition) · R6 (shapes).
- * FC176 F2 (Cosmology_Universe_Seed_Admin_Endpoint) — the optional `initialAdmin` seed on
- * POST /universes, Cond.R-176 (Bravo): same TX as the tenant, fail-closed if the R_global 'MU'
- * role is absent, MU never Ω.
+ * FC177 F3 (Cosmology_Universe_User_Linking_Backend) — `linkedUserId` on POST /universes and
+ * GET /pending-users, Cond.R-177 R3 (Bravo): same TX as the tenant, fail-closed if the target
+ * isn't a valid candidate (not found / already active / already a member / no billing profile),
+ * MU never Ω. Supersedes FC176 F2's `initialAdmin` (inline user creation), retired by the same
+ * condition — Cosmología no longer captures anyone's data by hand.
  */
 
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn().mockResolvedValue('argon2_seed_hash') }));
@@ -487,27 +489,31 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.release).toHaveBeenCalled();
   });
 
-  // ─── FC176 F2 — Cosmology_Universe_Seed_Admin_Endpoint (optional initialAdmin) ───
+  // ─── FC177 F3 — Cosmology_Universe_User_Linking_Backend (linkedUserId) ───
 
-  const initialAdminPayload = {
-    fullName: 'Admin Semilla',
-    email: 'admin.semilla@piic.mx',
-    password: 'PasswordTemporal123',
+  const billingRow = {
+    rfc: 'ABC010101AB9',
+    razon_social: 'Cliente Ejemplo SA de CV',
+    regimen_fiscal: '601',
+    uso_cfdi: 'G03',
+    telefono: '5551234567',
   };
 
-  it('COSMOLOGY-CREATE-SEED-1 (Scenario 1): Ω creates a Universe WITH initialAdmin — 201, single TX seeds tenant + user + membership + MU role + designation', async () => {
+  it('COSMOLOGY-LINK-1 (Scenario 3): Ω creates a Universe WITH linkedUserId — 201, single TX migrates fiscal data + activates + membership + MU role + designation', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
       .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[]]) // findUserByEmail → findAllActiveUsers (0 candidates)
-      .mockResolvedValueOnce([[]]); // usernameExists → free
+      .mockResolvedValueOnce([[{ is_active: 0 }]]) // findUserActiveState → quarantined
+      .mockResolvedValueOnce([[]]) // findTenantMembershipOwnerIds → 0 (not a member anywhere)
+      .mockResolvedValueOnce([[billingRow]]); // findBillingProfile
     mockConnection.execute
       .mockResolvedValueOnce([{ insertId: 950, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
-      .mockResolvedValueOnce([{ insertId: 501, affectedRows: 1 }]) // insertSeedUser
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenantProfileFromBilling
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // activateUser
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenantUserMembership
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertCosmonautRoleAssignment
       .mockResolvedValueOnce([[{ present: 2 }]]) // designateMasterOfUniverse: detectSchema154
@@ -521,16 +527,16 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'Nuevo Universo',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 501,
       },
     });
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(950);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(10);
+    expect(mockConnection.execute).toHaveBeenCalledTimes(11);
   });
 
-  it('COSMOLOGY-CREATE-SEED-FAILCLOSED: R_global MU role absent — 500 MU_ROLE_NOT_CONFIGURED, no TX opened (Cond.R-176 R1 Bravo)', async () => {
+  it('COSMOLOGY-LINK-FAILCLOSED-MUROLE: R_global MU role absent — 500 MU_ROLE_NOT_CONFIGURED, no TX opened (Cond.R-177 R3 Bravo)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
@@ -543,7 +549,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 501,
       },
     });
     expect(res.statusCode).toBe(500);
@@ -551,13 +557,12 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-CREATE-SEED-DUPEMAIL: initialAdmin.email already belongs to an active user — 409 EMAIL_ALREADY_EXISTS, no TX opened', async () => {
+  it("COSMOLOGY-LINK-FAILCLOSED-NOTFOUND: linkedUserId doesn't exist — 404 LINKED_USER_NOT_FOUND", async () => {
     (db.execute as Mock)
-      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
-      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
       .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[{ id: 5, email: 'enc_admin.semilla@piic.mx' }]]) // findAllActiveUsers → 1 candidate
-      .mockResolvedValueOnce([[{ id: 5, email: 'enc_admin.semilla@piic.mx' }]]); // findUserWithRoleAndDepartmentById(5)
+      .mockResolvedValueOnce([[]]); // findUserActiveState → not found
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -566,21 +571,20 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 999,
       },
     });
-    expect(res.statusCode).toBe(409);
-    expect(JSON.parse(res.body).code).toBe('EMAIL_ALREADY_EXISTS');
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_NOT_FOUND');
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-CREATE-SEED-DUPEUSERNAME: username (=email) already taken by an unrelated row — 409 USERNAME_ALREADY_EXISTS, no TX opened', async () => {
+  it('COSMOLOGY-LINK-FAILCLOSED-ACTIVE: linkedUserId already active — 409 LINKED_USER_NOT_PENDING', async () => {
     (db.execute as Mock)
-      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
-      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
-      .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[]]) // findAllActiveUsers → 0 (no email dupe)
-      .mockResolvedValueOnce([[{ id: 11 }]]); // usernameExists → taken
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
+      .mockResolvedValueOnce([[{ id: 9 }]])
+      .mockResolvedValueOnce([[{ is_active: 1 }]]); // findUserActiveState → already active
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -589,27 +593,75 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 501,
       },
     });
     expect(res.statusCode).toBe(409);
-    expect(JSON.parse(res.body).code).toBe('USERNAME_ALREADY_EXISTS');
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_NOT_PENDING');
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-CREATE-SEED-ROLLBACK (Cond.R-176 "MISMA TX que tenant"): admin-seed failure mid-TX rolls back the tenant too', async () => {
+  it('COSMOLOGY-LINK-FAILCLOSED-MEMBER: linkedUserId already belongs to a Universo — 409 LINKED_USER_ALREADY_MEMBER', async () => {
     (db.execute as Mock)
-      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
-      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
-      .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[]]) // findAllActiveUsers → 0
-      .mockResolvedValueOnce([[]]); // usernameExists → free
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
+      .mockResolvedValueOnce([[{ id: 9 }]])
+      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[{ owner_id: 4 }]]); // findTenantMembershipOwnerIds → already a member elsewhere
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: {
+        label: 'X',
+        universeTypeCode: 'FMS',
+        ownerTypeCode: 'FLOTILLA',
+        linkedUserId: 501,
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_ALREADY_MEMBER');
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it('COSMOLOGY-LINK-FAILCLOSED-NOBILLING: linkedUserId never completed public signup fiscal data — 409 LINKED_USER_MISSING_BILLING_PROFILE', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
+      .mockResolvedValueOnce([[{ id: 9 }]])
+      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[]]) // findTenantMembershipOwnerIds → 0
+      .mockResolvedValueOnce([[]]); // findBillingProfile → none
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: {
+        label: 'X',
+        universeTypeCode: 'FMS',
+        ownerTypeCode: 'FLOTILLA',
+        linkedUserId: 501,
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_MISSING_BILLING_PROFILE');
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it('COSMOLOGY-LINK-ROLLBACK (Cond.R-177 R3 "MISMA TX que tenant"): linking failure mid-TX rolls back the tenant too', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
+      .mockResolvedValueOnce([[{ id: 9 }]])
+      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[]])
+      .mockResolvedValueOnce([[billingRow]]);
     mockConnection.execute
       .mockResolvedValueOnce([{ insertId: 951, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
-      .mockRejectedValueOnce(new Error('DB connection lost mid-admin-seed')); // insertSeedUser
+      .mockRejectedValueOnce(new Error('DB connection lost mid-link')); // insertTenantProfileFromBilling
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -618,7 +670,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'Nuevo Universo',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 501,
       },
     });
     expect(res.statusCode).toBe(500);
@@ -627,55 +679,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.release).toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-CREATE-SEED-SCHEMA-PRE-154: designateMasterOfUniverse reports schema drift — 500, whole TX rolls back (I1 fail-closed)', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
-      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
-      .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[]]) // findAllActiveUsers → 0
-      .mockResolvedValueOnce([[]]); // usernameExists → free
-    mockConnection.execute
-      .mockResolvedValueOnce([{ insertId: 952, affectedRows: 1 }]) // mintUniverseTenantId
-      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
-      .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
-      .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
-      .mockResolvedValueOnce([{ insertId: 502, affectedRows: 1 }]) // insertSeedUser
-      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenantUserMembership
-      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertCosmonautRoleAssignment
-      .mockResolvedValueOnce([[{ present: 0 }]]); // designateMasterOfUniverse: detectSchema154 → pre-154
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/cosmology/universes',
-      headers: omegaHeader(),
-      payload: {
-        label: 'Nuevo Universo',
-        universeTypeCode: 'FMS',
-        ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
-      },
-    });
-    expect(res.statusCode).toBe(500);
-    expect(mockConnection.rollback).toHaveBeenCalled();
-    expect(mockConnection.commit).not.toHaveBeenCalled();
-  });
-
-  it('COSMOLOGY-CREATE-SEED-VALIDATION: initialAdmin.password shorter than 8 chars — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/cosmology/universes',
-      headers: omegaHeader(),
-      payload: {
-        label: 'X',
-        universeTypeCode: 'FMS',
-        ownerTypeCode: 'FLOTILLA',
-        initialAdmin: { ...initialAdminPayload, password: 'short' },
-      },
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-CREATE-SEED-BOLA (Scenario 3, Anti-BOLA): non-Ω actor with initialAdmin payload — 403, 0 queries', async () => {
+  it('COSMOLOGY-LINK-BOLA (Anti-BOLA): non-Ω actor with linkedUserId payload — 403, 0 queries', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -684,11 +688,56 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         label: 'X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
-        initialAdmin: initialAdminPayload,
+        linkedUserId: 501,
       },
     });
     expect(res.statusCode).toBe(403);
     expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('COSMOLOGY-PENDING-1: GET /pending-users — 200, lists quarantined candidates with decrypted email', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 501,
+          username: 'cliente@ejemplo.mx',
+          full_name: 'Cliente Ejemplo',
+          email: 'enc_cliente@ejemplo.mx',
+          rfc: 'ABC010101AB9',
+          razon_social: 'Cliente Ejemplo SA de CV',
+        },
+      ],
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/pending-users',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data).toEqual([
+      {
+        id: 501,
+        username: 'cliente@ejemplo.mx',
+        fullName: 'Cliente Ejemplo',
+        email: 'cliente@ejemplo.mx',
+        rfc: 'ABC010101AB9',
+        razonSocial: 'Cliente Ejemplo SA de CV',
+      },
+    ]);
+  });
+
+  it('COSMOLOGY-PENDING-BOLA: GET /pending-users — 403 for non-Ω actor', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/pending-users',
+      headers: arcHeader(),
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('COSMOLOGY-PENDING-NOAUTH: GET /pending-users — 401 without a JWT', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/cosmology/pending-users' });
+    expect(res.statusCode).toBe(401);
   });
 
   it('COSMOLOGY-DESTROY-FLEET-1: T6 409 UNIVERSE_NOT_ZERO_STATE with fleet_units populated (critical finding)', async () => {

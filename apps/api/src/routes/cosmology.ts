@@ -50,19 +50,13 @@ const superclusterParamSchema = tenantIdParamSchema.extend({ superclusterCode: z
 const clusterParamSchema = tenantIdParamSchema.extend({ clusterCode: z.string().min(1) });
 const addSuperclusterBodySchema = z.object({ superclusterCode: z.string().min(1) });
 const addClusterBodySchema = z.object({ clusterCode: z.string().min(1) });
-/** FC176 F2 — optional first-admin seed. Email capped at 100 (not the users.email column's
- *  255) so it also fits `users.username` — this endpoint sets username = email (Scenario 2,
- *  `login()`'s existing email-fallback already accepts either as the identifier). */
-const initialAdminBodySchema = z.object({
-  fullName: z.string().min(1).max(255),
-  email: z.string().email().max(100),
-  password: z.string().min(8).max(255),
-});
+/** FC177 F3 — links an existing quarantined user (FC177 F2 public signup) as the Universo's MU.
+ *  Replaces FC176 F2's `initialAdmin` (inline user creation, retired — Cond.R-177 R3 Bravo). */
 const createUniverseBodySchema = z.object({
   label: z.string().min(1).max(255),
   universeTypeCode: z.string().min(1),
   ownerTypeCode: z.string().min(1),
-  initialAdmin: initialAdminBodySchema.optional(),
+  linkedUserId: z.coerce.number().int().positive().optional(),
 });
 /** FC161 R4 — optional, backward-compatible: absent body / no `reason` keeps prior behavior. */
 const destroyUniverseBodySchema = z.object({ reason: z.string().min(5).optional() }).optional();
@@ -184,7 +178,7 @@ async function handleCreateUniverse(
     body.data.universeTypeCode,
     body.data.ownerTypeCode,
     callerId(request),
-    body.data.initialAdmin
+    body.data.linkedUserId
   );
   return sendCreateUniverseResult(reply, result);
 }
@@ -214,7 +208,16 @@ async function handleListUniverses(
   return sendListResult(reply, result);
 }
 
-/** Registers the 9 cosmology admin endpoints (6 Fase 1 + 3 Fase 2), all Ω-exclusive. */
+/** FC177 F3 — GET /pending-users: the candidate pool for `linkedUserId`. */
+async function handleListPendingUsers(
+  _request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const result = await CosmologyService.listPendingUsers();
+  return sendListResult(reply, result);
+}
+
+/** Registers the 10 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3), all Ω-exclusive. */
 export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
@@ -229,4 +232,5 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.post('/universes', omegaGuard, handleCreateUniverse);
   fastify.delete('/universes/:tenantId', omegaGuard, handleDestroyUniverse);
   fastify.get('/universes', omegaGuard, handleListUniverses);
+  fastify.get('/pending-users', omegaGuard, handleListPendingUsers);
 }

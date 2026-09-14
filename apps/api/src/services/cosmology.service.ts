@@ -2,12 +2,9 @@ import { randomBytes } from 'node:crypto';
 import db from './db';
 import * as CosmologyRepository from './cosmology.repository';
 import { recordAuditLog } from './auditService';
-import {
-  prepareInitialAdminSeed,
-  seedInitialAdminInTx,
-  InitialAdminInput,
-  PreparedAdminSeed,
-} from './universeAdminSeed';
+import { prepareUserLink, linkUserInTx, PreparedUserLink } from './universeUserLinking';
+import { findPendingUsers } from './universeUserLinking.repository';
+import EncryptionService from './encryption';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -251,14 +248,14 @@ async function validateUniverseCreateTypes(
   return { ok: true, universeTypeId: universeType.id, ownerTypeId: ownerType.id };
 }
 
-/** F2-I3 — the single TX: mint id → insert tenant → seed SC+Cúmulo blueprint → (FC176 F2)
- *  optionally seed the Universo's first admin, same TX (Cond.R-176 "MISMA TX que tenant"). */
+/** F2-I3 — the single TX: mint id → insert tenant → seed SC+Cúmulo blueprint → (FC177 F3)
+ *  optionally link an existing quarantined user as MU, same TX (Cond.R-177 R3 "MISMA TX"). */
 async function runCreateUniverseTransaction(
   label: string,
   universeTypeId: number,
   ownerTypeId: number,
   callerId: number,
-  adminSeed?: PreparedAdminSeed
+  userLink?: PreparedUserLink
 ): Promise<number> {
   const connection = await db.getConnection();
   try {
@@ -279,8 +276,8 @@ async function runCreateUniverseTransaction(
       connection
     );
     await CosmologyRepository.seedClusterBlueprint(tenantId, callerId, connection);
-    if (adminSeed) {
-      await seedInitialAdminInTx(connection, tenantId, callerId, adminSeed);
+    if (userLink) {
+      await linkUserInTx(connection, tenantId, callerId, userLink);
     }
     await connection.commit();
     return tenantId;
@@ -293,23 +290,24 @@ async function runCreateUniverseTransaction(
 }
 
 /** T5 — CREATE_UNIVERSE. Single TX: mint id → insert tenant → seed SC+Cúmulo blueprint →
- *  (FC176 F2) optionally seed initial admin → audit. `initialAdmin` absent preserves FC160 F1
- *  behavior exactly (Scenario "Ausente" of FC176's truth table). */
+ *  (FC177 F3) optionally link an existing quarantined user as its MU → audit. `linkedUserId`
+ *  absent preserves FC160 F1 behavior exactly (truth table row "Ausente"). FC176 F2's
+ *  `initialAdmin` (inline user creation) is retired — Cond.R-177 R3 (Bravo). */
 export async function createUniverse(
   label: string,
   universeTypeCode: string,
   ownerTypeCode: string,
   callerId: number,
-  initialAdmin?: InitialAdminInput
+  linkedUserId?: number
 ): Promise<CreateUniverseResult> {
   const types = await validateUniverseCreateTypes(universeTypeCode, ownerTypeCode);
   if (!('universeTypeId' in types)) return types;
 
-  let adminSeed: PreparedAdminSeed | undefined;
-  if (initialAdmin) {
-    const prepared = await prepareInitialAdminSeed(initialAdmin);
+  let userLink: PreparedUserLink | undefined;
+  if (linkedUserId !== undefined) {
+    const prepared = await prepareUserLink(linkedUserId);
     if (!('muRoleId' in prepared)) return prepared;
-    adminSeed = prepared;
+    userLink = prepared;
   }
 
   const tenantId = await runCreateUniverseTransaction(
@@ -317,7 +315,7 @@ export async function createUniverse(
     types.universeTypeId,
     types.ownerTypeId,
     callerId,
-    adminSeed
+    userLink
   );
   await recordAuditLog({
     entity_type: 'universe',
@@ -327,7 +325,7 @@ export async function createUniverse(
       label,
       universeTypeCode,
       ownerTypeCode,
-      initialAdminSeeded: Boolean(adminSeed),
+      linkedUserId: userLink ? userLink.userId : null,
     },
     reason: 'CREATE_UNIVERSE (§24.5)',
     user_id: callerId,
@@ -405,6 +403,33 @@ export async function listUniverses(): Promise<ListResult<UniverseView>> {
       universeTypeCode: r.universeTypeCode,
       activeSuperclusters: Number(r.activeSuperclusters),
       activeClusters: Number(r.activeClusters),
+    })),
+  };
+}
+
+export interface PendingUserView {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  rfc: string;
+  razonSocial: string;
+}
+
+/** FC177 F3 — the candidate pool for `linkedUserId`: quarantined users with a billing snapshot
+ *  and no tenant yet. Email is decrypted here (Ω-only listing) so GrayMan can identify who's
+ *  who — the encrypted column alone isn't human-readable. */
+export async function listPendingUsers(): Promise<ListResult<PendingUserView>> {
+  const rows = await findPendingUsers();
+  return {
+    ok: true,
+    data: rows.map((r) => ({
+      id: r.id,
+      username: r.username,
+      fullName: r.full_name,
+      email: EncryptionService.decrypt(r.email),
+      rfc: r.rfc,
+      razonSocial: r.razon_social,
     })),
   };
 }
