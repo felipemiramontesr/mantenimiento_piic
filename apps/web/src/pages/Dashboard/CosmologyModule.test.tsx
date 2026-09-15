@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent, act } from '../../test/testUtils';
 import CosmologyModule from './CosmologyModule';
 import usePermissions from '../../hooks/usePermissions';
 import api from '../../api/client';
@@ -279,6 +279,98 @@ describe('CosmologyModule', () => {
     // shows its own RFC — the fixed line, not a dynamic "matched field" badge.
     expect(await screen.findByText('RFC: ABC010101AB9')).toBeInTheDocument();
     expect(screen.getByText('RFC: XYZ020202XY7')).toBeInTheDocument();
+  });
+
+  it('FC181 (Scenario 1): typing a search term filters candidates via pendingUserMatchesQuery (match/no-match)', async () => {
+    mockPerms({ omega: true });
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return {
+          data: {
+            success: true,
+            data: MOCK_HOMONYM_PENDING_USERS,
+            total: MOCK_HOMONYM_PENDING_USERS.length,
+          },
+        };
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    const trigger = await screen.findByText('Buscar por nombre, RFC, razón social o email…');
+    fireEvent.click(trigger);
+    // both candidates visible before typing anything
+    await screen.findByText('RFC: ABC010101AB9');
+    expect(screen.getByText('RFC: XYZ020202XY7')).toBeInTheDocument();
+
+    // let the initial debounced onSearch('') actually settle (real 300ms debounce) before
+    // typing — exercises onSearch's empty-term branch, not just the initialOptions fallback.
+    await act(async () => {
+      await new Promise((r) => {
+        setTimeout(r, 350);
+      });
+    });
+    expect(screen.getByText('RFC: XYZ020202XY7')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar...'), {
+      target: { value: 'ABC010101AB9' },
+    });
+
+    // the debounced onSearch narrows the list to only the matching candidate
+    await waitFor(() => expect(screen.queryByText('RFC: XYZ020202XY7')).not.toBeInTheDocument(), {
+      timeout: 1000,
+    });
+    expect(screen.getByText('RFC: ABC010101AB9')).toBeInTheDocument();
+  });
+
+  it('usePendingUsers does not update state after unmount once an in-flight (rejecting) fetch settles', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockPerms({ omega: true });
+    let rejectFetch: (e: unknown) => void = () => {};
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return new Promise((_resolve, reject) => {
+          rejectFetch = reject;
+        });
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
+    const { unmount } = render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    await screen.findByText('Cargando…');
+    unmount();
+    rejectFetch(new Error('network error'));
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it('FC181 (Scenario 2): usePendingUsers falls back safely when the API response omits data/total', async () => {
+    mockPerms({ omega: true });
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/cosmology/pending-users') {
+        return { data: { success: true } };
+      }
+      return { data: { success: true, data: MOCK_UNIVERSES } };
+    });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTestId('create-universe-with-link-toggle'));
+    // no crash, no candidates, and no overflow notice (total defaults to 0)
+    await screen.findByText('Buscar por nombre, RFC, razón social o email…');
+    expect(screen.queryByTestId('pending-users-overflow-notice')).not.toBeInTheDocument();
   });
 
   it('FC179 (Scenario 3): an overflow notice appears when the queue exceeds the FIFO-limited rows returned', async () => {
