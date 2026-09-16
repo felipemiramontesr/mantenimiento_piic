@@ -30,8 +30,8 @@ function getLoginErrorMessage(err: unknown): string {
 function useLoginForm(): LoginFormState {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('GrayMan');
-  const [password, setPassword] = useState('Archon2026!');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCookies, setShowCookies] = useState(false);

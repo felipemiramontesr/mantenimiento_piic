@@ -47,6 +47,12 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.getByRole('button', { name: /acceder al sistema/i })).toBeInTheDocument();
   });
 
+  it('FC183 — loads with empty, sanitized credential fields (no hardcoded defaults)', () => {
+    renderComponent();
+    expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).toHaveValue('');
+    expect(screen.getByPlaceholderText('••••••••')).toHaveValue('');
+  });
+
   it('shows cookie banner if cookies_accepted is not set and allows accepting', () => {
     renderComponent();
     const bannerText = screen.getByText(/Utilizamos cookies propias y de terceros/i);
@@ -107,6 +113,10 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     });
 
     renderComponent();
+    fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+      target: { value: 'admin' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
     await waitFor(() => {
