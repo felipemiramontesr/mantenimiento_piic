@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import { UserIndustrial } from '../types/user';
 
 // FC 082 F0c — isExternalClientOnly (rol 9), isSuiteVIM (eje suite) e
 // isFamiliar (rol 10) murieron con la purga de identidad (084_AN §1a).
@@ -27,11 +28,27 @@ export const REVERSE_ALIASES: Record<string, string> = Object.entries(LEGACY_ALI
   {}
 );
 
+/** FC182 (Modelo B, §24.15) — true for an Arconauta Itinerante: an active `Arc` with no
+ *  Universo yet (`tenantId === null`), never Ω (who also carries `tenantId: null` but is
+ *  excluded via roleId/`'*'`). `tenantId === undefined` (context still loading) is deliberately
+ *  NOT itinerant — only an explicit `null` from the resolved auth context counts. Exported
+ *  standalone so `Login.tsx`'s post-login redirect can reuse the exact same predicate instead of
+ *  re-deriving it. */
+export function isItinerantArcUser(
+  user: Pick<UserIndustrial, 'roleId' | 'tenantId' | 'permissions'> | null | undefined
+): boolean {
+  if (!user) return false;
+  if (user.roleId === 0) return false;
+  if (user.permissions?.includes('*')) return false;
+  return user.tenantId === null;
+}
+
 export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
   isOmegaStrict: () => boolean;
+  isItinerantArc: () => boolean;
 } {
   const { currentUser, effectiveUser } = useAuth();
 
@@ -68,10 +85,13 @@ export default function usePermissions(): {
     return currentUser.permissions?.includes('*') ?? false;
   };
 
+  const isItinerantArc = (): boolean => isItinerantArcUser(effectiveUser);
+
   return {
     hasPermission,
     hasAnyPermission,
     isOmnipotent,
     isOmegaStrict,
+    isItinerantArc,
   };
 }

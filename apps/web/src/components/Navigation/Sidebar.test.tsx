@@ -42,6 +42,7 @@ const defaultPermissions = {
   hasAnyPermission: (): boolean => true,
   isOmnipotent: (): boolean => true,
   isOmegaStrict: (): boolean => true,
+  isItinerantArc: (): boolean => false,
 };
 
 const defaultAuth = {
@@ -91,6 +92,42 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.queryByText('Red Social')).toBeNull();
   });
 
+  it('FC182 F2 — an itinerant Arc (tenantId: null) sees ONLY Arcsial, nothing else survives the allow-list', () => {
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (): boolean => true,
+      hasAnyPermission: (): boolean => true,
+      isOmnipotent: (): boolean => false,
+      isOmegaStrict: (): boolean => false,
+      isItinerantArc: (): boolean => true,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Arcsial')).toBeInTheDocument();
+    // Note the mocked hasPermission/hasAnyPermission both return true here, deliberately —
+    // proves the itinerant short-circuit in buildNavEntries wins regardless of what the
+    // per-item permission checks would have said, matching the FC's explicit allow-list
+    // invariant rather than depending on every permission slug staying aligned.
+    expect(screen.queryByText('Comando')).toBeNull();
+    expect(screen.queryByText('Finanzas')).toBeNull();
+    expect(screen.queryByText('Unidades')).toBeNull();
+    expect(screen.queryByText('Rastreo GPS')).toBeNull();
+    expect(screen.queryByText('Talleres')).toBeNull();
+    expect(screen.queryByText('Rutas')).toBeNull();
+    expect(screen.queryByText('Incidencias')).toBeNull();
+    expect(screen.queryByText('Mantenimiento')).toBeNull();
+    expect(screen.queryByText('Personal')).toBeNull();
+    expect(screen.queryByText('Seguridad')).toBeNull();
+    expect(screen.queryByText('Cosmología')).toBeNull();
+    expect(screen.queryByText('Alertas')).toBeNull();
+    // logout stays reachable regardless of role (pre-existing invariant, unaffected)
+    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
+  });
+
   // FC 082 F0c — el escenario "Cliente Externo (rol 9) solo ve Portal" murió
   // con el rol 9 y el NavItem Portal (084_AN §1a-1b). Un usuario sin permisos
   // ve solo los items sin gate (Comando/Arcsial/Talleres) + logout.
@@ -100,6 +137,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
       isOmegaStrict: (): boolean => false,
+      isItinerantArc: (): boolean => false,
     });
 
     render(
@@ -126,6 +164,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => directorPerms.includes(p)),
       isOmnipotent: (): boolean => false,
       isOmegaStrict: (): boolean => false,
+      isItinerantArc: (): boolean => false,
     });
 
     render(
@@ -277,6 +316,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
       isOmegaStrict: (): boolean => false,
+      isItinerantArc: (): boolean => false,
     });
 
     render(
@@ -421,6 +461,7 @@ describe('Sidebar Component (Archon Core)', () => {
           hasAnyPermission: (): boolean => perms.hasPermission,
           isOmnipotent: (): boolean => perms.isOmnipotent,
           isOmegaStrict: (): boolean => perms.isOmnipotent,
+          isItinerantArc: (): boolean => false,
         });
 
         render(
@@ -450,6 +491,7 @@ describe('Sidebar Component (Archon Core)', () => {
         hasAnyPermission: (ps: string[]): boolean => ps.includes('alert:view:any'),
         isOmnipotent: (): boolean => false,
         isOmegaStrict: (): boolean => false,
+        isItinerantArc: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -467,6 +509,7 @@ describe('Sidebar Component (Archon Core)', () => {
           ps.some((p) => ['users:collaborator:view', 'security:audit:view'].includes(p)),
         isOmnipotent: (): boolean => false,
         isOmegaStrict: (): boolean => false,
+        isItinerantArc: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -483,6 +526,7 @@ describe('Sidebar Component (Archon Core)', () => {
         hasAnyPermission: (ps: string[]): boolean => ps.includes('user:admin'),
         isOmnipotent: (): boolean => false,
         isOmegaStrict: (): boolean => false,
+        isItinerantArc: (): boolean => false,
       });
       render(
         <BrowserRouter>

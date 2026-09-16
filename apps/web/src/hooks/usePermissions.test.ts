@@ -315,4 +315,76 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
       expect(result.current.isOmegaStrict()).toBe(false);
     });
   });
+
+  describe('isItinerantArc — FC182 (Modelo B, §24.15 Arconautas Itinerantes)', () => {
+    it('returns false when no currentUser', () => {
+      mockAuth(null);
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(false);
+    });
+
+    it('returns true for an active Arc with tenantId: null (no Universo)', () => {
+      mockAuth({
+        id: '30',
+        username: 'arc.itinerant',
+        roleId: 3,
+        roleName: 'Arc',
+        tenantId: null,
+        permissions: ['social:post:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(true);
+    });
+
+    it('returns false once linked to a Universo (tenantId is a real number)', () => {
+      mockAuth({
+        id: '30',
+        username: 'arc.linked',
+        roleId: 3,
+        roleName: 'MU',
+        tenantId: 900,
+        permissions: ['admin:owner:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(false);
+    });
+
+    it('returns false for Ω (roleId 0) even though Ω also carries tenantId: null', () => {
+      mockAuth({
+        id: '1',
+        username: 'grayman',
+        roleId: 0,
+        roleName: 'GrayMan',
+        tenantId: null,
+        permissions: ['*'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(false);
+    });
+
+    it('returns false for wildcard permissions even with tenantId: null (defense in depth)', () => {
+      mockAuth({
+        id: '2',
+        username: 'wildcard-non-zero-role',
+        roleId: 8,
+        roleName: 'Administrador de TI',
+        tenantId: null,
+        permissions: ['*'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(false);
+    });
+
+    it('returns false when tenantId is undefined — auth context still loading, not itinerant', () => {
+      mockAuth({
+        id: '4',
+        username: 'operator',
+        roleId: 3,
+        roleName: 'Operador',
+        permissions: ['fleet:read'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isItinerantArc()).toBe(false);
+    });
+  });
 });

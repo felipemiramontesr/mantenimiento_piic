@@ -377,6 +377,7 @@ interface PermCheckers {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmegaStrict: () => boolean;
+  isItinerantArc: () => boolean;
 }
 
 interface NavEntryConfig {
@@ -424,6 +425,22 @@ function buildCoreNavEntries(
   ];
 }
 
+/** The one destination an itinerant Arc has (FC182 F2) — `ProfileView` at this path doubles as
+ *  both "Arcsial" (the social feed) and "Mi Perfil" (a `ProfileEditSlideOver` reachable from
+ *  within it), and is the only page in the app that consumes Arc's `social:*`/`users:profile-
+ *  image:manage` permissions. Factored out so the itinerant short-circuit in `buildNavEntries`
+ *  doesn't duplicate the entry every non-itinerant user already sees via `buildFleetNavEntries`. */
+function buildArcsialEntry(pathname: string): NavEntryConfig {
+  return {
+    key: 'arcsial',
+    icon: <Rss size={20} />,
+    label: 'Arcsial',
+    path: '/dashboard/social',
+    active: pathname === '/dashboard/social',
+    visible: true,
+  };
+}
+
 /** Unidades/Rastreo GPS/Arcsial/Talleres — extracted so `buildNavEntries` stays under budget. */
 function buildFleetNavEntries(
   pathname: string,
@@ -451,14 +468,7 @@ function buildFleetNavEntries(
         'fleet:unit:view:own',
       ]),
     },
-    {
-      key: 'arcsial',
-      icon: <Rss size={20} />,
-      label: 'Arcsial',
-      path: '/dashboard/social',
-      active: pathname === '/dashboard/social',
-      visible: true,
-    },
+    buildArcsialEntry(pathname),
     {
       key: 'talleres',
       icon: <Building2 size={20} />,
@@ -538,12 +548,23 @@ function buildAdminNavEntries(
 
 /** Orden estable: Alertas, Comando, Finanzas, Unidades, Rastreo GPS, Arcsial,
  *  Talleres, Rutas, Incidencias, Mantenimiento, Personal, Seguridad,
- *  Cosmología — idéntico al orden JSX original. */
+ *  Cosmología — idéntico al orden JSX original.
+ *
+ *  FC182 F2 — an itinerant Arc (`tenantId: null`, no Universo) short-circuits to Arcsial ALONE,
+ *  bypassing the per-item permission checks above entirely. Most of those already resolve to
+ *  hidden for Arc's 11-slug whitelist on their own (no `fleet:*`/`maint:*`/etc.), but two are
+ *  `visible: true` unconditionally — `comando` (a Universe-operational dashboard) and `talleres`
+ *  — so relying on the per-item checks alone would leak them. An explicit allow-list matches the
+ *  FC's own invariant ("visibles ÚNICAMENTE Arcsial") instead of hoping every permission audit
+ *  stays aligned as new nav entries get added later. */
 function buildNavEntries(
   pathname: string,
   perms: PermCheckers,
   alertsCount: number
 ): NavEntryConfig[] {
+  if (perms.isItinerantArc()) {
+    return [buildArcsialEntry(pathname)];
+  }
   return [
     ...buildCoreNavEntries(pathname, perms, alertsCount),
     ...buildFleetNavEntries(pathname, perms),
@@ -558,6 +579,7 @@ interface SidebarNavListProps {
   readonly hasPermission: (permission: string) => boolean;
   readonly hasAnyPermission: (permissions: string[]) => boolean;
   readonly isOmegaStrict: () => boolean;
+  readonly isItinerantArc: () => boolean;
   readonly alertsCount: number;
   readonly scrollRef: React.RefObject<HTMLElement>;
 }
@@ -573,12 +595,13 @@ function SidebarNavList({
   hasPermission,
   hasAnyPermission,
   isOmegaStrict,
+  isItinerantArc,
   alertsCount,
   scrollRef,
 }: SidebarNavListProps): React.ReactElement {
   const entries = buildNavEntries(
     pathname,
-    { hasPermission, hasAnyPermission, isOmegaStrict },
+    { hasPermission, hasAnyPermission, isOmegaStrict, isItinerantArc },
     alertsCount
   );
   return (
@@ -732,7 +755,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
   // FC 082 F0c — ramas Familiar (rol 10) y Cliente Externo (rol 9) purgadas
   // junto con los nav-items CRM/Portal/Familia (084_AN §1a-1b).
-  const { hasPermission, hasAnyPermission, isOmegaStrict } = usePermissions();
+  const { hasPermission, hasAnyPermission, isOmegaStrict, isItinerantArc } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -770,6 +793,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           hasPermission={hasPermission}
           hasAnyPermission={hasAnyPermission}
           isOmegaStrict={isOmegaStrict}
+          isItinerantArc={isItinerantArc}
           alertsCount={alertsCount}
           scrollRef={scrollRef}
         />
