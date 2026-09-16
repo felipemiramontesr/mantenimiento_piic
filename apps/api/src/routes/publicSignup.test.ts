@@ -52,6 +52,10 @@ describe('POST /v1/public/signup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (db.execute as Mock).mockResolvedValue([[], undefined]);
+    // FC182 — findArcCosmonautRoleId (Cosmology_repository) is the FIRST db.execute call in
+    // publicSignup(), fail-closed before any duplicate check runs; queue its row so every test
+    // below reaches the actual signup logic instead of short-circuiting on ARC_ROLE_NOT_CONFIGURED.
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 9 }], undefined]);
     mockConnection.execute.mockResolvedValue([{ affectedRows: 1, insertId: 501 }, undefined]);
   });
 
@@ -115,6 +119,19 @@ describe('POST /v1/public/signup', () => {
     });
     expect(res.statusCode).toBe(409);
     expect(JSON.parse(res.body).code).toBe('SIGNUP_CONFLICT');
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it('SIGNUP-8 (FC182): rol Arc no configurado → 500 ARC_ROLE_NOT_CONFIGURED, 0 TX abierta', async () => {
+    (db.execute as Mock).mockReset();
+    (db.execute as Mock).mockResolvedValue([[], undefined]); // Arc lookup → no row → null
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/public/signup',
+      payload: VALID_PAYLOAD,
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).code).toBe('ARC_ROLE_NOT_CONFIGURED');
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 

@@ -12,9 +12,15 @@ import { designateMasterOfUniverse } from './universeBootstrap';
  * FC177 F3 — Cosmology_Universe_User_Linking_Backend. Supersedes FC176 F2's
  * `universeAdminSeed.ts` (which CREATED a brand-new admin user inline) — Cond.R-177 R3 (Bravo)
  * explicitly retires that flow: Cosmología no longer captures anyone's data by hand. GrayMan
- * instead links an EXISTING, self-registered, quarantined user (`is_active: false`, FC177 F2)
- * to the Universo he's creating; this module is the fail-closed pre-checks + the atomic-TX
- * tail (activate → membership → MU role → `designateMasterOfUniverse`) for that link.
+ * instead links an EXISTING, self-registered user to the Universo he's creating; this module is
+ * the fail-closed pre-checks + the atomic-TX tail (activate → membership → MU role →
+ * `designateMasterOfUniverse`) for that link.
+ *
+ * FC182 (Modelo B, 331_AN Alfa / 332_AN Bravo) — the candidate arrives already active (global
+ * `Arc` role, Arcsial-only, no tenant) rather than quarantined; `is_active` now only signals
+ * admin suspension, so `validateLinkCandidate` fails closed on `!isActive` (suspended, not
+ * eligible) instead of the old `isActive` (already active, not pending) — same fail-closed
+ * posture, redefined for the new lifecycle.
  */
 
 export type LinkUserError = {
@@ -51,12 +57,12 @@ async function validateLinkCandidate(userId: number): Promise<BillingProfile | L
       message: 'Usuario no encontrado',
     };
   }
-  if (user.isActive) {
+  if (!user.isActive) {
     return {
       ok: false,
       status: 409,
-      code: 'LINKED_USER_NOT_PENDING',
-      message: 'El usuario ya está activo — no está en cuarentena',
+      code: 'LINKED_USER_INACTIVE',
+      message: 'El usuario está desactivado o suspendido — no elegible para vinculación',
     };
   }
   const memberships = await CosmonautRepository.findTenantMembershipOwnerIds(userId);

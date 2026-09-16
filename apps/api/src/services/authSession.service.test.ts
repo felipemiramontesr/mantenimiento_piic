@@ -141,3 +141,31 @@ describe('FC177 F1 — login() hard-gates is_active (Cond.R-177 R2, Bravo)', () 
     expect(result.ok).toBe(true);
   });
 });
+
+describe('FC182 (Scenario 2, Modelo B) — login() de un Arconauta Itinerante puro (rol global Arc, 0 tenant)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (argon2Verify as Mock).mockResolvedValue(true);
+  });
+
+  it('AT-FC182-1: usuario activo con solo asignación global Arc resuelve tenantId=null y los permisos de Arc — sin cambio en authSession.service.ts, ya cubierto por el chasis cosmonauta real', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findUserWithRoleAndDepartmentByUsername (is_active:1, FC182 nace así)
+      .mockResolvedValueOnce([[], undefined]) // resolvePrimaryTenant → findTenantMembershipOwnerIds → 0 filas
+      .mockResolvedValueOnce([[], undefined]) // resolvePrimaryTenant → findEarliestActiveAssignmentTenantId → 0 filas (solo asignación global tenant_id NULL) → null
+      .mockResolvedValueOnce([
+        [{ slug: 'social:post:view:own' }, { slug: 'social:post:create:own' }],
+        undefined,
+      ]) // resolveEffectivePermissions(userId, null) → recoge la fila global vía `tenant_id IS NULL`
+      .mockResolvedValueOnce([[], undefined]); // getAvailableTenants → 0 (deriveOwnerType(null) no hace query, retorna null directo)
+
+    const result = await login('arc_tenant', 'password123');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.tenantId).toBeNull();
+    expect(result.permissions).toEqual(['social:post:view:own', 'social:post:create:own']);
+    expect(result.ownerType).toBeNull();
+    expect(result.availableTenants).toEqual([]);
+  });
+});

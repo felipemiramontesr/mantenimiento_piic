@@ -17,6 +17,8 @@ vi.mock('./db', () => ({
 vi.mock('./cosmology.repository', () => ({
   usernameExists: vi.fn(),
   insertSeedUser: vi.fn(),
+  findArcCosmonautRoleId: vi.fn(),
+  insertCosmonautRoleAssignment: vi.fn(),
 }));
 vi.mock('./publicSignup.repository', () => ({ insertBillingProfile: vi.fn() }));
 vi.mock('./authSession.service', () => ({ findUserByEmail: vi.fn() }));
@@ -57,10 +59,11 @@ describe('FC177 F2 — publicSignup()', () => {
     vi.clearAllMocks();
     (findUserByEmail as Mock).mockResolvedValue(null);
     (CosmologyRepository.usernameExists as Mock).mockResolvedValue(false);
+    (CosmologyRepository.findArcCosmonautRoleId as Mock).mockResolvedValue(9);
     (argon2Hash as Mock).mockResolvedValue('hashed_pw');
   });
 
-  it('Scenario 1 — happy path: crea el usuario en cuarentena + billing profile, misma TX', async () => {
+  it('Scenario 1 (FC182 Modelo B) — happy path: usuario activo + billing profile + rol Arc global, misma TX', async () => {
     const conn = mockConnection();
     (db.getConnection as Mock).mockResolvedValue(conn);
     (CosmologyRepository.insertSeedUser as Mock).mockResolvedValue(501);
@@ -73,7 +76,7 @@ describe('FC177 F2 — publicSignup()', () => {
       'Cliente Ejemplo',
       'enc_cliente@ejemplo.mx',
       'hashed_pw',
-      false, // FC177 F2 — nace en cuarentena, nunca activo
+      true, // FC182 — nace activo, rol Arc global (Arcsial), 0 tenant
       conn
     );
     expect(PublicSignupRepository.insertBillingProfile).toHaveBeenCalledWith(
@@ -88,8 +91,30 @@ describe('FC177 F2 — publicSignup()', () => {
       },
       conn
     );
+    expect(CosmologyRepository.insertCosmonautRoleAssignment).toHaveBeenCalledWith(
+      501,
+      9,
+      null, // R_global — 0 tenant
+      null, // 0 human caller at signup time
+      conn
+    );
     expect(conn.commit).toHaveBeenCalled();
     expect(conn.release).toHaveBeenCalled();
+  });
+
+  it('fail-closed (Cond.R-182, mirrors FC177 F3 MU_ROLE_NOT_CONFIGURED) — rol Arc no configurado → 500, 0 TX abierta', async () => {
+    (CosmologyRepository.findArcCosmonautRoleId as Mock).mockResolvedValue(null);
+
+    const result = await publicSignup(INPUT);
+
+    expect(result).toEqual({
+      ok: false,
+      status: 500,
+      code: 'ARC_ROLE_NOT_CONFIGURED',
+      message: expect.any(String),
+    });
+    expect(findUserByEmail).not.toHaveBeenCalled();
+    expect(db.getConnection).not.toHaveBeenCalled();
   });
 
   it('email ya usado por una cuenta activa → 409 SIGNUP_CONFLICT genérico, 0 TX abierta', async () => {
@@ -125,6 +150,21 @@ describe('FC177 F2 — publicSignup()', () => {
     (db.getConnection as Mock).mockResolvedValue(conn);
     (CosmologyRepository.insertSeedUser as Mock).mockResolvedValue(501);
     (PublicSignupRepository.insertBillingProfile as Mock).mockRejectedValue(
+      new Error('DB write failed')
+    );
+
+    await expect(publicSignup(INPUT)).rejects.toThrow('DB write failed');
+    expect(conn.rollback).toHaveBeenCalled();
+    expect(conn.commit).not.toHaveBeenCalled();
+    expect(conn.release).toHaveBeenCalled();
+    expect(CosmologyRepository.insertCosmonautRoleAssignment).not.toHaveBeenCalled();
+  });
+
+  it('rollback total si la asignación del rol Arc falla a medio camino (FC182)', async () => {
+    const conn = mockConnection();
+    (db.getConnection as Mock).mockResolvedValue(conn);
+    (CosmologyRepository.insertSeedUser as Mock).mockResolvedValue(501);
+    (CosmologyRepository.insertCosmonautRoleAssignment as Mock).mockRejectedValue(
       new Error('DB write failed')
     );
 

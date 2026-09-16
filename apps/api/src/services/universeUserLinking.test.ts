@@ -62,14 +62,14 @@ describe('FC177 F3 — prepareUserLink', () => {
     });
   });
 
-  it('user already active → 409 LINKED_USER_NOT_PENDING', async () => {
+  it('user inactive/suspended (FC182 — is_active now signals admin suspension, not quarantine) → 409 LINKED_USER_INACTIVE', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: false });
     const result = await prepareUserLink(501);
     expect(result).toEqual({
       ok: false,
       status: 409,
-      code: 'LINKED_USER_NOT_PENDING',
+      code: 'LINKED_USER_INACTIVE',
       message: expect.any(String),
     });
     expect(CosmonautRepository.findTenantMembershipOwnerIds).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe('FC177 F3 — prepareUserLink', () => {
 
   it('user already belongs to a Universo → 409 LINKED_USER_ALREADY_MEMBER', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: false });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([4]);
     const result = await prepareUserLink(501);
     expect(result).toEqual({
@@ -91,7 +91,7 @@ describe('FC177 F3 — prepareUserLink', () => {
 
   it('user never completed signup fiscal data → 409 LINKED_USER_MISSING_BILLING_PROFILE', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: false });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([]);
     (LinkingRepository.findBillingProfile as Mock).mockResolvedValue(null);
     const result = await prepareUserLink(501);
@@ -103,9 +103,9 @@ describe('FC177 F3 — prepareUserLink', () => {
     });
   });
 
-  it('happy path: valid quarantined candidate → PreparedUserLink with mapped billing fields', async () => {
+  it('happy path (FC182): valid active Arc candidate → PreparedUserLink with mapped billing fields', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: false });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([]);
     (LinkingRepository.findBillingProfile as Mock).mockResolvedValue(BILLING_ROW);
     const result = await prepareUserLink(501);

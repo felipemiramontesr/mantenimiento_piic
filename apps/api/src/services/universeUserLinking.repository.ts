@@ -25,12 +25,16 @@ export interface PendingUserRow extends RowDataPacket {
  *  silently truncating. */
 const PENDING_USERS_LIMIT = 200;
 
-const PENDING_USERS_WHERE = `WHERE u.is_active = 0
+/** FC182 (331_AN, Alfa) — under Modelo B, `is_active` is no longer a "not yet linked" proxy:
+ *  every self-registered user is active from signup (global `Arc` role, Arcsial-only). A
+ *  candidate is now `is_active = 1` (in good standing, not admin-suspended) AND absent from
+ *  `tenant_user_memberships` (never linked to a Universo). */
+const PENDING_USERS_WHERE = `WHERE u.is_active = 1
        AND NOT EXISTS (SELECT 1 FROM tenant_user_memberships tum WHERE tum.user_id = u.id)`;
 
-/** F3-I1 (FC177), FIFO-limited + counted (FC179) — users in quarantine (`is_active=0`) with a
- *  billing snapshot and no tenant yet, oldest registration first (`created_at ASC`) so nobody
- *  waits indefinitely at the back of an unbounded queue. */
+/** F3-I1 (FC177), FIFO-limited + counted (FC179), redefined for Modelo B (FC182) — active Arc
+ *  itinerants with a billing snapshot and no tenant yet, oldest registration first
+ *  (`created_at ASC`) so nobody waits indefinitely at the back of an unbounded queue. */
 export async function findPendingUsers(
   executor: Executor = db
 ): Promise<{ rows: PendingUserRow[]; total: number }> {

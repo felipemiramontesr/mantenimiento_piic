@@ -504,7 +504,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]) // findOwnerTypeByCode
       .mockResolvedValueOnce([[{ id: 9 }]]) // findMuCosmonautRoleId
-      .mockResolvedValueOnce([[{ is_active: 0 }]]) // findUserActiveState → quarantined
+      .mockResolvedValueOnce([[{ is_active: 1 }]]) // findUserActiveState → active Arc, not yet linked (FC182)
       .mockResolvedValueOnce([[]]) // findTenantMembershipOwnerIds → 0 (not a member anywhere)
       .mockResolvedValueOnce([[billingRow]]); // findBillingProfile
     mockConnection.execute
@@ -579,12 +579,12 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
-  it('COSMOLOGY-LINK-FAILCLOSED-ACTIVE: linkedUserId already active — 409 LINKED_USER_NOT_PENDING', async () => {
+  it('COSMOLOGY-LINK-FAILCLOSED-INACTIVE: linkedUserId inactive/suspended (FC182) — 409 LINKED_USER_INACTIVE', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
       .mockResolvedValueOnce([[{ id: 9 }]])
-      .mockResolvedValueOnce([[{ is_active: 1 }]]); // findUserActiveState → already active
+      .mockResolvedValueOnce([[{ is_active: 0 }]]); // findUserActiveState → admin-suspended
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -597,7 +597,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       },
     });
     expect(res.statusCode).toBe(409);
-    expect(JSON.parse(res.body).code).toBe('LINKED_USER_NOT_PENDING');
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_INACTIVE');
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
@@ -606,7 +606,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
       .mockResolvedValueOnce([[{ id: 9 }]])
-      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[{ is_active: 1 }]])
       .mockResolvedValueOnce([[{ owner_id: 4 }]]); // findTenantMembershipOwnerIds → already a member elsewhere
     const res = await app.inject({
       method: 'POST',
@@ -629,7 +629,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
       .mockResolvedValueOnce([[{ id: 9 }]])
-      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[{ is_active: 1 }]])
       .mockResolvedValueOnce([[]]) // findTenantMembershipOwnerIds → 0
       .mockResolvedValueOnce([[]]); // findBillingProfile → none
     const res = await app.inject({
@@ -653,7 +653,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]])
       .mockResolvedValueOnce([[{ id: 9 }]])
-      .mockResolvedValueOnce([[{ is_active: 0 }]])
+      .mockResolvedValueOnce([[{ is_active: 1 }]])
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[billingRow]]);
     mockConnection.execute
@@ -970,5 +970,73 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+});
+
+/**
+ * FC182 (Scenario 3, Modelo B) — Itinerant Arc tenant isolation. Not a new guard: `Arc`'s
+ * whitelist (migración 170) never includes any fleet/maint/route/finance/cosmology/cosmonaut
+ * slug, so `requirePermission()` already rejects an itinerant token by construction — this proves
+ * it, rather than trusting the whitelist by inspection alone (Cond.R-182 R1, Bravo — "verificación
+ * exhaustiva de guardias"). Deliberately reuses `../index`'s single `buildApp()` — the same
+ * instance registers cosmology AND fleet routes, so one token can be tested against both.
+ */
+describe('FC182 (Scenario 3) — Itinerant Arc (tenantId=null) is rejected by permission, not by a new tenant guard', () => {
+  const app = buildApp();
+  let itinerantArcToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    // The real 11 Arc slugs seeded by migración 170 — no fleet/maint/route/finance/cosmology/
+    // cosmonaut permission among them, by design (§24.15, least-privilege itinerant).
+    itinerantArcToken = jwt.sign({
+      id: 30,
+      username: 'arc.itinerant',
+      roleId: 3,
+      tenantId: null,
+      permissions: [
+        'social:post:view',
+        'social:post:create',
+        'social:post:edit:own',
+        'social:review:view',
+        'users:collaborator:edit:own',
+        'users:profile-image:manage',
+        'notifications:view:own',
+        'notifications:manage:own',
+        'notifications:config:edit',
+        'document:file:upload',
+        'document:file:download',
+      ],
+    });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+  });
+
+  const itinerantHeader = (): Record<string, string> => ({
+    authorization: `Bearer ${itinerantArcToken}`,
+  });
+
+  it('GET /v1/cosmology/universes — 403 for an itinerant Arc, 0 query reaches the handler', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes',
+      headers: itinerantHeader(),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('GET /v1/fleet — 403 for an itinerant Arc, a Universe-scoped module outside Cosmología entirely', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet',
+      headers: itinerantHeader(),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(db.execute).not.toHaveBeenCalled();
   });
 });

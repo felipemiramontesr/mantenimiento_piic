@@ -381,6 +381,17 @@ export async function findMuCosmonautRoleId(executor: Executor = db): Promise<nu
   return rows.length > 0 ? rows[0].id : null;
 }
 
+/** R_global 'Arc' role lookup (seeded by migración 170, §24.15 — Arconautas Itinerantes) — same
+ *  fail-closed shape as `findMuCosmonautRoleId`: null means the seed hasn't run here. FC182
+ *  assigns this role atomically at public signup, before the itinerant ever logs in. */
+export async function findArcCosmonautRoleId(executor: Executor = db): Promise<number | null> {
+  const [rows] = await executor.execute<CosmonautRoleIdRow[]>(
+    "SELECT id FROM cosmonaut_roles WHERE tenant_id IS NULL AND name = 'Arc' LIMIT 1",
+    []
+  );
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 /** True if `username` is already taken — guards the seed INSERT before opening its TX. */
 export async function usernameExists(username: string, executor: Executor = db): Promise<boolean> {
   const [rows] = await executor.execute<RowDataPacket[]>(
@@ -422,12 +433,15 @@ export async function insertTenantUserMembership(
   );
 }
 
-/** F2-I6(c) — grants the RBAC 'MU' role (never a sovereign role) scoped to this Universo. */
+/** F2-I6(c) — grants a cosmonaut role (never a sovereign role). `tenantId: null` grants an
+ *  R_global role (FC182 — the `Arc` role assigned at public signup, `assignedBy: null` since no
+ *  human caller exists at that point); `tenantId: number` grants an R_universe/R_global role
+ *  scoped to that Universo (FC177 F3's `MU` grant on link, with the linking Ω as `assignedBy`). */
 export async function insertCosmonautRoleAssignment(
   userId: number,
   roleId: number,
-  tenantId: number,
-  assignedBy: number,
+  tenantId: number | null,
+  assignedBy: number | null,
   executor: Executor = db
 ): Promise<void> {
   await executor.execute<ResultSetHeader>(
