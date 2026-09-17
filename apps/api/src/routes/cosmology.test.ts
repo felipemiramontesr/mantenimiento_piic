@@ -1040,3 +1040,91 @@ describe('FC182 (Scenario 3) — Itinerant Arc (tenantId=null) is rejected by pe
     expect(db.execute).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * FC185 F2 — POST /v1/cosmology/users/:id/mfa/reset. Ω-exclusivo (invariante: "0 auto-reset"),
+ * mismo `omegaGuard` que el resto de la cosmología admin.
+ */
+describe('FC185 F2 — POST /v1/cosmology/users/:id/mfa/reset', () => {
+  const app = buildApp();
+  let omegaToken: string;
+  let arcToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    omegaToken = jwt.sign({ id: 1, username: 'GrayMan', roleId: 0, permissions: ['*'] });
+    arcToken = jwt.sign({ id: 20, username: 'arc.user', roleId: 3, permissions: ['fleet:view'] });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    mockConnection.execute.mockResolvedValue([[], undefined]);
+  });
+
+  const omegaHeader = (): Record<string, string> => ({ authorization: `Bearer ${omegaToken}` });
+  const arcHeader = (): Record<string, string> => ({ authorization: `Bearer ${arcToken}` });
+
+  it('403 para un no-Ω, 0 query — el invariante "0 auto-reset" empieza en el guard', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/users/20/mfa/reset',
+      headers: arcHeader(),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('401 sin sesión', async () => {
+    const res = await app.inject({ method: 'POST', url: '/v1/cosmology/users/20/mfa/reset' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('400 VALIDATION_ERROR con un :id no numérico', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/users/not-a-number/mfa/reset',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('404 MFA_NOT_ENROLLED cuando el usuario objetivo no tiene credencial', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // findCredentialByUserId → sin fila
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/users/20/mfa/reset',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('MFA_NOT_ENROLLED');
+  });
+
+  it('200 — Ω resetea el MFA de otro usuario: borra credencial+backups en 1 TX', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ id: 9, user_id: 20, type: 'totp', secret_encrypted: 'enc_x', is_confirmed: 1 }],
+      undefined,
+    ]); // findCredentialByUserId
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/users/20/mfa/reset',
+      headers: omegaHeader(),
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toEqual({ success: true });
+    expect(mockConnection.commit).toHaveBeenCalled();
+    expect(mockConnection.rollback).not.toHaveBeenCalled();
+    const deleteCredCall = mockConnection.execute.mock.calls.find(([sql]) =>
+      String(sql).includes('DELETE FROM user_mfa_credentials')
+    );
+    const deleteBackupsCall = mockConnection.execute.mock.calls.find(([sql]) =>
+      String(sql).includes('DELETE FROM user_mfa_backup_codes')
+    );
+    expect(deleteCredCall?.[1]).toEqual([20]);
+    expect(deleteBackupsCall?.[1]).toEqual([20]);
+  });
+});

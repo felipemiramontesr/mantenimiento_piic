@@ -2,6 +2,8 @@ import { RowDataPacket } from 'mysql2';
 import { verify as argon2Verify } from '@node-rs/argon2';
 import EncryptionService from './encryption';
 import * as SessionRepository from './authSession.repository';
+import * as MfaRepository from './mfa.repository';
+import * as CosmonautRepository from './cosmonaut.repository';
 import {
   resolveAuthContext,
   resolveAuthContextForRefresh,
@@ -94,7 +96,49 @@ export type LoginResult =
       availableTenants: number[];
     }
   | { ok: false; status: 401; errorCode: 'L3' | 'L4' }
-  | { ok: false; status: 403; errorCode: 'ACCOUNT_PENDING_ACTIVATION' };
+  | { ok: false; status: 403; errorCode: 'ACCOUNT_PENDING_ACTIVATION' }
+  | { ok: false; status: 200; errorCode: 'MFA_REQUIRED'; userId: number }
+  | { ok: false; status: 200; errorCode: 'MFA_SETUP_REQUIRED'; userId: number; username: string };
+
+/** FC185 F2 — Ω/MU mandatory, Arc opt-in (FC185 Invariante 4, 340_AN). `tenantId !== null` por sí
+ *  solo NO basta para detectar "es MU": `assignmentsRoutes.ts` permite sub-usuarios con
+ *  `cosmonaut_type: 'ARC'` y un Universo real asignado (verificado en código antes de asumir lo
+ *  contrario) — así que un ARC con tenant sigue siendo opt-in, igual que un ARC itinerante puro.
+ *  `findCosmonautType` es el único chequeo que distingue correctamente ambos casos. */
+async function isMfaMandatoryRole(
+  userId: number,
+  roleId: number,
+  tenantId: number | null
+): Promise<boolean> {
+  if (roleId === 0) return true;
+  if (tenantId === null) return false;
+  const cosmonautType = await CosmonautRepository.findCosmonautType(userId, tenantId);
+  return cosmonautType === 'MU';
+}
+
+/** FC185 F2 — corre después de `resolveAuthContext`, antes de emitir sesión completa. Un
+ *  credencial TOTP confirmada (enrolada por cualquier rol, opt-in incluido) siempre exige el
+ *  segundo paso; si no existe ninguna y el rol es mandatorio, bloquea con `MFA_SETUP_REQUIRED` en
+ *  vez de dejarlo operar sin protección. */
+async function evaluateMfaGate(
+  mapped: MappedUser,
+  tenantId: number | null
+): Promise<LoginResult | null> {
+  const credential = await MfaRepository.findCredentialByUserId(mapped.id, 'totp');
+  if (credential?.is_confirmed) {
+    return { ok: false, status: 200, errorCode: 'MFA_REQUIRED', userId: mapped.id };
+  }
+  if (await isMfaMandatoryRole(mapped.id, mapped.roleId, tenantId)) {
+    return {
+      ok: false,
+      status: 200,
+      errorCode: 'MFA_SETUP_REQUIRED',
+      userId: mapped.id,
+      username: mapped.username,
+    };
+  }
+  return null;
+}
 
 /** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly.
  *  FC177 F1 — the `is_active` gate runs AFTER password verification (Cond.R-177 R2, Bravo):
@@ -121,6 +165,8 @@ export async function login(username: string, password: string): Promise<LoginRe
     mapped.id,
     mapped.roleId
   );
+  const mfaGate = await evaluateMfaGate(mapped, tenantId);
+  if (mfaGate) return mfaGate;
   return {
     ok: true,
     userId: user.id,

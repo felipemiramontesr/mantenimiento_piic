@@ -96,6 +96,38 @@ function issueSessionResponse(
   });
 }
 
+/** FC185 F2 (Scenario 1) — crea la fila de rastreo (`MfaService.createChallenge`) y firma el
+ *  `mfaToken` efímero (TTL 5m, scope `mfa_challenge`) — el único punto donde ese JWT se emite,
+ *  igual que `issueSessionResponse` es el único punto para el de sesión completa. */
+async function issueMfaChallengeResponse(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  userId: number
+): Promise<FastifyReply> {
+  const challengeId = await MfaService.createChallenge(userId);
+  const mfaToken = request.server.jwt.sign(
+    { id: userId, challengeId, scope: 'mfa_challenge' },
+    { expiresIn: '5m' }
+  );
+  return reply.send({ success: true, mfaRequired: true, mfaToken });
+}
+
+/** FC185 F2 — Ω/MU sin MFA aún: token de alcance mínimo (`type: 'mfa_setup'`, sin permisos) que
+ *  solo sirve para llamar `/mfa/setup` + `/mfa/confirm` (F1) — ambos leen `request.user.id` de
+ *  cualquier JWT válido, así que no necesitan cambio para aceptarlo. */
+function issueMfaSetupResponse(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  userId: number,
+  username: string
+): FastifyReply {
+  const setupToken = request.server.jwt.sign(
+    { id: userId, username, type: 'mfa_setup' },
+    { expiresIn: '10m' }
+  );
+  return reply.send({ success: true, mfaSetupRequired: true, setupToken });
+}
+
 async function handleLogin(
   request: FastifyRequest<{ Body: { username?: string; password?: string } }>,
   reply: FastifyReply
@@ -110,6 +142,14 @@ async function handleLogin(
   try {
     const result = await SessionService.login(username, password);
     if (!result.ok) {
+      // FC185 F2 — MFA_REQUIRED/MFA_SETUP_REQUIRED llevan cuerpo propio (mfaToken/setupToken), no
+      // el {error: code} genérico del resto de fallos de login.
+      if (result.errorCode === 'MFA_REQUIRED') {
+        return issueMfaChallengeResponse(request, reply, result.userId);
+      }
+      if (result.errorCode === 'MFA_SETUP_REQUIRED') {
+        return issueMfaSetupResponse(request, reply, result.userId, result.username);
+      }
       // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
       return reply.code(result.status).send({ error: result.errorCode });
     }
@@ -503,7 +543,65 @@ async function handleMfaConfirm(
   }
 }
 
-/** Registers the 14 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
+interface MfaChallengeJwtPayload {
+  id: number;
+  challengeId: string;
+  scope: string;
+}
+
+/** FC185 F2 (Scenario 2/3/4) — POST /v1/auth/mfa/verify. A diferencia del resto de rutas de
+ *  `auth.ts`, NO usa `request.jwtVerify()` (que lee de headers/cookies): el `mfaToken` viaja en el
+ *  BODY junto con `code`, así que se decodifica manualmente con `jwt.verify()` — mismo mecanismo
+ *  de firma/expiración, solo que el request aún no trae una sesión real. `scope !== 'mfa_challenge'`
+ *  rechaza cualquier JWT válido pero ajeno a este flujo (p. ej. un access/refresh token reciclado). */
+async function handleMfaVerify(
+  request: FastifyRequest<{ Body: { mfaToken?: string; code?: string } }>,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const parsed = z
+    .object({ mfaToken: z.string().min(1), code: z.string().min(1) })
+    .safeParse(request.body);
+  if (!parsed.success) {
+    return reply.code(400).send({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'mfaToken y code son requeridos',
+    });
+  }
+  let payload: MfaChallengeJwtPayload;
+  try {
+    payload = request.server.jwt.verify<MfaChallengeJwtPayload>(parsed.data.mfaToken);
+  } catch {
+    return reply.code(401).send({
+      success: false,
+      code: 'TOKEN_EXPIRED_OR_REVOKED',
+      message: 'El mfaToken expiró o es inválido',
+    });
+  }
+  if (payload.scope !== 'mfa_challenge') {
+    return reply.code(401).send({
+      success: false,
+      code: 'TOKEN_EXPIRED_OR_REVOKED',
+      message: 'Token no válido para este flujo',
+    });
+  }
+  try {
+    const result = await MfaService.verifyChallenge(payload.challengeId, parsed.data.code);
+    if (!result.ok) {
+      return reply
+        .code(result.status)
+        .send({ success: false, code: result.code, message: result.message });
+    }
+    return issueSessionResponse(request, reply, result);
+  } catch (e) {
+    request.log.error(e);
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'MFA_VERIFY_FAIL' });
+  }
+}
+
+/** Registers the 15 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: { username?: string; password?: string } }>(
     '/login',
@@ -533,8 +631,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // GET /v1/auth/me — resolved user profile + capabilities (union of all assigned roles)
   fastify.get('/me', handleGetMe);
   fastify.get('/users/:uuid/node', handleGetUserNode);
-  // FC185 F1 — POST /v1/auth/mfa/setup + /mfa/confirm (enrolamiento). El canje de código en
-  // login de dos pasos (/mfa/verify) llega en F2.
+  // FC185 F1 — POST /v1/auth/mfa/setup + /mfa/confirm (enrolamiento).
   fastify.post('/mfa/setup', handleMfaSetup);
   fastify.post<{ Body: { code?: string } }>('/mfa/confirm', handleMfaConfirm);
+  // FC185 F2 — POST /v1/auth/mfa/verify (canje de código por sesión completa, login de 2 pasos).
+  fastify.post<{ Body: { mfaToken?: string; code?: string } }>('/mfa/verify', handleMfaVerify);
 }

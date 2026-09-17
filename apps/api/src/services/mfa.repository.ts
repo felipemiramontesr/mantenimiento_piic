@@ -85,3 +85,113 @@ export async function insertBackupCodes(
     values
   );
 }
+
+/** F2 — graba el step consumido por un login ya confirmado (a diferencia de `confirmCredential`,
+ *  no toca `is_confirmed` — la credencial ya estaba activa). */
+export async function updateLastUsedStep(
+  id: number,
+  step: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'UPDATE user_mfa_credentials SET last_used_step = ?, last_used_at = NOW() WHERE id = ?',
+    [step, id]
+  );
+}
+
+/** F2 — Ω-exclusivo (invariante: "0 auto-reset"). Borra la credencial confirmada/pendiente y los
+ *  backups de un usuario en una sola TX -- deja al usuario en el mismo estado "sin MFA" que antes
+ *  de enrolarse, listo para re-enrolar desde cero. */
+export async function deleteMfaCredentialAndBackups(
+  userId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>('DELETE FROM user_mfa_credentials WHERE user_id = ?', [
+    userId,
+  ]);
+  await executor.execute<ResultSetHeader>('DELETE FROM user_mfa_backup_codes WHERE user_id = ?', [
+    userId,
+  ]);
+}
+
+export interface MfaBackupCodeRow extends RowDataPacket {
+  id: number;
+  code_hash: string;
+}
+
+/** Códigos de respaldo aún no consumidos de un usuario — se comparan uno a uno (Argon2id, hasta 8
+ *  verificaciones) porque el hash no es indexable por el código en claro. */
+export async function findUnusedBackupCodes(
+  userId: number,
+  executor: Executor = db
+): Promise<MfaBackupCodeRow[]> {
+  const [rows] = await executor.execute<MfaBackupCodeRow[]>(
+    'SELECT id, code_hash FROM user_mfa_backup_codes WHERE user_id = ? AND used_at IS NULL',
+    [userId]
+  );
+  return rows;
+}
+
+/** Quema atómicamente un código de respaldo -- `used_at IS NULL` en el WHERE evita una carrera
+ *  donde el mismo código se consuma dos veces; `affectedRows === 0` significa que alguien más ya
+ *  lo usó entre el SELECT y este UPDATE. */
+export async function markBackupCodeUsed(id: number, executor: Executor = db): Promise<boolean> {
+  const [result] = await executor.execute<ResultSetHeader>(
+    'UPDATE user_mfa_backup_codes SET used_at = NOW() WHERE id = ? AND used_at IS NULL',
+    [id]
+  );
+  return result.affectedRows > 0;
+}
+
+export interface MfaChallengeRow extends RowDataPacket {
+  id: number;
+  challenge_id: string;
+  user_id: number;
+  attempts_used: number;
+  revoked: number;
+}
+
+/** F2 — crea la fila de rastreo del reto de login (Scenario 1/3 del FC). `challengeId` es el UUID
+ *  embebido en el `mfaToken` firmado por la ruta, nunca el JWT completo. */
+export async function insertChallenge(
+  challengeId: string,
+  userId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'INSERT INTO mfa_challenges (challenge_id, user_id) VALUES (?, ?)',
+    [challengeId, userId]
+  );
+}
+
+/** Fila de rastreo del reto de login (intentos usados, revocado), o `null` si no existe. */
+export async function findChallengeById(
+  challengeId: string,
+  executor: Executor = db
+): Promise<MfaChallengeRow | null> {
+  const [rows] = await executor.execute<MfaChallengeRow[]>(
+    'SELECT id, challenge_id, user_id, attempts_used, revoked FROM mfa_challenges WHERE challenge_id = ?',
+    [challengeId]
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** Scenario 3 — máximo 5 intentos fallidos: incrementa y regresa el nuevo total para que el
+ *  caller decida si este fue el fallo que agota el presupuesto. */
+export async function incrementChallengeAttempts(
+  id: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'UPDATE mfa_challenges SET attempts_used = attempts_used + 1 WHERE id = ?',
+    [id]
+  );
+}
+
+/** Revoca el reto -- al 5to fallo (Scenario 3) o al primer éxito (un challenge es de un solo uso
+ *  en ambos casos, mismo criterio que un código de respaldo). */
+export async function revokeChallenge(id: number, executor: Executor = db): Promise<void> {
+  await executor.execute<ResultSetHeader>('UPDATE mfa_challenges SET revoked = 1 WHERE id = ?', [
+    id,
+  ]);
+}

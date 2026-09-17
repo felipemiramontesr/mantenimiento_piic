@@ -65,7 +65,9 @@ describe('FC176 F1 — authSession.service login() via cosmonautMiddleware real'
       .mockResolvedValueOnce([[{ owner_id: 4 }], undefined]) // resolvePrimaryTenant → tenant_user_memberships
       .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined]) // resolveEffectivePermissions
       .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined]) // deriveOwnerType
-      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]); // getAvailableTenants
+      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]) // getAvailableTenants
+      .mockResolvedValueOnce([[], undefined]) // FC185 F2 — findCredentialByUserId: 0 MFA enrolado
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }], undefined]); // FC185 F2 — findCosmonautType: sub-usuario, no MU → no mandatorio
 
     const result = await login('arc_tenant', 'password123');
 
@@ -77,16 +79,20 @@ describe('FC176 F1 — authSession.service login() via cosmonautMiddleware real'
     expect(result.availableTenants).toEqual([4]);
   });
 
-  it('AT-FC176-F1-2: GrayMan (roleId=0) mantiene el bypass total, 0 consultas al chasis cosmonauta', async () => {
-    (db as unknown as MockDb).execute.mockResolvedValueOnce([[OMEGA_USER_ROW], undefined]); // findUserWithRoleAndDepartmentByUsername
+  it('AT-FC176-F1-2 (actualizado FC185 F2): GrayMan (roleId=0) sigue bypaseando el chasis de permisos (0 consultas ahí), pero ahora el MFA es mandatorio — sin credencial enrolada, login() bloquea con MFA_SETUP_REQUIRED en vez de sesión completa', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[OMEGA_USER_ROW], undefined]) // findUserWithRoleAndDepartmentByUsername
+      .mockResolvedValueOnce([[], undefined]); // FC185 F2 — findCredentialByUserId: 0 MFA enrolado
 
     const result = await login('grayman', 'password123');
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.tenantId).toBeNull();
-    expect(result.permissions).toEqual(['*']);
-    expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result).toMatchObject({ status: 200, errorCode: 'MFA_SETUP_REQUIRED', userId: 1 });
+    // 2 queries: lookup de usuario + findCredentialByUserId. El chasis de permisos
+    // (resolveEffectivePermissions/deriveOwnerType/getAvailableTenants) sigue en 0 para Ω — el
+    // bypass original de FC176 F1 no cambió, solo se agregó el gate de MFA después de él.
+    expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -134,7 +140,9 @@ describe('FC177 F1 — login() hard-gates is_active (Cond.R-177 R2, Bravo)', () 
       .mockResolvedValueOnce([[{ owner_id: 4 }], undefined])
       .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined])
       .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined])
-      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]);
+      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined])
+      .mockResolvedValueOnce([[], undefined]) // FC185 F2 — findCredentialByUserId: 0 MFA enrolado
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }], undefined]); // FC185 F2 — findCosmonautType: no MU
 
     const result = await login('arc_tenant', 'password123');
 
@@ -157,7 +165,8 @@ describe('FC182 (Scenario 2, Modelo B) — login() de un Arconauta Itinerante pu
         [{ slug: 'social:post:view:own' }, { slug: 'social:post:create:own' }],
         undefined,
       ]) // resolveEffectivePermissions(userId, null) → recoge la fila global vía `tenant_id IS NULL`
-      .mockResolvedValueOnce([[], undefined]); // getAvailableTenants → 0 (deriveOwnerType(null) no hace query, retorna null directo)
+      .mockResolvedValueOnce([[], undefined]) // getAvailableTenants → 0 (deriveOwnerType(null) no hace query, retorna null directo)
+      .mockResolvedValueOnce([[], undefined]); // FC185 F2 — findCredentialByUserId: 0 MFA enrolado (opt-in, tenantId=null → 0 findCosmonautType)
 
     const result = await login('arc_tenant', 'password123');
 

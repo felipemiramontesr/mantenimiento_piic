@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { requireOmega } from '../middleware/cosmonautMiddleware';
 import * as CosmologyService from '../services/cosmology.service';
+import { resetUserMfa } from '../services/mfa.service';
 import type {
   MutationResult,
   ListResult,
@@ -58,6 +59,7 @@ function sendPendingUsersListResult(
 }
 
 const tenantIdParamSchema = z.object({ tenantId: z.coerce.number().int().positive() });
+const userIdParamSchema = z.object({ id: z.coerce.number().int().positive() });
 const superclusterParamSchema = tenantIdParamSchema.extend({ superclusterCode: z.string().min(1) });
 const clusterParamSchema = tenantIdParamSchema.extend({ clusterCode: z.string().min(1) });
 const addSuperclusterBodySchema = z.object({ superclusterCode: z.string().min(1) });
@@ -229,7 +231,21 @@ async function handleListPendingUsers(
   return sendPendingUsersListResult(reply, result);
 }
 
-/** Registers the 10 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3), all Ω-exclusive. */
+/** FC185 F2 — POST /users/:id/mfa/reset. Único camino de "perdí mi autenticador": el usuario
+ *  jamás puede auto-resetear su propio MFA (invariante del FC), solo Ω. */
+async function handleResetUserMfa(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const params = userIdParamSchema.safeParse(request.params);
+  if (!params.success) {
+    return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+  }
+  const result = await resetUserMfa(params.data.id, callerId(request));
+  return sendMutationResult(reply, result);
+}
+
+/** Registers the 11 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2), all Ω-exclusive. */
 export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
@@ -245,4 +261,5 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.delete('/universes/:tenantId', omegaGuard, handleDestroyUniverse);
   fastify.get('/universes', omegaGuard, handleListUniverses);
   fastify.get('/pending-users', omegaGuard, handleListPendingUsers);
+  fastify.post('/users/:id/mfa/reset', omegaGuard, handleResetUserMfa);
 }
