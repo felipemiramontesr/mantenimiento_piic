@@ -7,6 +7,7 @@ import ProfileFormBanners from './ArchonProfilePanel/ProfileFormBanners';
 import PersonalDataCard from './ArchonProfilePanel/PersonalDataCard';
 import SecurityAccessCard from './ArchonProfilePanel/SecurityAccessCard';
 import CacheRepairSection from './ArchonProfilePanel/CacheRepairSection';
+import MfaSecurityCard from './MfaSecurityCard';
 
 interface ProfileSubmitButtonProps {
   readonly isSubmitting: boolean;
@@ -87,7 +88,8 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         <ProfileSubmitButton isSubmitting={isSubmitting} canSubmit={canSubmit} />
       </form>
 
-      <div className="w-full max-w-[1700px] mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="w-full max-w-[1700px] mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-6">
+        <MfaSecurityCard />
         <CacheRepairSection />
       </div>
     </div>

@@ -166,4 +166,84 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).not.toBeDisabled();
     expect(screen.getByPlaceholderText('••••••••')).not.toBeDisabled();
   });
+
+  describe('FC185 F3 — mfaSetupRequired (Ω/MU sin MFA enrolado, invariante 4)', () => {
+    const submitLogin = (): void => {
+      fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+        target: { value: 'grayman' },
+      });
+      fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+        target: { value: 'Archon2026!' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
+    };
+
+    it('reemplaza el formulario por el asistente MFA en vez de navegar al dashboard', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (url === '/auth/login') {
+          return Promise.resolve({
+            data: { success: true, mfaSetupRequired: true, setupToken: 'setup-token-1' },
+          });
+        }
+        if (url === '/auth/mfa/setup') {
+          return Promise.resolve({
+            data: {
+              success: true,
+              data: { secretBase32: 'SECRET32', otpauthUri: 'otpauth://totp/x' },
+            },
+          });
+        }
+        return Promise.reject(new Error(`unexpected URL ${url}`));
+      });
+
+      renderComponent();
+      submitLogin();
+
+      expect(await screen.findByTestId('mfa-mandatory-setup')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('usuario o correo@empresa.com')).not.toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+      await waitFor(() => expect(screen.getByTestId('mfa-scan-step')).toBeInTheDocument());
+    });
+
+    it('completar el asistente regresa al formulario de login con el banner de éxito, contraseña vacía', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (url === '/auth/login') {
+          return Promise.resolve({
+            data: { success: true, mfaSetupRequired: true, setupToken: 'setup-token-1' },
+          });
+        }
+        if (url === '/auth/mfa/setup') {
+          return Promise.resolve({
+            data: {
+              success: true,
+              data: { secretBase32: 'SECRET32', otpauthUri: 'otpauth://totp/x' },
+            },
+          });
+        }
+        if (url === '/auth/mfa/confirm') {
+          return Promise.resolve({
+            data: { success: true, data: { backupCodes: ['AAAAA-11111'] } },
+          });
+        }
+        return Promise.reject(new Error(`unexpected URL ${url}`));
+      });
+
+      renderComponent();
+      submitLogin();
+
+      await screen.findByTestId('mfa-scan-step');
+      fireEvent.change(screen.getByLabelText(/código de 6 dígitos/i), {
+        target: { value: '123456' },
+      });
+      fireEvent.click(screen.getByTestId('mfa-confirm-submit'));
+
+      await screen.findByTestId('mfa-backup-codes-step');
+      fireEvent.click(screen.getByTestId('mfa-backup-acknowledge'));
+      fireEvent.click(screen.getByTestId('mfa-backup-continue'));
+
+      expect(await screen.findByTestId('mfa-just-activated-banner')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('••••••••')).toHaveValue('');
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+    });
+  });
 });

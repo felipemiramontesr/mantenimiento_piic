@@ -5,6 +5,8 @@ import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
+import MfaEnrollmentWizard from '../../components/Identity/MfaEnrollment/MfaEnrollmentWizard';
+import { UserIndustrial } from '../../types/user';
 
 interface LoginFormState {
   username: string;
@@ -17,6 +19,9 @@ interface LoginFormState {
   showCookies: boolean;
   acceptCookies: () => void;
   dismissCookies: () => void;
+  mfaSetupToken: string | null;
+  mfaJustActivated: boolean;
+  handleMfaSetupComplete: () => void;
 }
 
 function getLoginErrorMessage(err: unknown): string {
@@ -26,14 +31,13 @@ function getLoginErrorMessage(err: unknown): string {
     : 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
 }
 
-/** Estado y submit del formulario de acceso + banner de cookies (FC163 F2B4 Sub-Batch 4B-2). */
-function useLoginForm(): LoginFormState {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+/** Banner de consentimiento de cookies — extraído de `useLoginForm` para mantenerlo bajo Gate 2
+ *  (FC185 F3, sin cambio de comportamiento). */
+function useCookieConsent(): {
+  showCookies: boolean;
+  acceptCookies: () => void;
+  dismissCookies: () => void;
+} {
   const [showCookies, setShowCookies] = useState(false);
 
   useEffect(() => {
@@ -45,23 +49,75 @@ function useLoginForm(): LoginFormState {
     setShowCookies(false);
   };
 
+  return { showCookies, acceptCookies, dismissCookies: (): void => setShowCookies(false) };
+}
+
+interface LoginResponseHandlers {
+  readonly login: (token: string, user: UserIndustrial) => void;
+  readonly navigate: (path: string) => void;
+  readonly setError: (v: string | null) => void;
+  readonly setMfaSetupToken: (v: string | null) => void;
+}
+
+interface LoginApiResponse {
+  data: {
+    mfaSetupRequired?: boolean;
+    setupToken?: string;
+    token?: string;
+    user?: UserIndustrial;
+  };
+}
+
+/** Traduce la respuesta de `/auth/login` a una de las 3 ramas (sesión completa, `mfaSetupRequired`
+ *  FC185 F3, o error de protocolo) — extraída de `handleLogin` para mantener `useLoginForm` bajo
+ *  Gate 2, mismo comportamiento verbatim. */
+function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponseHandlers): void {
+  if (response.data.mfaSetupRequired) {
+    handlers.setMfaSetupToken(response.data.setupToken ?? null);
+  } else if (response.data.token && response.data.user) {
+    handlers.login(response.data.token, response.data.user);
+    handlers.navigate('/dashboard');
+  } else {
+    handlers.setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
+  }
+}
+
+/** Estado y submit del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2).
+ *  FC185 F3 — `mfaSetupRequired: true` (Ω/MU sin MFA enrolado, invariante 4 del FC) desvía a
+ *  `MfaEnrollmentWizard` con el `setupToken` de alcance mínimo en vez de continuar el login;
+ *  confirmar el enrolamiento NO emite sesión (F2 no la emite ahí) — el usuario vuelve al
+ *  formulario y entra normal con su password ya enrolado. `mfaRequired: true` (login de dos pasos
+ *  para quien YA tiene MFA) es alcance de F4, deliberadamente sin manejar aún aquí. */
+function useLoginForm(): LoginFormState {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mfaSetupToken, setMfaSetupToken] = useState<string | null>(null);
+  const [mfaJustActivated, setMfaJustActivated] = useState(false);
+  const { showCookies, acceptCookies, dismissCookies } = useCookieConsent();
+
   const handleLogin = (e: React.FormEvent): void => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMfaJustActivated(false);
 
     api
       .post('/auth/login', { username, password })
-      .then((response) => {
-        if (response.data.token) {
-          login(response.data.token, response.data.user);
-          navigate('/dashboard');
-        } else {
-          setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
-        }
-      })
+      .then((response) =>
+        handleLoginResponse(response, { login, navigate, setError, setMfaSetupToken })
+      )
       .catch((err: unknown) => setError(getLoginErrorMessage(err)))
       .finally(() => setLoading(false));
+  };
+
+  const handleMfaSetupComplete = (): void => {
+    setMfaSetupToken(null);
+    setMfaJustActivated(true);
+    setPassword('');
   };
 
   return {
@@ -74,7 +130,10 @@ function useLoginForm(): LoginFormState {
     handleLogin,
     showCookies,
     acceptCookies,
-    dismissCookies: (): void => setShowCookies(false),
+    dismissCookies,
+    mfaSetupToken,
+    mfaJustActivated,
+    handleMfaSetupComplete,
   };
 }
 
@@ -123,6 +182,7 @@ interface LoginFormProps {
   readonly loading: boolean;
   readonly error: string | null;
   readonly onSubmit: (e: React.FormEvent) => void;
+  readonly mfaJustActivated: boolean;
 }
 
 interface LoginCredentialFieldsProps {
@@ -218,6 +278,7 @@ function LoginForm({
   loading,
   error,
   onSubmit,
+  mfaJustActivated,
 }: LoginFormProps): React.JSX.Element {
   return (
     <div className="w-full max-w-[440px]">
@@ -229,6 +290,15 @@ function LoginForm({
           Control de Flotas
         </p>
       </header>
+
+      {mfaJustActivated && (
+        <div
+          data-testid="mfa-just-activated-banner"
+          className="mb-6 p-4 bg-emerald-500/10 text-emerald-700 text-archon-md font-black rounded-[4px] border-l-4 border-emerald-500 animate-in slide-in-from-top duration-300"
+        >
+          MFA activado. Ingresa tu contraseña de nuevo para continuar.
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-archon-md font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
@@ -298,10 +368,16 @@ interface LoginPanelProps {
   readonly loading: boolean;
   readonly error: string | null;
   readonly onSubmit: (e: React.FormEvent) => void;
+  readonly mfaJustActivated: boolean;
+  readonly mfaSetupToken: string | null;
+  readonly onMfaSetupComplete: () => void;
 }
 
-/** Panel derecho: logo móvil, formulario de acceso, pie de página (FC163 F2B4 Sub-Batch 4B-2). */
+/** Panel derecho: logo móvil, formulario de acceso o asistente MFA obligatorio, pie de página
+ *  (FC163 F2B4 Sub-Batch 4B-2; FC185 F3 — `mfaSetupToken` reemplaza el formulario por el
+ *  asistente, invariante 4 del FC: Ω/MU no puede saltarse el enrolamiento). */
 function LoginPanel(props: LoginPanelProps): React.JSX.Element {
+  const { mfaSetupToken, onMfaSetupComplete, ...formProps } = props;
   return (
     <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
       <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
@@ -310,7 +386,13 @@ function LoginPanel(props: LoginPanelProps): React.JSX.Element {
         </header>
 
         <main className="flex-1 flex flex-col justify-center px-6 md:px-16">
-          <LoginForm {...props} />
+          {mfaSetupToken ? (
+            <div className="w-full max-w-[440px]" data-testid="mfa-mandatory-setup">
+              <MfaEnrollmentWizard token={mfaSetupToken} onComplete={onMfaSetupComplete} />
+            </div>
+          ) : (
+            <LoginForm {...formProps} />
+          )}
         </main>
 
         <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
@@ -345,6 +427,9 @@ const LoginPage: React.FC = () => {
     showCookies,
     acceptCookies,
     dismissCookies,
+    mfaSetupToken,
+    mfaJustActivated,
+    handleMfaSetupComplete,
   } = useLoginForm();
 
   return (
@@ -366,6 +451,9 @@ const LoginPage: React.FC = () => {
         loading={loading}
         error={error}
         onSubmit={handleLogin}
+        mfaJustActivated={mfaJustActivated}
+        mfaSetupToken={mfaSetupToken}
+        onMfaSetupComplete={handleMfaSetupComplete}
       />
 
       {showCookies && <CookieBanner onReject={dismissCookies} onAccept={acceptCookies} />}
