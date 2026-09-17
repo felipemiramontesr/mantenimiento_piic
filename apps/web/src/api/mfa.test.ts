@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import api from './client';
-import { beginMfaSetup, confirmMfaSetup } from './mfa';
+import { beginMfaSetup, confirmMfaSetup, verifyMfaChallenge } from './mfa';
 
 /** FC185 F3 — cliente tipado de `/v1/auth/mfa/setup` + `/confirm`. */
 
@@ -61,5 +61,23 @@ describe('api/mfa', () => {
       { code: '123456' },
       { headers: { Authorization: 'Bearer setup-token-123' } }
     );
+  });
+
+  it('verifyMfaChallenge postea mfaToken+code y regresa la respuesta cruda (misma forma que /login)', async () => {
+    (api.post as Mock).mockResolvedValue({
+      data: { success: true, token: 'session-token', user: { id: 501, username: 'archie' } },
+    });
+
+    const result = await verifyMfaChallenge('mfa-token-1', '123456');
+
+    expect(api.post).toHaveBeenCalledWith('/auth/mfa/verify', {
+      mfaToken: 'mfa-token-1',
+      code: '123456',
+    });
+    expect(result).toEqual({
+      success: true,
+      token: 'session-token',
+      user: { id: 501, username: 'archie' },
+    });
   });
 });

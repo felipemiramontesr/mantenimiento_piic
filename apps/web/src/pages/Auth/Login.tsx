@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
-import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
-import MfaEnrollmentWizard from '../../components/Identity/MfaEnrollment/MfaEnrollmentWizard';
+import useMfaChallenge, { MfaChallengeState } from './useMfaChallenge';
+import LoginPanel from './LoginPanel';
 import { UserIndustrial } from '../../types/user';
 
 interface LoginFormState {
@@ -22,6 +22,7 @@ interface LoginFormState {
   mfaSetupToken: string | null;
   mfaJustActivated: boolean;
   handleMfaSetupComplete: () => void;
+  mfaChallenge: MfaChallengeState;
 }
 
 function getLoginErrorMessage(err: unknown): string {
@@ -57,23 +58,28 @@ interface LoginResponseHandlers {
   readonly navigate: (path: string) => void;
   readonly setError: (v: string | null) => void;
   readonly setMfaSetupToken: (v: string | null) => void;
+  readonly startMfaChallenge: (mfaToken: string) => void;
 }
 
 interface LoginApiResponse {
   data: {
     mfaSetupRequired?: boolean;
     setupToken?: string;
+    mfaRequired?: boolean;
+    mfaToken?: string;
     token?: string;
     user?: UserIndustrial;
   };
 }
 
-/** Traduce la respuesta de `/auth/login` a una de las 3 ramas (sesión completa, `mfaSetupRequired`
- *  FC185 F3, o error de protocolo) — extraída de `handleLogin` para mantener `useLoginForm` bajo
- *  Gate 2, mismo comportamiento verbatim. */
+/** Traduce la respuesta de `/auth/login` a una de 4 ramas (sesión completa, `mfaSetupRequired`
+ *  F3, `mfaRequired` F4, o error de protocolo) — extraída de `handleLogin` para mantener
+ *  `useLoginForm` bajo Gate 2, mismo comportamiento verbatim para las ramas preexistentes. */
 function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponseHandlers): void {
   if (response.data.mfaSetupRequired) {
     handlers.setMfaSetupToken(response.data.setupToken ?? null);
+  } else if (response.data.mfaRequired && response.data.mfaToken) {
+    handlers.startMfaChallenge(response.data.mfaToken);
   } else if (response.data.token && response.data.user) {
     handlers.login(response.data.token, response.data.user);
     handlers.navigate('/dashboard');
@@ -82,12 +88,78 @@ function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponse
   }
 }
 
+/** Estado del enrolamiento obligatorio F3 (`mfaSetupToken`/`mfaJustActivated`) — extraído de
+ *  `useLoginForm` para mantenerlo bajo Gate 2, mismo comportamiento verbatim. */
+function useMfaSetupFlow(setPassword: (v: string) => void): {
+  mfaSetupToken: string | null;
+  setMfaSetupToken: (v: string | null) => void;
+  mfaJustActivated: boolean;
+  setMfaJustActivated: (v: boolean) => void;
+  handleMfaSetupComplete: () => void;
+} {
+  const [mfaSetupToken, setMfaSetupToken] = useState<string | null>(null);
+  const [mfaJustActivated, setMfaJustActivated] = useState(false);
+
+  const handleMfaSetupComplete = (): void => {
+    setMfaSetupToken(null);
+    setMfaJustActivated(true);
+    setPassword('');
+  };
+
+  return {
+    mfaSetupToken,
+    setMfaSetupToken,
+    mfaJustActivated,
+    setMfaJustActivated,
+    handleMfaSetupComplete,
+  };
+}
+
+interface PerformLoginState {
+  readonly setLoading: (v: boolean) => void;
+  readonly setError: (v: string | null) => void;
+  readonly setMfaJustActivated: (v: boolean) => void;
+}
+
+/** El submit completo: banderas de estado + `POST /auth/login` + traducción de la respuesta —
+ *  extraído de `useLoginForm` para mantenerlo bajo Gate 2, mismo comportamiento verbatim. */
+function performLogin(
+  username: string,
+  password: string,
+  state: PerformLoginState,
+  responseHandlers: LoginResponseHandlers
+): void {
+  state.setLoading(true);
+  state.setError(null);
+  state.setMfaJustActivated(false);
+
+  api
+    .post('/auth/login', { username, password })
+    .then((response) => handleLoginResponse(response, responseHandlers))
+    .catch((err: unknown) => state.setError(getLoginErrorMessage(err)))
+    .finally(() => state.setLoading(false));
+}
+
+/** Fábrica del `onSubmit` del formulario — extraída de `useLoginForm` para mantenerlo bajo
+ *  Gate 2, mismo comportamiento verbatim. */
+function makeHandleLogin(
+  username: string,
+  password: string,
+  state: PerformLoginState,
+  responseHandlers: LoginResponseHandlers
+): (e: React.FormEvent) => void {
+  return (e: React.FormEvent): void => {
+    e.preventDefault();
+    performLogin(username, password, state, responseHandlers);
+  };
+}
+
 /** Estado y submit del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2).
  *  FC185 F3 — `mfaSetupRequired: true` (Ω/MU sin MFA enrolado, invariante 4 del FC) desvía a
  *  `MfaEnrollmentWizard` con el `setupToken` de alcance mínimo en vez de continuar el login;
  *  confirmar el enrolamiento NO emite sesión (F2 no la emite ahí) — el usuario vuelve al
- *  formulario y entra normal con su password ya enrolado. `mfaRequired: true` (login de dos pasos
- *  para quien YA tiene MFA) es alcance de F4, deliberadamente sin manejar aún aquí. */
+ *  formulario y entra normal con su password ya enrolado. FC185 F4 — `mfaRequired: true` desvía a
+ *  `useMfaChallenge`, cuyo `onSuccess` reusa el MISMO `login()+navigate()` que un login normal. */
 function useLoginForm(): LoginFormState {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -95,30 +167,25 @@ function useLoginForm(): LoginFormState {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mfaSetupToken, setMfaSetupToken] = useState<string | null>(null);
-  const [mfaJustActivated, setMfaJustActivated] = useState(false);
   const { showCookies, acceptCookies, dismissCookies } = useCookieConsent();
+  const {
+    mfaSetupToken,
+    setMfaSetupToken,
+    mfaJustActivated,
+    setMfaJustActivated,
+    handleMfaSetupComplete,
+  } = useMfaSetupFlow(setPassword);
+  const mfaChallenge = useMfaChallenge((token, user) => {
+    login(token, user);
+    navigate('/dashboard');
+  });
 
-  const handleLogin = (e: React.FormEvent): void => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setMfaJustActivated(false);
-
-    api
-      .post('/auth/login', { username, password })
-      .then((response) =>
-        handleLoginResponse(response, { login, navigate, setError, setMfaSetupToken })
-      )
-      .catch((err: unknown) => setError(getLoginErrorMessage(err)))
-      .finally(() => setLoading(false));
-  };
-
-  const handleMfaSetupComplete = (): void => {
-    setMfaSetupToken(null);
-    setMfaJustActivated(true);
-    setPassword('');
-  };
+  const handleLogin = makeHandleLogin(
+    username,
+    password,
+    { setLoading, setError, setMfaJustActivated },
+    { login, navigate, setError, setMfaSetupToken, startMfaChallenge: mfaChallenge.start }
+  );
 
   return {
     username,
@@ -134,6 +201,7 @@ function useLoginForm(): LoginFormState {
     mfaSetupToken,
     mfaJustActivated,
     handleMfaSetupComplete,
+    mfaChallenge,
   };
 }
 
@@ -171,152 +239,6 @@ function HeroContent(): React.JSX.Element {
         </div>
       </main>
     </section>
-  );
-}
-
-interface LoginFormProps {
-  readonly username: string;
-  readonly password: string;
-  readonly onUsernameChange: (v: string) => void;
-  readonly onPasswordChange: (v: string) => void;
-  readonly loading: boolean;
-  readonly error: string | null;
-  readonly onSubmit: (e: React.FormEvent) => void;
-  readonly mfaJustActivated: boolean;
-}
-
-interface LoginCredentialFieldsProps {
-  readonly username: string;
-  readonly password: string;
-  readonly onUsernameChange: (v: string) => void;
-  readonly onPasswordChange: (v: string) => void;
-  readonly loading: boolean;
-}
-
-/** Campos de usuario y contraseña del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2). */
-function LoginCredentialFields({
-  username,
-  password,
-  onUsernameChange,
-  onPasswordChange,
-  loading,
-}: LoginCredentialFieldsProps): React.JSX.Element {
-  return (
-    <>
-      <div className="flex flex-col gap-1 relative mb-4">
-        <label
-          htmlFor="login-username"
-          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
-        >
-          Usuario o Correo
-        </label>
-        <input
-          id="login-username"
-          type="text"
-          placeholder="usuario o correo@empresa.com"
-          value={username}
-          onChange={(e): void => onUsernameChange(e.target.value)}
-          className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
-          disabled={loading}
-          required
-        />
-      </div>
-
-      <div className="flex flex-col gap-1 relative mb-6">
-        <label
-          htmlFor="login-password"
-          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
-        >
-          Clave de Seguridad
-        </label>
-        <input
-          id="login-password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e): void => onPasswordChange(e.target.value)}
-          className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
-          disabled={loading}
-          required
-        />
-      </div>
-    </>
-  );
-}
-
-/** Botón de submit + links de contraseña olvidada / autoregistro (FC163 F2B4; FC177 F2 — link a /signup). */
-function LoginSubmitButton({ loading }: { readonly loading: boolean }): React.JSX.Element {
-  return (
-    <div className="flex flex-col">
-      <button type="submit" disabled={loading} className="btn-archon-primary w-full !md:w-full">
-        {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
-      </button>
-      <div className="flex items-center justify-between mt-[5px]">
-        <button
-          type="button"
-          className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
-        >
-          ¿Olvidaste tu contraseña?
-        </button>
-        <Link
-          to="/signup"
-          className="text-pinnacle-navy/50 font-display font-bold text-xs hover:opacity-80 transition-all"
-        >
-          Crear cuenta
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/** Encabezado + banner de error + inputs + submit del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2). */
-function LoginForm({
-  username,
-  password,
-  onUsernameChange,
-  onPasswordChange,
-  loading,
-  error,
-  onSubmit,
-  mfaJustActivated,
-}: LoginFormProps): React.JSX.Element {
-  return (
-    <div className="w-full max-w-[440px]">
-      <header className="mb-12">
-        <h2 className="text-pinnacle-navy font-display font-black text-4xl lg:text-5xl tracking-tight leading-tight">
-          Acceso Archon
-        </h2>
-        <p className="text-pinnacle-navy/40 font-display font-bold text-archon-md uppercase tracking-[0.25em] mt-2">
-          Control de Flotas
-        </p>
-      </header>
-
-      {mfaJustActivated && (
-        <div
-          data-testid="mfa-just-activated-banner"
-          className="mb-6 p-4 bg-emerald-500/10 text-emerald-700 text-archon-md font-black rounded-[4px] border-l-4 border-emerald-500 animate-in slide-in-from-top duration-300"
-        >
-          MFA activado. Ingresa tu contraseña de nuevo para continuar.
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-archon-md font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={onSubmit} className="flex flex-col gap-6">
-        <LoginCredentialFields
-          username={username}
-          password={password}
-          onUsernameChange={onUsernameChange}
-          onPasswordChange={onPasswordChange}
-          loading={loading}
-        />
-        <LoginSubmitButton loading={loading} />
-      </form>
-    </div>
   );
 }
 
@@ -360,53 +282,6 @@ function CookieBanner({ onReject, onAccept }: CookieBannerProps): React.JSX.Elem
   );
 }
 
-interface LoginPanelProps {
-  readonly username: string;
-  readonly password: string;
-  readonly onUsernameChange: (v: string) => void;
-  readonly onPasswordChange: (v: string) => void;
-  readonly loading: boolean;
-  readonly error: string | null;
-  readonly onSubmit: (e: React.FormEvent) => void;
-  readonly mfaJustActivated: boolean;
-  readonly mfaSetupToken: string | null;
-  readonly onMfaSetupComplete: () => void;
-}
-
-/** Panel derecho: logo móvil, formulario de acceso o asistente MFA obligatorio, pie de página
- *  (FC163 F2B4 Sub-Batch 4B-2; FC185 F3 — `mfaSetupToken` reemplaza el formulario por el
- *  asistente, invariante 4 del FC: Ω/MU no puede saltarse el enrolamiento). */
-function LoginPanel(props: LoginPanelProps): React.JSX.Element {
-  const { mfaSetupToken, onMfaSetupComplete, ...formProps } = props;
-  return (
-    <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
-      <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
-        <header className="h-[10vh] md:hidden bg-pinnacle-navy flex items-center px-6">
-          <PiicLogo />
-        </header>
-
-        <main className="flex-1 flex flex-col justify-center px-6 md:px-16">
-          {mfaSetupToken ? (
-            <div className="w-full max-w-[440px]" data-testid="mfa-mandatory-setup">
-              <MfaEnrollmentWizard token={mfaSetupToken} onComplete={onMfaSetupComplete} />
-            </div>
-          ) : (
-            <LoginForm {...formProps} />
-          )}
-        </main>
-
-        <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
-          <div className="flex flex-col items-center gap-1 text-center">
-            <span className="text-pinnacle-navy/40 font-bold text-archon-sm uppercase tracking-widest">
-              © Todos los derechos reservados. Dreamtek.
-            </span>
-          </div>
-        </footer>
-      </div>
-    </section>
-  );
-}
-
 /**
  * LoginPage Component - ARCHON System (V.78.100.80)
  *
@@ -430,6 +305,7 @@ const LoginPage: React.FC = () => {
     mfaSetupToken,
     mfaJustActivated,
     handleMfaSetupComplete,
+    mfaChallenge,
   } = useLoginForm();
 
   return (
@@ -454,6 +330,7 @@ const LoginPage: React.FC = () => {
         mfaJustActivated={mfaJustActivated}
         mfaSetupToken={mfaSetupToken}
         onMfaSetupComplete={handleMfaSetupComplete}
+        mfaChallenge={mfaChallenge}
       />
 
       {showCookies && <CookieBanner onReject={dismissCookies} onAccept={acceptCookies} />}

@@ -205,6 +205,20 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       await waitFor(() => expect(screen.getByTestId('mfa-scan-step')).toBeInTheDocument());
     });
 
+    it('defensivo — mfaSetupRequired sin setupToken: no revienta, cae de vuelta al formulario normal', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: { success: true, mfaSetupRequired: true },
+      });
+
+      renderComponent();
+      submitLogin();
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('mfa-mandatory-setup')).not.toBeInTheDocument();
+      });
+      expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).toBeInTheDocument();
+    });
+
     it('completar el asistente regresa al formulario de login con el banner de éxito, contraseña vacía', async () => {
       (api.post as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
         if (url === '/auth/login') {
@@ -244,6 +258,126 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       expect(await screen.findByTestId('mfa-just-activated-banner')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('••••••••')).toHaveValue('');
       expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  describe('FC185 F4 — mfaRequired (usuario que YA tiene MFA confirmado)', () => {
+    const submitLogin = (): void => {
+      fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+        target: { value: 'archie' },
+      });
+      fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pw' } });
+      fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
+    };
+
+    it('reemplaza el formulario por el desafío de 6 dígitos en vez de navegar directo', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: { success: true, mfaRequired: true, mfaToken: 'mfa-token-1' },
+      });
+
+      renderComponent();
+      submitLogin();
+
+      expect(await screen.findByTestId('mfa-mandatory-challenge')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('usuario o correo@empresa.com')).not.toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+    });
+
+    it('código válido: canjea por sesión completa y navega a /dashboard', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (url === '/auth/login') {
+          return Promise.resolve({
+            data: { success: true, mfaRequired: true, mfaToken: 'mfa-token-1' },
+          });
+        }
+        if (url === '/auth/mfa/verify') {
+          return Promise.resolve({
+            data: { success: true, token: 'session-token', user: { id: 501, username: 'archie' } },
+          });
+        }
+        return Promise.reject(new Error(`unexpected URL ${url}`));
+      });
+
+      renderComponent();
+      submitLogin();
+
+      await screen.findByTestId('mfa-challenge-step');
+      fireEvent.change(document.getElementById('mfa-challenge-code') as HTMLInputElement, {
+        target: { value: '123456' },
+      });
+      fireEvent.click(screen.getByTestId('mfa-challenge-submit'));
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'));
+      expect(api.post).toHaveBeenCalledWith('/auth/mfa/verify', {
+        mfaToken: 'mfa-token-1',
+        code: '123456',
+      });
+    });
+
+    it('código inválido: muestra el error del backend y se queda en el desafío (puede reintentar)', async () => {
+      (api.post as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          data: { success: true, mfaRequired: true, mfaToken: 'mfa-token-1' },
+        })
+        .mockRejectedValueOnce({
+          response: {
+            data: { code: 'MFA_INVALID_CODE', message: 'El código ingresado no es válido' },
+          },
+        });
+
+      renderComponent();
+      submitLogin();
+
+      await screen.findByTestId('mfa-challenge-step');
+      fireEvent.change(document.getElementById('mfa-challenge-code') as HTMLInputElement, {
+        target: { value: '000000' },
+      });
+      fireEvent.click(screen.getByTestId('mfa-challenge-submit'));
+
+      expect(await screen.findByText('El código ingresado no es válido')).toBeInTheDocument();
+      expect(screen.getByTestId('mfa-challenge-step')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+    });
+
+    it('reto revocado/expirado en el backend: regresa al login con el banner de expiración visible', async () => {
+      (api.post as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          data: { success: true, mfaRequired: true, mfaToken: 'mfa-token-1' },
+        })
+        .mockRejectedValueOnce({
+          response: {
+            data: { code: 'TOKEN_EXPIRED_OR_REVOKED', message: 'El reto expiró' },
+          },
+        });
+
+      renderComponent();
+      submitLogin();
+
+      await screen.findByTestId('mfa-challenge-step');
+      fireEvent.change(document.getElementById('mfa-challenge-code') as HTMLInputElement, {
+        target: { value: '000000' },
+      });
+      fireEvent.click(screen.getByTestId('mfa-challenge-submit'));
+
+      expect(await screen.findByTestId('mfa-challenge-expired-banner')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).toBeInTheDocument();
+    });
+
+    it('"Volver" regresa al formulario de login sin banner de expiración (salida manual, no timeout)', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: { success: true, mfaRequired: true, mfaToken: 'mfa-token-1' },
+      });
+
+      renderComponent();
+      submitLogin();
+
+      await screen.findByTestId('mfa-challenge-step');
+      fireEvent.click(screen.getByTestId('mfa-challenge-back'));
+
+      expect(
+        await screen.findByPlaceholderText('usuario o correo@empresa.com')
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId('mfa-challenge-expired-banner')).not.toBeInTheDocument();
     });
   });
 });
