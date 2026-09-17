@@ -6,6 +6,7 @@ import requirePermission from '../middleware/requirePermission';
 import { MultiMembershipHaltError } from '../middleware/cosmonautMiddleware';
 import * as SessionService from '../services/authSession.service';
 import * as UserManagementService from '../services/authUserManagement.service';
+import * as MfaService from '../services/mfa.service';
 import { ScopedUser } from '../services/ownerScopeResolver';
 
 /**
@@ -455,7 +456,54 @@ async function handleGetUserNode(
   }
 }
 
-/** Registers the 12 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
+/** FC185 F1 — POST /v1/auth/mfa/setup. Cualquier usuario autenticado (Ω/MU/Arc) puede iniciar su
+ *  propio enrolamiento — el mandato "obligatorio para Ω/MU" se aplica en el login (F2), no aquí.
+ *  El secreto en texto plano solo viaja en esta respuesta. */
+async function handleMfaSetup(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  await request.jwtVerify();
+  const { id, username } = request.user as { id: number; username: string };
+  try {
+    const result = await MfaService.beginSetup(id, username);
+    return reply.send({ success: true, data: result });
+  } catch (e) {
+    request.log.error(e);
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'MFA_SETUP_FAIL' });
+  }
+}
+
+/** FC185 F1 — POST /v1/auth/mfa/confirm. Exige el primer código TOTP válido antes de activar el
+ *  MFA; responde los 8 códigos de respaldo en texto plano UNA sola vez. */
+async function handleMfaConfirm(
+  request: FastifyRequest<{ Body: { code?: string } }>,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  await request.jwtVerify();
+  const parsed = z.object({ code: z.string().length(6) }).safeParse(request.body);
+  if (!parsed.success) {
+    return reply
+      .code(400)
+      .send({ success: false, code: 'VALIDATION_ERROR', message: 'Código de 6 dígitos requerido' });
+  }
+  const { id } = request.user as { id: number };
+  try {
+    const result = await MfaService.confirmSetup(id, parsed.data.code);
+    if (!result.ok) {
+      return reply
+        .code(result.status)
+        .send({ success: false, code: result.code, message: result.message });
+    }
+    return reply.send({ success: true, data: { backupCodes: result.backupCodes } });
+  } catch (e) {
+    request.log.error(e);
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'MFA_CONFIRM_FAIL' });
+  }
+}
+
+/** Registers the 14 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: { username?: string; password?: string } }>(
     '/login',
@@ -485,4 +533,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // GET /v1/auth/me — resolved user profile + capabilities (union of all assigned roles)
   fastify.get('/me', handleGetMe);
   fastify.get('/users/:uuid/node', handleGetUserNode);
+  // FC185 F1 — POST /v1/auth/mfa/setup + /mfa/confirm (enrolamiento). El canje de código en
+  // login de dos pasos (/mfa/verify) llega en F2.
+  fastify.post('/mfa/setup', handleMfaSetup);
+  fastify.post<{ Body: { code?: string } }>('/mfa/confirm', handleMfaConfirm);
 }
