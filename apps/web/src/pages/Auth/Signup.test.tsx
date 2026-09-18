@@ -36,6 +36,9 @@ function fillRequiredFields(): void {
   fireEvent.change(screen.getByLabelText('Contraseña'), {
     target: { value: VALID_FIELDS.password },
   });
+  fireEvent.change(screen.getByLabelText('Confirmar Contraseña'), {
+    target: { value: VALID_FIELDS.password },
+  });
   fireEvent.change(screen.getByLabelText('RFC'), { target: { value: VALID_FIELDS.rfc } });
   fireEvent.change(screen.getByLabelText('Código Postal Fiscal'), {
     target: { value: VALID_FIELDS.codigoPostalFiscal },
@@ -213,6 +216,80 @@ describe('SignupPage Component (FC177 F2)', () => {
 
       fireEvent.click(screen.getByTestId('signup-submit'));
       expect(api.post).not.toHaveBeenCalled();
+    });
+  });
+
+  // FC184 F3 — Password_Security_Confirm_Strength_And_Visibility_Toggle.
+  describe('FC184 F3 — confirmación de contraseña, medidor de fuerza y toggles de visibilidad', () => {
+    it('confirmPassword no coincide: alerta el desajuste y bloquea el submit (Scenario 3)', () => {
+      renderComponent();
+      fillRequiredFields();
+      const confirmInput = screen.getByLabelText('Confirmar Contraseña');
+
+      fireEvent.change(confirmInput, { target: { value: 'OtraClaveDistinta1' } });
+      fireEvent.blur(confirmInput);
+
+      expect(screen.getByTestId('signup-confirm-password-error')).toBeInTheDocument();
+      expect(screen.getByTestId('signup-submit')).toBeDisabled();
+    });
+
+    it('confirmPassword corregido para coincidir: el error desaparece y el submit se habilita', () => {
+      renderComponent();
+      fillRequiredFields();
+      const confirmInput = screen.getByLabelText('Confirmar Contraseña');
+
+      fireEvent.change(confirmInput, { target: { value: 'OtraClaveDistinta1' } });
+      fireEvent.blur(confirmInput);
+      expect(screen.getByTestId('signup-confirm-password-error')).toBeInTheDocument();
+
+      fireEvent.change(confirmInput, { target: { value: VALID_FIELDS.password } });
+      expect(screen.queryByTestId('signup-confirm-password-error')).not.toBeInTheDocument();
+      expect(screen.getByTestId('signup-submit')).not.toBeDisabled();
+    });
+
+    it('el medidor de fuerza aparece y muestra "Débil" para una contraseña trivial (Scenario 3)', () => {
+      renderComponent();
+      fireEvent.change(screen.getByLabelText('Contraseña'), {
+        target: { value: 'password123' },
+      });
+      expect(screen.getByTestId('signup-password-strength')).toHaveTextContent(/débil/i);
+    });
+
+    it('el medidor de fuerza no se muestra con el campo de contraseña vacío', () => {
+      renderComponent();
+      expect(screen.queryByTestId('signup-password-strength')).not.toBeInTheDocument();
+    });
+
+    it('toggle de visibilidad en "Contraseña": alterna entre password y text (Scenario 4)', () => {
+      renderComponent();
+      const passwordInput = screen.getByLabelText('Contraseña');
+      expect(passwordInput).toHaveAttribute('type', 'password');
+
+      fireEvent.click(screen.getByTestId('signup-password-toggle-visibility'));
+      expect(passwordInput).toHaveAttribute('type', 'text');
+
+      fireEvent.click(screen.getByTestId('signup-password-toggle-visibility'));
+      expect(passwordInput).toHaveAttribute('type', 'password');
+    });
+
+    it('toggle de visibilidad en "Confirmar Contraseña": alterna entre password y text (Scenario 4)', () => {
+      renderComponent();
+      const confirmInput = screen.getByLabelText('Confirmar Contraseña');
+      expect(confirmInput).toHaveAttribute('type', 'password');
+
+      fireEvent.click(screen.getByTestId('signup-confirm-password-toggle-visibility'));
+      expect(confirmInput).toHaveAttribute('type', 'text');
+    });
+
+    it('Scenario 1 sigue enviando solo los campos del backend — confirmPassword NUNCA viaja en el payload', async () => {
+      (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { success: true } });
+      renderComponent();
+      fillRequiredFields();
+      fireEvent.click(screen.getByTestId('signup-submit'));
+
+      const [, payload] = (api.post as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(payload).not.toHaveProperty('confirmPassword');
+      await waitFor(() => expect(screen.getByTestId('signup-success')).toBeInTheDocument());
     });
   });
 });

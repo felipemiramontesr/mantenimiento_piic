@@ -8,6 +8,7 @@ import { isValidRfc, isValidPostalCode } from './signupValidation';
 import { SignupFormData, SignupFieldsProps } from './signupTypes';
 import { FIELD_LABEL_CLASS, FIELD_INPUT_CLASS } from './signupFieldStyles';
 import SignupRfcAndCpFields from './SignupRfcAndCpFields';
+import SignupPasswordFields from './SignupPasswordFields';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. The public, unauthenticated counterpart to
@@ -22,6 +23,7 @@ const EMPTY_FORM: SignupFormData = {
   fullName: '',
   email: '',
   password: '',
+  confirmPassword: '',
   rfc: '',
   razonSocial: '',
   regimenFiscal: '',
@@ -51,14 +53,19 @@ interface SignupFormState {
 }
 
 /** Estado + submit del formulario de autoregistro (FC177 F2). FC184 F2 — `isFormValid` bloquea el
- *  submit mientras RFC/CP no cumplan el formato canónico (Scenario 2 del FC); el backend sigue
+ *  submit mientras RFC/CP no cumplan el formato canónico (Scenario 2 del FC). FC184 F3 — también
+ *  exige que `confirmPassword` coincida exactamente con `password` (Scenario 3); el backend sigue
  *  siendo la autoridad final, esto solo evita un viaje de red predeciblemente rechazado. */
 function useSignupForm(): SignupFormState {
   const [data, setData] = useState<SignupFormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const isFormValid = isValidRfc(data.rfc) && isValidPostalCode(data.codigoPostalFiscal);
+  const isFormValid =
+    isValidRfc(data.rfc) &&
+    isValidPostalCode(data.codigoPostalFiscal) &&
+    data.password.length > 0 &&
+    data.password === data.confirmPassword;
 
   const setField = (field: keyof SignupFormData, value: string): void => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -68,7 +75,7 @@ function useSignupForm(): SignupFormState {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { telefono, ...required } = data;
+    const { telefono, confirmPassword: _confirmPassword, ...required } = data;
     api
       .post('/public/signup', { ...required, ...(telefono ? { telefono } : {}) })
       .then(() => setSuccess(true))
@@ -130,21 +137,7 @@ function SignupIdentityFields({ data, onChange, loading }: SignupFieldsProps): R
           required
         />
       </div>
-      <div className="flex flex-col gap-1 mb-4">
-        <label htmlFor="signup-password" className={FIELD_LABEL_CLASS}>
-          Contraseña
-        </label>
-        <input
-          id="signup-password"
-          type="password"
-          minLength={8}
-          value={data.password}
-          onChange={(e): void => onChange('password', e.target.value)}
-          className={FIELD_INPUT_CLASS}
-          disabled={loading}
-          required
-        />
-      </div>
+      <SignupPasswordFields data={data} onChange={onChange} loading={loading} />
     </>
   );
 }

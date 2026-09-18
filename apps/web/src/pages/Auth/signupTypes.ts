@@ -5,6 +5,7 @@ export interface SignupFormData {
   fullName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   rfc: string;
   razonSocial: string;
   regimenFiscal: string;

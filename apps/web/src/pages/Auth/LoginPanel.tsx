@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import MfaEnrollmentWizard from '../../components/Identity/MfaEnrollment/MfaEnrollmentWizard';
 import MfaChallengeStep from '../../components/Identity/MfaEnrollment/MfaChallengeStep';
 import { MfaChallengeState } from './useMfaChallenge';
+import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 
 /**
  * FC163 F2B4 Sub-Batch 4B-2 (formulario original) + FC185 F3/F4 (asistente MFA obligatorio y
- * desafío de login) — extraído de `Login.tsx` a su propio archivo porque el archivo combinado
- * superaba el límite de 400 líneas de ESLint (Gate 2/1).
+ * desafío de login) + FC184 F3 (toggle de visibilidad, Scenario 4) — extraído de `Login.tsx` a su
+ * propio archivo porque el archivo combinado superaba el límite de 400 líneas de ESLint (Gate 2/1).
  */
 
 interface LoginFormProps {
@@ -31,6 +32,77 @@ interface LoginCredentialFieldsProps {
   readonly loading: boolean;
 }
 
+/** Campo de usuario/correo — extraído de `LoginCredentialFields` para mantenerla bajo Gate 2. */
+function LoginUsernameField({
+  username,
+  onUsernameChange,
+  loading,
+}: Pick<
+  LoginCredentialFieldsProps,
+  'username' | 'onUsernameChange' | 'loading'
+>): React.JSX.Element {
+  return (
+    <div className="flex flex-col gap-1 relative mb-4">
+      <label
+        htmlFor="login-username"
+        className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
+      >
+        Usuario o Correo
+      </label>
+      <input
+        id="login-username"
+        type="text"
+        placeholder="usuario o correo@empresa.com"
+        value={username}
+        onChange={(e): void => onUsernameChange(e.target.value)}
+        className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+        disabled={loading}
+        required
+      />
+    </div>
+  );
+}
+
+/** Campo de clave de seguridad + toggle de visibilidad (FC184 F3, Scenario 4) — extraído de
+ *  `LoginCredentialFields` para mantenerla bajo Gate 2. */
+function LoginPasswordField({
+  password,
+  onPasswordChange,
+  loading,
+}: Pick<
+  LoginCredentialFieldsProps,
+  'password' | 'onPasswordChange' | 'loading'
+>): React.JSX.Element {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="flex flex-col gap-1 relative mb-6">
+      <label
+        htmlFor="login-password"
+        className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
+      >
+        Clave de Seguridad
+      </label>
+      <div className="relative">
+        <input
+          id="login-password"
+          type={visible ? 'text' : 'password'}
+          placeholder="••••••••"
+          value={password}
+          onChange={(e): void => onPasswordChange(e.target.value)}
+          className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+          disabled={loading}
+          required
+        />
+        <PasswordVisibilityToggle
+          visible={visible}
+          onToggle={(): void => setVisible((v) => !v)}
+          targetId="login-password"
+        />
+      </div>
+    </div>
+  );
+}
+
 /** Campos de usuario y contraseña del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2). */
 function LoginCredentialFields({
   username,
@@ -41,43 +113,16 @@ function LoginCredentialFields({
 }: LoginCredentialFieldsProps): React.JSX.Element {
   return (
     <>
-      <div className="flex flex-col gap-1 relative mb-4">
-        <label
-          htmlFor="login-username"
-          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
-        >
-          Usuario o Correo
-        </label>
-        <input
-          id="login-username"
-          type="text"
-          placeholder="usuario o correo@empresa.com"
-          value={username}
-          onChange={(e): void => onUsernameChange(e.target.value)}
-          className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
-          disabled={loading}
-          required
-        />
-      </div>
-
-      <div className="flex flex-col gap-1 relative mb-6">
-        <label
-          htmlFor="login-password"
-          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
-        >
-          Clave de Seguridad
-        </label>
-        <input
-          id="login-password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e): void => onPasswordChange(e.target.value)}
-          className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
-          disabled={loading}
-          required
-        />
-      </div>
+      <LoginUsernameField
+        username={username}
+        onUsernameChange={onUsernameChange}
+        loading={loading}
+      />
+      <LoginPasswordField
+        password={password}
+        onPasswordChange={onPasswordChange}
+        loading={loading}
+      />
     </>
   );
 }

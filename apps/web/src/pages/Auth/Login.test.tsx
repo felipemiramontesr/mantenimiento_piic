@@ -380,4 +380,19 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       expect(screen.queryByTestId('mfa-challenge-expired-banner')).not.toBeInTheDocument();
     });
   });
+
+  // FC184 F3 — Password_Security_Confirm_Strength_And_Visibility_Toggle (Scenario 4).
+  describe('FC184 F3 — toggle de visibilidad de contraseña', () => {
+    it('alterna el input de clave entre password y text al hacer click en el ícono del ojo', () => {
+      renderComponent();
+      const passwordInput = screen.getByPlaceholderText('••••••••');
+      expect(passwordInput).toHaveAttribute('type', 'password');
+
+      fireEvent.click(screen.getByTestId('login-password-toggle-visibility'));
+      expect(passwordInput).toHaveAttribute('type', 'text');
+
+      fireEvent.click(screen.getByTestId('login-password-toggle-visibility'));
+      expect(passwordInput).toHaveAttribute('type', 'password');
+    });
+  });
 });
