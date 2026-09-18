@@ -10,6 +10,9 @@ import React, {
 import { UserIndustrial } from '../types/user';
 import api from '../api/client';
 import { setToken, clearToken } from '../api/tokenStore';
+import restoreSession from './sessionRestore';
+import useCrossTabSessionSync from './useCrossTabSessionSync';
+import { SessionBroadcastEventType } from './useSessionBroadcast';
 
 /**
  * 🔱 Archon Context: AuthContext
@@ -39,44 +42,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/** FC 070 mount-time session restore, extracted out of `AuthProvider` to keep
- * it under Gate 2's maxFnLoc budget (FC094 F1) — same epoch-guard behavior
- * verbatim, just called from a `useEffect(() => {...}, [])` instead of
- * defined inline inside one. */
-async function restoreSession(
-  sessionEpochRef: React.MutableRefObject<number>,
-  epochAtStart: number,
-  setCurrentUser: (user: UserIndustrial | null) => void,
-  setIsAuthenticated: (value: boolean) => void,
-  setIsLoading: (value: boolean) => void
-): Promise<void> {
-  try {
-    const response = await api.post<{ success: boolean; token: string; user: UserIndustrial }>(
-      '/auth/refresh'
-    );
-    if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
-    if (response.data.success) {
-      setToken(response.data.token);
-      setCurrentUser(response.data.user);
-      setIsAuthenticated(true);
-    }
-  } catch {
-    if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
-    // No valid refresh token — stay unauthenticated
-    clearToken();
-    setIsAuthenticated(false);
-  } finally {
-    setIsLoading(false);
-  }
-}
-
 /** `login`/`logout`, extracted out of `AuthProvider` alongside `restoreSession`
  * to keep it under Gate 2's maxFnLoc budget (FC094 F1) — same epoch-bump
- * behavior verbatim, just built once per render instead of defined inline. */
+ * behavior verbatim, just built once per render instead of defined inline.
+ * FC184 F1 — ambos notifican vía `broadcast` a las demás pestañas (BroadcastChannel), solo la
+ * intención LOGIN/LOGOUT, nunca el token de acceso (Cond.R-184 R1). */
 function createSessionActions(
   bumpEpoch: () => void,
   setCurrentUser: (user: UserIndustrial | null) => void,
-  setIsAuthenticated: (value: boolean) => void
+  setIsAuthenticated: (value: boolean) => void,
+  broadcast: (type: SessionBroadcastEventType) => void
 ): {
   login: (token: string, user: UserIndustrial) => void;
   logout: () => Promise<void>;
@@ -86,6 +61,7 @@ function createSessionActions(
     setToken(token);
     setCurrentUser(user);
     setIsAuthenticated(true);
+    broadcast('LOGIN');
   };
 
   const logout = async (): Promise<void> => {
@@ -98,10 +74,31 @@ function createSessionActions(
     clearToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
+    broadcast('LOGOUT');
     window.location.href = '/login';
   };
 
   return { login, logout };
+}
+
+/** `broadcast` (FC184 F1) + memoización de `login`/`logout` (S6481) — extraído de
+ * `useAuthSessionActions` para mantenerlo bajo el cap de 50 líneas de Gate 2. */
+function useSyncedSessionActions(
+  sessionEpochRef: React.MutableRefObject<number>,
+  bumpEpoch: () => void,
+  setCurrentUser: (user: UserIndustrial | null) => void,
+  setIsAuthenticated: (value: boolean) => void
+): { login: (token: string, user: UserIndustrial) => void; logout: () => Promise<void> } {
+  const broadcast = useCrossTabSessionSync(
+    sessionEpochRef,
+    bumpEpoch,
+    setCurrentUser,
+    setIsAuthenticated
+  );
+  return useMemo(
+    () => createSessionActions(bumpEpoch, setCurrentUser, setIsAuthenticated, broadcast),
+    [bumpEpoch, setCurrentUser, setIsAuthenticated, broadcast]
+  );
 }
 
 /** Sesión: epoch ref + acciones estables (impersonation/login/logout/
@@ -139,13 +136,13 @@ function useAuthSessionActions(
     sessionEpochRef.current += 1;
   }, []);
 
-  // FC166 Track D (S6481) — `bumpEpoch` ya es estable (useCallback []), y
-  // setCurrentUser/setIsAuthenticated son estables por contrato de React
-  // (useState), así que memoizar aquí mantiene `login`/`logout` con la misma
-  // identidad entre renders (antes se recreaban en cada uno).
-  const { login, logout } = useMemo(
-    () => createSessionActions(bumpEpoch, setCurrentUser, setIsAuthenticated),
-    [bumpEpoch, setCurrentUser, setIsAuthenticated]
+  // FC184 F1 — `broadcast` (BroadcastChannel) + memoización S6481, extraídos a
+  // `useSyncedSessionActions` para mantener esta función bajo el cap de Gate 2.
+  const { login, logout } = useSyncedSessionActions(
+    sessionEpochRef,
+    bumpEpoch,
+    setCurrentUser,
+    setIsAuthenticated
   );
 
   // Forma funcional: evita depender de `currentUser` en el useCallback (deja

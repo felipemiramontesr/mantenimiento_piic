@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 import api from '../api/client';
 import { setToken, clearToken } from '../api/tokenStore';
+import { SESSION_CHANNEL_NAME } from './useSessionBroadcast';
 
 // Mock api client
 vi.mock('../api/client', () => ({
@@ -264,5 +265,89 @@ describe('AuthContext', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.effectiveUser).toMatchObject({ username: 'grayman' });
     expect(result.current.isImpersonating).toBe(false);
+  });
+
+  // FC184 F1 — Cross_Tab_Session_Sync_BroadcastChannel. Integración de punta a punta a través de
+  // AuthProvider (no solo el hook aislado, ya cubierto en useCrossTabSessionSync.test.ts): verifica
+  // que login()/logout() realmente emiten al canal real y que un evento remoto real actualiza el
+  // contexto público (`useAuth()`).
+  describe('FC184 F1 — Cross-Tab Session Sync', () => {
+    it('login() notifica LOGIN a otras pestañas sin transmitir el token', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      const otherTab = new BroadcastChannel(SESSION_CHANNEL_NAME);
+      const received = new Promise<void>((resolve) => {
+        otherTab.onmessage = (event): void => {
+          expect(event.data).toEqual({ type: 'LOGIN' });
+          resolve();
+        };
+      });
+
+      act(() => {
+        result.current.login('tok-xyz', stubUser);
+      });
+
+      await received;
+      otherTab.close();
+    });
+
+    it('logout() notifica LOGOUT a otras pestañas', async () => {
+      mockedApi.post
+        .mockResolvedValueOnce({ data: { success: true, token: 'tok-r', user: stubUser } })
+        .mockResolvedValueOnce({ data: { success: true } });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      const otherTab = new BroadcastChannel(SESSION_CHANNEL_NAME);
+      const received = new Promise<void>((resolve) => {
+        otherTab.onmessage = (event): void => {
+          expect(event.data).toEqual({ type: 'LOGOUT' });
+          resolve();
+        };
+      });
+
+      await act(async () => {
+        await result.current.logout();
+      });
+
+      await received;
+      otherTab.close();
+    });
+
+    it('un LOGOUT emitido por otra pestaña real deja este contexto no autenticado', async () => {
+      mockedApi.post.mockResolvedValueOnce({
+        data: { success: true, token: 'tok-r', user: stubUser },
+      });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+      const otherTab = new BroadcastChannel(SESSION_CHANNEL_NAME);
+
+      act(() => {
+        otherTab.postMessage({ type: 'LOGOUT' });
+      });
+
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(false));
+      expect(result.current.currentUser).toBeNull();
+      otherTab.close();
+    });
+
+    it('un LOGIN emitido por otra pestaña real re-deriva el usuario vía /auth/refresh', async () => {
+      mockedApi.post.mockRejectedValueOnce(new Error('no session')); // restore inicial: sin sesión
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.isAuthenticated).toBe(false);
+
+      mockedApi.post.mockResolvedValueOnce({
+        data: { success: true, token: 'tok-from-other-tab', user: stubUser },
+      });
+      const otherTab = new BroadcastChannel(SESSION_CHANNEL_NAME);
+
+      act(() => {
+        otherTab.postMessage({ type: 'LOGIN' });
+      });
+
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+      expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+      otherTab.close();
+    });
   });
 });
