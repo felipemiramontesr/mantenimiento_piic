@@ -155,4 +155,64 @@ describe('SignupPage Component (FC177 F2)', () => {
     renderComponent();
     expect(screen.getByText(/inicia sesión/i).closest('a')).toHaveAttribute('href', '/login');
   });
+
+  // FC184 F2 — Signup_Client_Side_RFC_And_Postal_Validation.
+  describe('FC184 F2 — validación reactiva de RFC y Código Postal', () => {
+    it('el botón de envío está deshabilitado hasta que RFC y CP tengan formato válido (Scenario 2)', () => {
+      renderComponent();
+      expect(screen.getByTestId('signup-submit')).toBeDisabled();
+
+      fillRequiredFields();
+      expect(screen.getByTestId('signup-submit')).not.toBeDisabled();
+    });
+
+    it('RFC inválido: muestra el error solo después de que el campo pierde el foco', () => {
+      renderComponent();
+      const rfcInput = screen.getByLabelText('RFC');
+
+      fireEvent.change(rfcInput, { target: { value: 'ABC123' } });
+      expect(screen.queryByTestId('signup-rfc-error')).not.toBeInTheDocument();
+
+      fireEvent.blur(rfcInput);
+      expect(screen.getByTestId('signup-rfc-error')).toBeInTheDocument();
+    });
+
+    it('RFC válido tras corregirlo: el error desaparece y el submit se habilita (con el resto de campos)', () => {
+      renderComponent();
+      const rfcInput = screen.getByLabelText('RFC');
+
+      fireEvent.change(rfcInput, { target: { value: 'ABC123' } });
+      fireEvent.blur(rfcInput);
+      expect(screen.getByTestId('signup-rfc-error')).toBeInTheDocument();
+
+      fireEvent.change(rfcInput, { target: { value: VALID_FIELDS.rfc } });
+      expect(screen.queryByTestId('signup-rfc-error')).not.toBeInTheDocument();
+    });
+
+    it('Código Postal: filtra caracteres no numéricos y limita a 5 dígitos', () => {
+      renderComponent();
+      const cpInput = screen.getByLabelText('Código Postal Fiscal') as HTMLInputElement;
+
+      fireEvent.change(cpInput, { target: { value: '06a6b00c99' } });
+      expect(cpInput).toHaveValue('06600');
+    });
+
+    it('Código Postal inválido (menos de 5 dígitos): muestra error tras perder el foco', () => {
+      renderComponent();
+      const cpInput = screen.getByLabelText('Código Postal Fiscal');
+
+      fireEvent.change(cpInput, { target: { value: '066' } });
+      fireEvent.blur(cpInput);
+      expect(screen.getByTestId('signup-cp-error')).toBeInTheDocument();
+    });
+
+    it('RFC/CP con formato inválido: el envío del formulario permanece bloqueado (no llama a la API)', () => {
+      renderComponent();
+      fillRequiredFields();
+      fireEvent.change(screen.getByLabelText('RFC'), { target: { value: 'INVALIDO' } });
+
+      fireEvent.click(screen.getByTestId('signup-submit'));
+      expect(api.post).not.toHaveBeenCalled();
+    });
+  });
 });

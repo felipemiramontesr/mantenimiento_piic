@@ -4,6 +4,10 @@ import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
+import { isValidRfc, isValidPostalCode } from './signupValidation';
+import { SignupFormData, SignupFieldsProps } from './signupTypes';
+import { FIELD_LABEL_CLASS, FIELD_INPUT_CLASS } from './signupFieldStyles';
+import SignupRfcAndCpFields from './SignupRfcAndCpFields';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. The public, unauthenticated counterpart to
@@ -13,17 +17,6 @@ import serviceBackground from '../../assets/service-bg.png';
  * the account is born in quarantine (`is_active: false`); only Ω linking it to a Universo
  * (FC177 F3/F4) activates it.
  */
-
-interface SignupFormData {
-  fullName: string;
-  email: string;
-  password: string;
-  rfc: string;
-  razonSocial: string;
-  regimenFiscal: string;
-  codigoPostalFiscal: string;
-  telefono: string;
-}
 
 const EMPTY_FORM: SignupFormData = {
   fullName: '',
@@ -53,15 +46,19 @@ interface SignupFormState {
   readonly loading: boolean;
   readonly error: string | null;
   readonly success: boolean;
+  readonly isFormValid: boolean;
   readonly handleSubmit: (e: React.FormEvent) => void;
 }
 
-/** Estado + submit del formulario de autoregistro (FC177 F2). */
+/** Estado + submit del formulario de autoregistro (FC177 F2). FC184 F2 — `isFormValid` bloquea el
+ *  submit mientras RFC/CP no cumplan el formato canónico (Scenario 2 del FC); el backend sigue
+ *  siendo la autoridad final, esto solo evita un viaje de red predeciblemente rechazado. */
 function useSignupForm(): SignupFormState {
   const [data, setData] = useState<SignupFormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const isFormValid = isValidRfc(data.rfc) && isValidPostalCode(data.codigoPostalFiscal);
 
   const setField = (field: keyof SignupFormData, value: string): void => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -79,7 +76,7 @@ function useSignupForm(): SignupFormState {
       .finally(() => setLoading(false));
   };
 
-  return { data, setField, loading, error, success, handleSubmit };
+  return { data, setField, loading, error, success, isFormValid, handleSubmit };
 }
 
 /** Panel de marketing izquierdo, mismo patrón que `HeroContent` de Login.tsx. */
@@ -100,17 +97,6 @@ function SignupHeroContent(): React.JSX.Element {
     </section>
   );
 }
-
-interface SignupFieldsProps {
-  readonly data: SignupFormData;
-  readonly onChange: (field: keyof SignupFormData, value: string) => void;
-  readonly loading: boolean;
-}
-
-const FIELD_LABEL_CLASS =
-  'font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70';
-const FIELD_INPUT_CLASS =
-  'w-full h-12 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20';
 
 /** Nombre, correo, contraseña — identidad del solicitante. */
 function SignupIdentityFields({ data, onChange, loading }: SignupFieldsProps): React.JSX.Element {
@@ -160,43 +146,6 @@ function SignupIdentityFields({ data, onChange, loading }: SignupFieldsProps): R
         />
       </div>
     </>
-  );
-}
-
-/** RFC + Código Postal fiscal — mitad superior de los datos de la Constancia SAT. */
-function SignupRfcAndCpFields({ data, onChange, loading }: SignupFieldsProps): React.JSX.Element {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="signup-rfc" className={FIELD_LABEL_CLASS}>
-          RFC
-        </label>
-        <input
-          id="signup-rfc"
-          type="text"
-          value={data.rfc}
-          onChange={(e): void => onChange('rfc', e.target.value.toUpperCase())}
-          className={FIELD_INPUT_CLASS}
-          disabled={loading}
-          required
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="signup-cp" className={FIELD_LABEL_CLASS}>
-          Código Postal Fiscal
-        </label>
-        <input
-          id="signup-cp"
-          type="text"
-          maxLength={5}
-          value={data.codigoPostalFiscal}
-          onChange={(e): void => onChange('codigoPostalFiscal', e.target.value)}
-          className={FIELD_INPUT_CLASS}
-          disabled={loading}
-          required
-        />
-      </div>
-    </div>
   );
 }
 
@@ -271,15 +220,18 @@ function SignupFiscalFields(props: SignupFieldsProps): React.JSX.Element {
 
 interface SignupFormProps extends SignupFieldsProps {
   readonly error: string | null;
+  readonly isFormValid: boolean;
   readonly onSubmit: (e: React.FormEvent) => void;
 }
 
-/** Encabezado + banner de error + campos + submit del formulario de autoregistro. */
+/** Encabezado + banner de error + campos + submit del formulario de autoregistro. FC184 F2 — el
+ *  botón queda deshabilitado mientras RFC/CP no cumplan el formato canónico (Scenario 2). */
 function SignupForm({
   data,
   onChange,
   loading,
   error,
+  isFormValid,
   onSubmit,
 }: SignupFormProps): React.JSX.Element {
   return (
@@ -304,7 +256,7 @@ function SignupForm({
         <SignupFiscalFields data={data} onChange={onChange} loading={loading} />
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !isFormValid}
           data-testid="signup-submit"
           className="btn-archon-primary w-full"
         >
@@ -341,7 +293,7 @@ function SignupSuccessPanel(): React.JSX.Element {
 
 /** Panel derecho: logo móvil, formulario/confirmación, pie de página (mismo patrón que LoginPanel). */
 function SignupPanel(props: SignupFormState): React.JSX.Element {
-  const { data, setField, loading, error, success, handleSubmit } = props;
+  const { data, setField, loading, error, success, isFormValid, handleSubmit } = props;
   return (
     <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.2)] py-12">
       <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
@@ -358,6 +310,7 @@ function SignupPanel(props: SignupFormState): React.JSX.Element {
               onChange={setField}
               loading={loading}
               error={error}
+              isFormValid={isFormValid}
               onSubmit={handleSubmit}
             />
           )}
