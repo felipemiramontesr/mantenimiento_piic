@@ -53,6 +53,8 @@ import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
+import { loadMailConfig } from './services/mailConfig';
+import { logMailStatus } from './services/mailFactory';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -356,6 +358,8 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       await server.listen({ port, host: '0.0.0.0' });
       // eslint-disable-next-line no-console
       console.log(`✅ [Archon API] System Online at port ${port}`);
+      // FC187 F1 — estado del correo SOLO en el log de arranque (Runtime logs de Hostinger).
+      logMailStatus(server.log, loadMailConfig(process.env));
 
       // UPA Stage-5 timeout sweep — every hour on the hour
       const cron = await import('node-cron');
