@@ -143,16 +143,37 @@ async function tryTotpCode(userId: number, code: string): Promise<boolean> {
  *  código atómicamente (`markBackupCodeUsed`, guardia `used_at IS NULL` contra doble consumo). */
 async function tryBackupCode(userId: number, code: string): Promise<boolean> {
   const candidates = await MfaRepository.findUnusedBackupCodes(userId);
-  // Secuencial a propósito: se detiene en el primer match en vez de lanzar hasta 8
-  // verificaciones Argon2id en paralelo por cada intento.
-  for (let i = 0; i < candidates.length; i += 1) {
-    // eslint-disable-next-line no-await-in-loop -- ver razón arriba
-    const isMatch = await argon2Verify(candidates[i].code_hash, code);
-    if (isMatch) {
-      return MfaRepository.markBackupCodeUsed(candidates[i].id);
-    }
+  // Secuencial a propósito: cada eslabón espera al anterior y, una vez hay un match, ya no lanza
+  // más verificaciones Argon2id (no hasta 8 en paralelo por cada intento). `reduce` en vez de
+  // `for`/`for-of`: satisface a la vez Sonar S4138 y la regla ESLint `no-restricted-syntax`.
+  const matchedId = await candidates.reduce<Promise<number | null>>(async (previous, candidate) => {
+    const alreadyMatched = await previous;
+    if (alreadyMatched !== null) return alreadyMatched;
+    return (await argon2Verify(candidate.code_hash, code)) ? candidate.id : null;
+  }, Promise.resolve(null));
+  return matchedId === null ? false : MfaRepository.markBackupCodeUsed(matchedId);
+}
+
+/** Camino de fallo de `verifyChallenge`: cuenta el intento y revoca el reto al llegar al límite.
+ *  Extraído (no inline en un `if` con varios `await`) porque V8 reporta un conteo de rama
+ *  negativo para el "else" implícito de ese patrón, que SonarCloud lee como condición sin
+ *  cubrir aunque ambas ramas estén probadas. */
+async function registerFailedAttempt(
+  challenge: MfaRepository.MfaChallengeRow
+): Promise<VerifyChallengeResult> {
+  await MfaRepository.incrementChallengeAttempts(challenge.id);
+  if (challenge.attempts_used + 1 >= MAX_MFA_ATTEMPTS) {
+    await MfaRepository.revokeChallenge(challenge.id);
   }
-  return false;
+  return invalidCodeResult();
+}
+
+/** Elige la rama TOTP o de respaldo según el formato del código. Helper síncrono (los brazos
+ *  devuelven la promesa, no la esperan): un ternario con `await` en sus brazos justo antes de un
+ *  `if` hace que V8 reporte un conteo de rama negativo para ese `if` (límite de v8→istanbul que
+ *  SonarCloud lee como condición sin cubrir aunque ambas ramas estén probadas). */
+function verifyCodeForUser(userId: number, code: string): Promise<boolean> {
+  return TOTP_CODE_PATTERN.test(code) ? tryTotpCode(userId, code) : tryBackupCode(userId, code);
 }
 
 /** POST /v1/auth/mfa/verify (Scenario 2/3/4, FC185). `challengeId` ya viene decodificado y
@@ -169,17 +190,9 @@ export async function verifyChallenge(
     return revokedResult();
   }
 
-  const isValid = TOTP_CODE_PATTERN.test(code)
-    ? await tryTotpCode(challenge.user_id, code)
-    : await tryBackupCode(challenge.user_id, code);
+  const isValid = await verifyCodeForUser(challenge.user_id, code);
 
-  if (!isValid) {
-    await MfaRepository.incrementChallengeAttempts(challenge.id);
-    if (challenge.attempts_used + 1 >= MAX_MFA_ATTEMPTS) {
-      await MfaRepository.revokeChallenge(challenge.id);
-    }
-    return invalidCodeResult();
-  }
+  if (!isValid) return registerFailedAttempt(challenge);
 
   // Un solo uso — igual que un código de respaldo, un challenge no se reutiliza ni tras un éxito.
   await MfaRepository.revokeChallenge(challenge.id);

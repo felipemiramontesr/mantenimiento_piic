@@ -13,7 +13,15 @@ import MfaBackupCodesStep from './MfaBackupCodesStep';
  *    `setupToken` de alcance mínimo que `/login` entrega en ese caso — invariante 4 del FC).
  */
 
-type WizardStep = 'loading' | 'scan' | 'backup' | 'load-error';
+/** Los datos de cada paso viajan DENTRO del paso (unión discriminada), no en `useState`s hermanos:
+ *  el compilador garantiza que `scan` siempre trae `setupData` y `backup` siempre trae
+ *  `backupCodes`, así que el render no necesita fallbacks defensivos (`?? ''`) para estados que el
+ *  tipo ya hace imposibles. */
+type WizardState =
+  | { step: 'loading' }
+  | { step: 'load-error' }
+  | { step: 'scan'; setupData: MfaSetupData }
+  | { step: 'backup'; backupCodes: string[] };
 
 function getMfaErrorMessage(err: unknown): string {
   const axiosError = err as AxiosError<{ code?: string }>;
@@ -31,21 +39,15 @@ interface MfaEnrollmentWizardProps {
 /** Carga inicial (`/mfa/setup`) — extraída de `useMfaEnrollmentState` para mantenerlo bajo Gate 2.
  *  El guard `cancelled` cubre ambas ramas (éxito y error): un desmontaje durante la carga nunca
  *  actualiza estado de un componente ya fuera del árbol. */
-function useMfaSetupLoad(
-  token: string | undefined,
-  setSetupData: (d: MfaSetupData) => void,
-  setStep: (s: WizardStep) => void
-): void {
+function useMfaSetupLoad(token: string | undefined, setState: (s: WizardState) => void): void {
   useEffect(() => {
     let cancelled = false;
     beginMfaSetup(token)
       .then((data) => {
-        if (cancelled) return;
-        setSetupData(data);
-        setStep('scan');
+        if (!cancelled) setState({ step: 'scan', setupData: data });
       })
       .catch(() => {
-        if (!cancelled) setStep('load-error');
+        if (!cancelled) setState({ step: 'load-error' });
       });
     return (): void => {
       cancelled = true;
@@ -58,51 +60,34 @@ function useMfaEnrollmentState(
   token: string | undefined,
   onComplete: () => void
 ): {
-  step: WizardStep;
-  setupData: MfaSetupData | null;
+  state: WizardState;
   code: string;
   setCode: (v: string) => void;
   confirming: boolean;
   confirmError: string | null;
-  backupCodes: string[];
   handleConfirm: (e: React.FormEvent) => void;
   handleBackupDone: () => void;
 } {
-  const [step, setStep] = useState<WizardStep>('loading');
-  const [setupData, setSetupData] = useState<MfaSetupData | null>(null);
+  const [state, setState] = useState<WizardState>({ step: 'loading' });
   const [code, setCode] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
-  useMfaSetupLoad(token, setSetupData, setStep);
+  useMfaSetupLoad(token, setState);
 
   const handleConfirm = (e: React.FormEvent): void => {
     e.preventDefault();
     setConfirming(true);
     setConfirmError(null);
     confirmMfaSetup(code, token)
-      .then((codes) => {
-        setBackupCodes(codes);
-        setStep('backup');
-      })
+      .then((backupCodes) => setState({ step: 'backup', backupCodes }))
       .catch((err: unknown) => setConfirmError(getMfaErrorMessage(err)))
       .finally(() => setConfirming(false));
   };
 
   const handleBackupDone = (): void => onComplete();
 
-  return {
-    step,
-    setupData,
-    code,
-    setCode,
-    confirming,
-    confirmError,
-    backupCodes,
-    handleConfirm,
-    handleBackupDone,
-  };
+  return { state, code, setCode, confirming, confirmError, handleConfirm, handleBackupDone };
 }
 
 /** Banner de error de carga inicial (`/mfa/setup` falló) — sin reintentar automáticamente. */
@@ -122,35 +107,26 @@ export default function MfaEnrollmentWizard({
   token,
   onComplete,
 }: MfaEnrollmentWizardProps): React.JSX.Element {
-  const {
-    step,
-    setupData,
-    code,
-    setCode,
-    confirming,
-    confirmError,
-    backupCodes,
-    handleConfirm,
-    handleBackupDone,
-  } = useMfaEnrollmentState(token, onComplete);
+  const { state, code, setCode, confirming, confirmError, handleConfirm, handleBackupDone } =
+    useMfaEnrollmentState(token, onComplete);
 
-  if (step === 'loading') {
+  if (state.step === 'loading') {
     return (
       <div data-testid="mfa-wizard-loading" className="text-center py-12 text-pinnacle-navy/50">
         Preparando tu enrolamiento...
       </div>
     );
   }
-  if (step === 'load-error') {
+  if (state.step === 'load-error') {
     return <MfaLoadErrorBanner />;
   }
-  if (step === 'backup') {
-    return <MfaBackupCodesStep codes={backupCodes} onDone={handleBackupDone} />;
+  if (state.step === 'backup') {
+    return <MfaBackupCodesStep codes={state.backupCodes} onDone={handleBackupDone} />;
   }
   return (
     <MfaScanStep
-      otpauthUri={setupData?.otpauthUri ?? ''}
-      secretBase32={setupData?.secretBase32 ?? ''}
+      otpauthUri={state.setupData.otpauthUri}
+      secretBase32={state.setupData.secretBase32}
       code={code}
       onCodeChange={setCode}
       loading={confirming}

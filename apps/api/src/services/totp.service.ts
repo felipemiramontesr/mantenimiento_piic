@@ -108,7 +108,7 @@ export function computeTotpCode(secretBase32: string, step: number): string {
   counter.writeUInt32BE(step >>> 0, 4);
   const hmac = crypto.createHmac('sha1', key).update(counter).digest();
   /* eslint-disable no-bitwise -- truncamiento dinámico RFC 4226 §5.3, mandatado por el estándar */
-  const offset = hmac[hmac.length - 1] & 0x0f;
+  const offset = (hmac.at(-1) as number) & 0x0f;
   const binCode =
     ((hmac[offset] & 0x7f) << 24) |
     ((hmac[offset + 1] & 0xff) << 16) |

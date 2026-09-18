@@ -346,6 +346,25 @@ describe('FC185 F2 — verifyChallenge()', () => {
     expect(result).toEqual(SESSION_SUCCESS);
   });
 
+  it('Scenario 4 — código de respaldo: se detiene en el primer match, sin verificar los candidatos restantes', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(CHALLENGE_ROW);
+    (MfaRepository.findUnusedBackupCodes as Mock).mockResolvedValue([
+      { id: 11, code_hash: 'hash_A' },
+      { id: 12, code_hash: 'hash_B' },
+      { id: 13, code_hash: 'hash_C' },
+    ]);
+    (argon2Verify as Mock).mockResolvedValueOnce(true);
+    (MfaRepository.markBackupCodeUsed as Mock).mockResolvedValue(true);
+    (SessionService.refresh as Mock).mockResolvedValue(SESSION_SUCCESS);
+
+    const result = await verifyChallenge('uuid-1', 'AAAAA-11111');
+
+    expect(argon2Verify).toHaveBeenCalledTimes(1);
+    expect(argon2Verify).toHaveBeenCalledWith('hash_A', 'AAAAA-11111');
+    expect(MfaRepository.markBackupCodeUsed).toHaveBeenCalledWith(11);
+    expect(result).toEqual(SESSION_SUCCESS);
+  });
+
   it('Scenario 4 — código de respaldo que no coincide con ninguno: cuenta como intento fallido', async () => {
     (MfaRepository.findChallengeById as Mock).mockResolvedValue(CHALLENGE_ROW);
     (MfaRepository.findUnusedBackupCodes as Mock).mockResolvedValue([

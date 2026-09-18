@@ -112,7 +112,7 @@ export default function MfaBackupCodesStep({
           onChange={(e): void => setAcknowledged(e.target.checked)}
           data-testid="mfa-backup-acknowledge"
         />
-        Ya guardé mis códigos de respaldo en un lugar seguro
+        <span>Ya guardé mis códigos de respaldo en un lugar seguro</span>
       </label>
 
       <button
