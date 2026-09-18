@@ -40,10 +40,25 @@ describe('FC187 F1 — createMailTransport', () => {
     expect(transport).toBeInstanceOf(SmtpMailTransport);
     expect(createTransportMock).toHaveBeenCalledTimes(1);
     expect(createTransportMock).toHaveBeenCalledWith(
-      expect.objectContaining({ host: 'smtp.example.test', port: 465, secure: true })
+      expect.objectContaining({
+        host: 'smtp.example.test',
+        port: 465,
+        secure: true,
+        requireTLS: true,
+      })
     );
     const sent = await transport.send({ to: 'a@example.test', subject: 's', html: 'h', text: 't' });
     expect(sent).toEqual({ status: 'sent', messageId: '<id>' });
+  });
+
+  it('smtp en otro puerto ⇒ secure=false pero requireTLS SIEMPRE true (STARTTLS exigido, nunca texto plano)', () => {
+    createTransportMock.mockReturnValue({ sendMail: vi.fn() } as never);
+
+    createMailTransport({ ...SMTP_CONFIG, port: 587, secure: false });
+
+    expect(createTransportMock).toHaveBeenCalledWith(
+      expect.objectContaining({ port: 587, secure: false, requireTLS: true })
+    );
   });
 
   it('memory ⇒ MemoryMailTransport y NO toca nodemailer', () => {

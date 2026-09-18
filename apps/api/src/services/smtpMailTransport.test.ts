@@ -33,20 +33,19 @@ function fakeMailer(sendMail: SmtpMailer['sendMail']): CreateSmtpMailer {
 }
 
 describe('FC187 F1 — buildSmtpTransportOptions', () => {
-  it('465 (secure) ⇒ TLS implícito, sin requireTLS', () => {
+  it('465 (secure) ⇒ TLS implícito', () => {
     const options = buildSmtpTransportOptions(CONFIG);
     expect(options).toMatchObject({
       host: CONFIG.host,
       port: 465,
       secure: true,
-      requireTLS: false,
       auth: { user: CONFIG.user, pass: CONFIG.pass },
     });
   });
 
-  it('otro puerto ⇒ secure=false y STARTTLS OBLIGATORIO (nunca texto plano)', () => {
+  it('otro puerto ⇒ secure=false (STARTTLS lo exige la fábrica, ver mailFactory.test)', () => {
     const options = buildSmtpTransportOptions({ ...CONFIG, port: 587, secure: false });
-    expect(options).toMatchObject({ port: 587, secure: false, requireTLS: true });
+    expect(options).toMatchObject({ port: 587, secure: false });
   });
 
   it('acota los timeouts y exige TLS >= 1.2', () => {

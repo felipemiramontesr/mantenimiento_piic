@@ -11,12 +11,11 @@ const CONNECTION_TIMEOUT_MS = 10_000;
 const GREETING_TIMEOUT_MS = 10_000;
 const SOCKET_TIMEOUT_MS = 15_000;
 
-/** Opciones que se le pasan a nodemailer. Nunca texto plano: TLS implícito o STARTTLS exigido. */
+/** Opciones de conexión. La exigencia de TLS (`requireTLS`) la fija `mailFactory.ts` en el punto de llamada. */
 export interface SmtpTransportOptions {
   readonly host: string;
   readonly port: number;
   readonly secure: boolean;
-  readonly requireTLS: boolean;
   readonly auth: { readonly user: string; readonly pass: string };
   readonly connectionTimeout: number;
   readonly greetingTimeout: number;
@@ -42,13 +41,12 @@ export interface SmtpMailer {
 /** Fábrica del cliente SMTP (en producción, `nodemailer.createTransport`). */
 export type CreateSmtpMailer = (options: SmtpTransportOptions) => SmtpMailer;
 
-/** Deriva las opciones de conexión: `secure` (465) ⇒ TLS implícito; si no, STARTTLS obligatorio. */
+/** Deriva las opciones de conexión: `secure` (465) ⇒ TLS implícito; otro puerto ⇒ STARTTLS (exigido en la fábrica). */
 export function buildSmtpTransportOptions(config: SmtpMailConfig): SmtpTransportOptions {
   return {
     host: config.host,
     port: config.port,
     secure: config.secure,
-    requireTLS: !config.secure,
     auth: { user: config.user, pass: config.pass },
     connectionTimeout: CONNECTION_TIMEOUT_MS,
     greetingTimeout: GREETING_TIMEOUT_MS,

@@ -13,7 +13,13 @@ import { SmtpMailTransport } from './smtpMailTransport';
 /** Crea el transporte que corresponde al modo de la configuración. */
 export function createMailTransport(config: MailConfig): MailTransport {
   if (config.mode === 'smtp') {
-    return new SmtpMailTransport(config, (options) => nodemailer.createTransport(options));
+    // `requireTLS: true` SIEMPRE y a la vista: con TLS implícito (465) la conexión ya es cifrada;
+    // en cualquier otro puerto obliga a STARTTLS y, si no se puede cifrar, NO envía (nunca texto
+    // plano). Va como literal en el punto de llamada porque SonarCloud (S5332) solo da por seguro
+    // un `createTransport` cuyo objeto de opciones puede leer estáticamente.
+    return new SmtpMailTransport(config, (options) =>
+      nodemailer.createTransport({ ...options, requireTLS: true })
+    );
   }
   if (config.mode === 'memory') return new MemoryMailTransport();
   return disabledMailTransport;
