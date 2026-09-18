@@ -54,7 +54,7 @@ import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
 import { loadMailConfig } from './services/mailConfig';
-import { logMailStatus } from './services/mailFactory';
+import { createMailTransport, logMailStatus } from './services/mailFactory';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -334,6 +334,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   registerCorePlugins(fastify);
   registerObservabilityHooks(fastify);
+
+  // FC187 F1 — un solo transporte de correo por instancia (Memory en test, Smtp/Disabled según
+  // SMTP_*); las rutas de F3/F5 lo leen de `fastify.mailTransport`.
+  fastify.decorate('mailTransport', createMailTransport(loadMailConfig(process.env)));
 
   // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
   fastify.register(universeContextPlugin);

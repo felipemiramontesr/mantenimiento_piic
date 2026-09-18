@@ -1,7 +1,13 @@
 import '@fastify/jwt';
 import type { UniverseCtx, ScopeFilter } from './scopes';
+import type { MailTransport } from '../services/mailTransport';
 
 declare module 'fastify' {
+  interface FastifyInstance {
+    /** FC187 F1 — transporte de correo del proceso (smtp | memory | disabled); lo consumen F3/F5. */
+    mailTransport: MailTransport;
+  }
+
   interface FastifyRequest {
     jwtVerify(): Promise<void>;
     user: {

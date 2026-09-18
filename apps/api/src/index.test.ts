@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import buildApp from './index';
 import db from './services/db';
+import { MemoryMailTransport } from './services/mailTransport';
 
 /**
  * FC162 F1-T7 — `index.ts` came out of the blanket Sonar/Vitest exclude
@@ -156,5 +157,26 @@ describe('GET /health/db (DB-1045 P4 probe)', () => {
     expect(body.status).toBe('down');
     expect(JSON.stringify(body)).not.toContain('u701509674_Felipe');
     spy.mockRestore();
+  });
+});
+
+describe('FC187 F1 — mailTransport decorado en buildApp', () => {
+  it('cada instancia trae su PROPIO MemoryMailTransport bajo test y envía sin red', async () => {
+    const first = buildApp();
+    const second = buildApp();
+
+    expect(first.mailTransport).toBeInstanceOf(MemoryMailTransport);
+    expect(second.mailTransport).not.toBe(first.mailTransport);
+
+    const result = await first.mailTransport.send({
+      to: 'destino@example.test',
+      subject: 's',
+      html: 'h',
+      text: 't',
+    });
+
+    expect(result).toEqual({ status: 'sent', messageId: 'memory-1' });
+    expect((first.mailTransport as MemoryMailTransport).outbox).toHaveLength(1);
+    expect((second.mailTransport as MemoryMailTransport).outbox).toHaveLength(0);
   });
 });

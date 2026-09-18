@@ -165,6 +165,20 @@ export const ALLOWLIST: readonly AllowlistEntry[] = [
       'símbolo, misma justificación, solo cambió el archivo.',
   },
   {
+    file: 'apps/api/src/services/mailTemplates.ts',
+    symbol: 'buildPasswordResetEmail',
+    reason:
+      'FC187 F1 -- plantilla entregada en F1 (contrato firmado por Omega), consumida por la ruta ' +
+      'forgot-password de FC187 F3. DORMANT-F3: retirar esta entrada cuando F3 la importe.',
+  },
+  {
+    file: 'apps/api/src/services/mailTemplates.ts',
+    symbol: 'buildEmailVerificationEmail',
+    reason:
+      'FC187 F1 -- plantilla entregada en F1 (contrato firmado por Omega), consumida por el alta ' +
+      'publica de FC187 F5. DORMANT-F5: retirar esta entrada cuando F5 la importe.',
+  },
+  {
     file: 'apps/api/src/services/auditService.ts',
     symbol: 'getEntityAuditHistory',
     reason: 'Probado directo en forensicIntegrity.test.ts.',
