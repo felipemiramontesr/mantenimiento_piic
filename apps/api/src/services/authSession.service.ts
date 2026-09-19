@@ -60,7 +60,12 @@ export function mapUserResponse(user: RowDataPacket): MappedUser {
     uuid: user.uuid,
     username: user.username,
     fullName: user.full_name || user.fullName,
-    email: EncryptionService.decrypt(user.email),
+    // FC189 — `user.email` puede ser NULL (cuenta sin correo registrado, p. ej. Ω antes de FC188):
+    // `decrypt()` hace `.split(':')` ANTES de su propio try/catch, así que un NULL sin guardia
+    // truena con TypeError y tumba /login, /refresh y /switch-tenant (comparten esta función).
+    // `''` en vez de pasar `null`: `MappedUser.email` es `string` y el resto del sistema (frontend
+    // incluido) asume que siempre puede tratarlo como tal.
+    email: user.email ? EncryptionService.decrypt(user.email) : '',
     roleId: rid,
     roleName: rname,
     department: user.department_name || user.department,

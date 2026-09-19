@@ -437,7 +437,8 @@ export async function listPendingUsers(): Promise<PendingUsersListResult> {
       id: r.id,
       username: r.username,
       fullName: r.full_name,
-      email: EncryptionService.decrypt(r.email),
+      // FC189 — mismo guard que authSession/authUserManagement: `r.email` NULL no debe tronar.
+      email: r.email ? EncryptionService.decrypt(r.email) : '',
       rfc: r.rfc,
       razonSocial: r.razon_social,
     })),

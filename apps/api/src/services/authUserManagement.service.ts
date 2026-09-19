@@ -114,7 +114,8 @@ export async function getUserNode(
   }
 
   const routeRows = await UserRepository.findRecentRoutesByDriverId(user.id as number);
-  const emailDecrypted = EncryptionService.decrypt(user.email as string);
+  // FC189 — `user.email` NULL (cuenta sin correo) truena `decrypt()` antes de su propio fail-safe.
+  const emailDecrypted = user.email ? EncryptionService.decrypt(user.email as string) : '';
 
   return {
     ok: true,
