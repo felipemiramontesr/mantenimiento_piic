@@ -81,7 +81,7 @@ describe('FC188 F2 — MailDiagnosticCard', () => {
     expect(outcome.textContent).toBe(
       'Correo de prueba enviado a fe•••@gmail.com — revisa tu bandeja de entrada y spam'
     );
-    expect(outcome).toHaveAttribute('role', 'status');
+    expect(screen.getByRole('status')).toBe(outcome);
     expect(screen.getByTestId('mail-diagnostic-mode').textContent).toMatch(/SMTP \(Hostinger\)/);
   });
 
@@ -112,7 +112,8 @@ describe('FC188 F2 — MailDiagnosticCard', () => {
 
     const outcome = await screen.findByTestId('mail-diagnostic-outcome');
     expect(outcome.textContent).toMatch(/verifica el usuario y contraseña del buzón en Hostinger/);
-    expect(outcome).toHaveAttribute('role', 'alert');
+    expect(screen.getByRole('alert')).toBe(outcome);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('ETIMEDOUT: indica verificar host y puerto SMTP', async () => {
@@ -149,7 +150,7 @@ describe('FC188 F2 — MailDiagnosticCard', () => {
     );
   });
 
-  it('429: avisa del límite de 3/hora (role=status, advertencia) y el botón queda disponible', async () => {
+  it('429: avisa del límite de 3/hora (<output> con rol status, advertencia) y el botón queda disponible', async () => {
     vi.mocked(api.post).mockRejectedValue(httpError(429, { code: 'RATE_LIMIT_EXCEEDED' }));
     render(<MailDiagnosticCard />);
 
@@ -157,7 +158,7 @@ describe('FC188 F2 — MailDiagnosticCard', () => {
 
     const outcome = await screen.findByTestId('mail-diagnostic-outcome');
     expect(outcome.textContent).toMatch(/3 correos de prueba por hora/);
-    expect(outcome).toHaveAttribute('role', 'status');
+    expect(screen.getByRole('status')).toBe(outcome);
     expect(screen.getByTestId('mail-diagnostic-send')).toBeEnabled();
   });
 

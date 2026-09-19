@@ -24,7 +24,7 @@ const TONE_STYLES: Record<MailTestTone, string> = {
 };
 
 /** Tarjeta de diagnóstico: destino enmascarado, botón de envío, transporte activo y el resultado
- *  de la última prueba (`role="alert"` en error, `role="status"` en éxito/advertencia). */
+ *  de la última prueba (`<output>`, rol `status` implícito, en éxito/advertencia; `role="alert"` en error). */
 function MailDiagnosticCard(): React.ReactElement {
   const { currentUser } = useAuth();
   const maskedEmail = maskEmail(currentUser?.email);
@@ -62,13 +62,15 @@ function MailDiagnosticCard(): React.ReactElement {
         {sending ? 'Enviando…' : 'Enviar Correo de Prueba'}
       </button>
       {outcome && (
-        <p
-          role={outcome.tone === 'error' ? 'alert' : 'status'}
-          className={`p-3 rounded border text-archon-base font-medium ${TONE_STYLES[outcome.tone]}`}
+        <output
+          role={outcome.tone === 'error' ? 'alert' : undefined}
+          className={`block p-3 rounded border text-archon-base font-medium ${
+            TONE_STYLES[outcome.tone]
+          }`}
           data-testid="mail-diagnostic-outcome"
         >
           {outcome.message}
-        </p>
+        </output>
       )}
     </div>
   );
