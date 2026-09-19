@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireOmega } from '../middleware/cosmonautMiddleware';
 import * as CosmologyService from '../services/cosmology.service';
 import { resetUserMfa } from '../services/mfa.service';
+import { buildMailTestRoute, handleMailTest } from './cosmologyMailTest';
 import type {
   MutationResult,
   ListResult,
@@ -245,7 +246,7 @@ async function handleResetUserMfa(
   return sendMutationResult(reply, result);
 }
 
-/** Registers the 11 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2), all Ω-exclusive. */
+/** Registers the 12 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1), all Ω-exclusive. */
 export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
@@ -262,4 +263,5 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.get('/universes', omegaGuard, handleListUniverses);
   fastify.get('/pending-users', omegaGuard, handleListPendingUsers);
   fastify.post('/users/:id/mfa/reset', omegaGuard, handleResetUserMfa);
+  fastify.post('/mail/test', buildMailTestRoute(omegaGuard.onRequest), handleMailTest);
 }

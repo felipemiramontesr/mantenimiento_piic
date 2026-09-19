@@ -1,8 +1,8 @@
 /**
- * FC187 F1 — plantillas de correo. UNA sola función (`renderActionEmail`) produce HTML y texto
- * plano desde los mismos datos: cero duplicación entre las dos versiones ni entre plantillas. Las
- * URLs las construye el servidor (FRONTEND_URL + token), nunca vienen del usuario; aun así todo se
- * escapa en el HTML.
+ * FC187 F1 / FC188 F1 — plantillas de correo. UNA sola función (`renderActionEmail`) produce HTML
+ * y texto plano desde los mismos datos: cero duplicación entre las dos versiones ni entre
+ * plantillas. Las URLs las construye el servidor (FRONTEND_URL + token), nunca vienen del usuario;
+ * aun así todo se escapa en el HTML.
  */
 
 /** Contenido listo para enviar (sin destinatario). */
@@ -12,12 +12,17 @@ export interface EmailContent {
   readonly text: string;
 }
 
+interface EmailAction {
+  readonly label: string;
+  readonly url: string;
+}
+
 interface ActionEmailSpec {
   readonly subject: string;
   readonly heading: string;
   readonly intro: string;
-  readonly actionLabel: string;
-  readonly actionUrl: string;
+  /** Sin `action` el correo es solo informativo (p. ej. el de prueba del sistema). */
+  readonly action?: EmailAction;
   readonly notes: readonly string[];
 }
 
@@ -34,8 +39,18 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
+function renderActionHtml(action: EmailAction): string {
+  const url = escapeHtml(action.url);
+  return (
+    `<p style="margin:0 0 24px;"><a href="${url}" style="display:inline-block;background:${YELLOW};` +
+    `color:${NAVY};text-decoration:none;font-weight:bold;padding:12px 24px;border-radius:4px;">` +
+    `${escapeHtml(action.label)}</a></p>` +
+    `<p style="margin:0 0 16px;font-size:13px;color:#5b6b7b;">Si el botón no funciona, copia este ` +
+    `enlace en tu navegador:<br><span style="word-break:break-all;">${url}</span></p>`
+  );
+}
+
 function renderHtmlBody(spec: ActionEmailSpec): string {
-  const url = escapeHtml(spec.actionUrl);
   const notes = spec.notes
     .map((n) => `<p style="margin:0 0 8px;font-size:13px;color:#5b6b7b;">${escapeHtml(n)}</p>`)
     .join('');
@@ -44,11 +59,7 @@ function renderHtmlBody(spec: ActionEmailSpec): string {
     `<p style="margin:0 0 24px;font-size:15px;line-height:1.5;color:${NAVY};">${escapeHtml(
       spec.intro
     )}</p>` +
-    `<p style="margin:0 0 24px;"><a href="${url}" style="display:inline-block;background:${YELLOW};` +
-    `color:${NAVY};text-decoration:none;font-weight:bold;padding:12px 24px;border-radius:4px;">` +
-    `${escapeHtml(spec.actionLabel)}</a></p>` +
-    `<p style="margin:0 0 16px;font-size:13px;color:#5b6b7b;">Si el botón no funciona, copia este ` +
-    `enlace en tu navegador:<br><span style="word-break:break-all;">${url}</span></p>${notes}`
+    `${spec.action ? renderActionHtml(spec.action) : ''}${notes}`
   );
 }
 
@@ -70,13 +81,8 @@ function renderHtml(spec: ActionEmailSpec): string {
 }
 
 function renderText(spec: ActionEmailSpec): string {
-  return [
-    BRAND,
-    spec.heading,
-    spec.intro,
-    `${spec.actionLabel}: ${spec.actionUrl}`,
-    ...spec.notes,
-  ].join('\n\n');
+  const actionLine = spec.action ? [`${spec.action.label}: ${spec.action.url}`] : [];
+  return [BRAND, spec.heading, spec.intro, ...actionLine, ...spec.notes].join('\n\n');
 }
 
 function renderActionEmail(spec: ActionEmailSpec): EmailContent {
@@ -91,8 +97,7 @@ export function buildPasswordResetEmail(resetUrl: string): EmailContent {
     intro:
       'Recibimos una solicitud para restablecer la contraseña de tu cuenta. ' +
       'Usa el botón para elegir una nueva.',
-    actionLabel: 'Restablecer contraseña',
-    actionUrl: resetUrl,
+    action: { label: 'Restablecer contraseña', url: resetUrl },
     notes: [
       'Este enlace caduca en 15 minutos y solo puede usarse una vez.',
       'Si no lo solicitaste, ignora este mensaje: tu contraseña no cambiará.',
@@ -106,11 +111,33 @@ export function buildEmailVerificationEmail(verifyUrl: string): EmailContent {
     subject: `Verifica tu correo — ${BRAND}`,
     heading: 'Verifica tu correo electrónico',
     intro: 'Confirma que esta dirección te pertenece para completar tu registro en Archon.',
-    actionLabel: 'Verificar correo',
-    actionUrl: verifyUrl,
+    action: { label: 'Verificar correo', url: verifyUrl },
     notes: [
       'No compartas este enlace con nadie.',
       'Si no creaste una cuenta, ignora este mensaje.',
+    ],
+  });
+}
+
+/** Datos del correo de prueba: quién lo disparó, cuándo (ISO UTC) y con qué transporte. */
+export interface MailTestEmailParams {
+  readonly actorName: string;
+  readonly sentAtIso: string;
+  readonly mode: string;
+}
+
+/** Correo de diagnóstico de Ω (FC188): informativo, sin botón ni enlace. */
+export function buildMailTestEmail(params: MailTestEmailParams): EmailContent {
+  return renderActionEmail({
+    subject: '[ARCHON] Correo de prueba del sistema',
+    heading: 'Correo de prueba del sistema',
+    intro:
+      'Este mensaje confirma que el correo transaccional de Archon está funcionando: ' +
+      'las variables de entorno, la autenticación SMTP y la entrega.',
+    notes: [
+      `Disparado por ${params.actorName} el ${params.sentAtIso} (UTC).`,
+      `Transporte activo: ${params.mode}.`,
+      'Si no esperabas este mensaje, ignóralo.',
     ],
   });
 }

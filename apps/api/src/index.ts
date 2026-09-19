@@ -337,7 +337,9 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   // FC187 F1 — un solo transporte de correo por instancia (Memory en test, Smtp/Disabled según
   // SMTP_*); las rutas de F3/F5 lo leen de `fastify.mailTransport`.
-  fastify.decorate('mailTransport', createMailTransport(loadMailConfig(process.env)));
+  const mailConfig = loadMailConfig(process.env);
+  fastify.decorate('mailTransport', createMailTransport(mailConfig));
+  fastify.decorate('mailMode', mailConfig.mode);
 
   // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
   fastify.register(universeContextPlugin);

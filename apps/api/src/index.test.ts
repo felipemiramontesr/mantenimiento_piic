@@ -167,6 +167,7 @@ describe('FC187 F1 — mailTransport decorado en buildApp', () => {
 
     expect(first.mailTransport).toBeInstanceOf(MemoryMailTransport);
     expect(second.mailTransport).not.toBe(first.mailTransport);
+    expect(first.mailMode).toBe('memory');
 
     const result = await first.mailTransport.send({
       to: 'destino@example.test',

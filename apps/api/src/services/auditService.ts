@@ -10,7 +10,8 @@ export interface AuditLogEntry {
     | 'catalog'
     | 'supercluster'
     | 'cluster'
-    | 'universe';
+    | 'universe'
+    | 'system_mail_test';
   entity_id: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   snapshot_before?: Record<string, unknown>;

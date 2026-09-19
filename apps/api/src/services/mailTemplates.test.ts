@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildEmailVerificationEmail, buildPasswordResetEmail } from './mailTemplates';
+import {
+  buildEmailVerificationEmail,
+  buildMailTestEmail,
+  buildPasswordResetEmail,
+} from './mailTemplates';
 
 /** FC187 F1 — una sola plantilla genera HTML y texto plano; todo dato dinámico se escapa. */
 
@@ -58,5 +62,36 @@ describe('FC187 F1 — escape de HTML', () => {
     expect(email.html).toContain('&amp;b=&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;');
     expect(email.html).toContain('&#39;q&#39;');
     expect(email.text).toContain(hostile);
+  });
+});
+
+describe('FC188 F1 — buildMailTestEmail (informativo, sin botón)', () => {
+  const email = buildMailTestEmail({
+    actorName: 'GrayMan',
+    sentAtIso: '2026-09-18T18:00:00.000Z',
+    mode: 'smtp',
+  });
+
+  it('asunto fijo y datos del disparo (quién, cuándo en UTC, transporte)', () => {
+    expect(email.subject).toBe('[ARCHON] Correo de prueba del sistema');
+    expect(email.text).toContain('Disparado por GrayMan el 2026-09-18T18:00:00.000Z (UTC).');
+    expect(email.text).toContain('Transporte activo: smtp.');
+    expect(email.html).toContain('GrayMan');
+  });
+
+  it('no lleva botón ni enlace (no hay acción que ofrecer)', () => {
+    expect(email.html).not.toContain('<a ');
+    expect(email.html).not.toContain('Si el botón no funciona');
+    expect(email.text).not.toContain('http');
+  });
+
+  it('escapa el nombre del actor en el HTML', () => {
+    const hostile = buildMailTestEmail({
+      actorName: '<img src=x>',
+      sentAtIso: '2026-09-18T18:00:00.000Z',
+      mode: 'memory',
+    });
+    expect(hostile.html).not.toContain('<img src=x>');
+    expect(hostile.html).toContain('&lt;img src=x&gt;');
   });
 });
