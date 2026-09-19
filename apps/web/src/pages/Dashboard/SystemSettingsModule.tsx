@@ -12,6 +12,7 @@ import {
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import ArchonAppTile from '../../components/Common/ArchonAppTile';
+import MailDiagnosticCard from './MailDiagnosticCard';
 
 /**
  * FC170/171/172/173/174 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
@@ -164,6 +165,7 @@ function SovereignConsoleSection(): React.ReactElement {
           navigate('/dashboard/cosmology');
         }}
       />
+      <MailDiagnosticCard />
     </div>
   );
 }

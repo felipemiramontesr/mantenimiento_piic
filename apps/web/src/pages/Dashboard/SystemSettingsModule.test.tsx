@@ -147,4 +147,22 @@ describe('SystemSettingsModule', () => {
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/system-settings/forensics');
     expect(screen.queryByText('Forensic Console V4')).not.toBeInTheDocument();
   });
+
+  // FC188 F2 — Diagnóstico de Correo: solo dentro de la Consola Soberana (invariante 3, Privilege Isolation).
+  it('FC188 F2 — Ω ve la tarjeta "Diagnóstico de Correo del Sistema" con su botón dentro de la Consola Soberana', () => {
+    mockPerms({ omega: true });
+    render(<SystemSettingsModule />);
+
+    const sovereign = screen.getByTestId('system-settings-sovereign-card');
+    expect(sovereign).toContainElement(screen.getByTestId('mail-diagnostic-card'));
+    expect(screen.getByRole('button', { name: 'Enviar Correo de Prueba' })).toBeInTheDocument();
+  });
+
+  it('FC188 F2 — un tenant (no Ω) NO ve la tarjeta de correo: 0 leak en el DOM', () => {
+    mockPerms({ fleet: true, omega: false });
+    const { container } = render(<SystemSettingsModule />);
+
+    expect(screen.queryByTestId('mail-diagnostic-card')).toBeNull();
+    expect(container.innerHTML).not.toMatch(/Diagnóstico de Correo/);
+  });
 });
