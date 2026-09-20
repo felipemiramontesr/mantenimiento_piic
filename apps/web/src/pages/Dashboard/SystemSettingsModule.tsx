@@ -8,11 +8,11 @@ import {
   Navigation,
   Stethoscope,
   ClipboardCheck,
+  Mail,
 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import ArchonAppTile from '../../components/Common/ArchonAppTile';
-import MailDiagnosticCard from './MailDiagnosticCard';
 
 /**
  * FC170/171/172/173/174 — System_Settings_Modular_Chassis_And_Sidebar_Integration.
@@ -99,12 +99,14 @@ function TenantUniverseSection(): React.ReactElement {
 interface SovereignConsoleTilesProps {
   readonly onOpenForensics: () => void;
   readonly onOpenCosmology: () => void;
+  readonly onOpenMailDiagnostic: () => void;
 }
 
 /** Grid de tiles de la Consola Soberana — extraído para que `SovereignConsoleSection` se mantenga bajo presupuesto (Gate 2). */
 function SovereignConsoleTiles({
   onOpenForensics,
   onOpenCosmology,
+  onOpenMailDiagnostic,
 }: SovereignConsoleTilesProps): React.ReactElement {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -125,6 +127,16 @@ function SovereignConsoleTiles({
         status="active"
         onClick={onOpenCosmology}
         dataTestId="sovereign-console-cosmology-trigger"
+      />
+      {/* FC190 — 4ª tile: mismo patrón clic→navega que Doctor/Cosmología, ninguna excepción inline. */}
+      <ArchonAppTile
+        id="mail-diagnostic"
+        title="Diagnóstico de Correo del Sistema"
+        description="Prueba de envío y salud del transporte SMTP"
+        icon={Mail}
+        status="active"
+        onClick={onOpenMailDiagnostic}
+        dataTestId="sovereign-console-mail-trigger"
       />
       <ArchonAppTile
         id="protocol-audit"
@@ -164,8 +176,10 @@ function SovereignConsoleSection(): React.ReactElement {
         onOpenCosmology={(): void => {
           navigate('/dashboard/cosmology');
         }}
+        onOpenMailDiagnostic={(): void => {
+          navigate('/dashboard/system-settings/mail-diagnostic');
+        }}
       />
-      <MailDiagnosticCard />
     </div>
   );
 }

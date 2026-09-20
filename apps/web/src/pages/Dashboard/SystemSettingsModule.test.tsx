@@ -148,21 +148,30 @@ describe('SystemSettingsModule', () => {
     expect(screen.queryByText('Forensic Console V4')).not.toBeInTheDocument();
   });
 
-  // FC188 F2 — Diagnóstico de Correo: solo dentro de la Consola Soberana (invariante 3, Privilege Isolation).
-  it('FC188 F2 — Ω ve la tarjeta "Diagnóstico de Correo del Sistema" con su botón dentro de la Consola Soberana', () => {
+  // FC190 F1 — Diagnóstico de Correo pasa de tarjeta fija a tile (invariante 1, App-Launcher
+  // Tile Consistency): mismo patrón clic→navega que Doctor/Cosmología, 0 excepción inline.
+  it('FC190 — Ω ve la tile "Diagnóstico de Correo del Sistema" dentro de la Consola Soberana', () => {
     mockPerms({ omega: true });
     render(<SystemSettingsModule />);
 
     const sovereign = screen.getByTestId('system-settings-sovereign-card');
-    expect(sovereign).toContainElement(screen.getByTestId('mail-diagnostic-card'));
-    expect(screen.getByRole('button', { name: 'Enviar Correo de Prueba' })).toBeInTheDocument();
+    expect(sovereign).toContainElement(screen.getByTestId('sovereign-console-mail-trigger'));
   });
 
-  it('FC188 F2 — un tenant (no Ω) NO ve la tarjeta de correo: 0 leak en el DOM', () => {
+  it('FC190 Scenario 1 — click en el tile de correo navega a /dashboard/system-settings/mail-diagnostic', () => {
+    mockPerms({ omega: true });
+    render(<SystemSettingsModule />);
+
+    fireEvent.click(screen.getByTestId('sovereign-console-mail-trigger'));
+
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/system-settings/mail-diagnostic');
+  });
+
+  it('FC190 Scenario 2 — un tenant (no Ω) NO ve el tile de correo: 0 leak en el DOM', () => {
     mockPerms({ fleet: true, omega: false });
     const { container } = render(<SystemSettingsModule />);
 
-    expect(screen.queryByTestId('mail-diagnostic-card')).toBeNull();
+    expect(screen.queryByTestId('sovereign-console-mail-trigger')).toBeNull();
     expect(container.innerHTML).not.toMatch(/Diagnóstico de Correo/);
   });
 });
