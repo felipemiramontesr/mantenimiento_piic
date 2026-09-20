@@ -69,6 +69,43 @@ describe('FC188 F2 — MailDiagnosticCard', () => {
     expect(screen.queryByTestId('mail-diagnostic-outcome')).toBeNull();
   });
 
+  it('FC191 Scenario 1 — fila superior en dos columnas: información a la izquierda, botón a la derecha', () => {
+    render(<MailDiagnosticCard />);
+    const row = screen.getByTestId('mail-diagnostic-header-row');
+    const info = screen.getByTestId('mail-diagnostic-info-column');
+    const action = screen.getByTestId('mail-diagnostic-action-column');
+    const button = screen.getByTestId('mail-diagnostic-send');
+
+    expect(Array.from(row.children)).toEqual([info, action]);
+    expect(info).toContainElement(screen.getByText('Diagnóstico de Correo del Sistema'));
+    expect(info).toContainElement(screen.getByText(/Envía un correo de prueba a fe•••@gmail\.com/));
+    expect(info).not.toContainElement(button);
+    expect(info).toHaveClass('text-left');
+    expect(action).toContainElement(button);
+    expect(action).toHaveClass('md:justify-end');
+  });
+
+  it('FC191 Scenario 2 — apilado por defecto (móvil) y en fila con separación desde md', () => {
+    render(<MailDiagnosticCard />);
+    const row = screen.getByTestId('mail-diagnostic-header-row');
+
+    expect(row).toHaveClass('flex', 'flex-col');
+    expect(row).toHaveClass('md:flex-row', 'md:justify-between');
+  });
+
+  it('FC191 Scenario 3 — el transporte y el resultado quedan debajo de la fila, fuera de las columnas', async () => {
+    vi.mocked(api.post).mockResolvedValue(okBody({ messageId: '<m1>' }));
+    render(<MailDiagnosticCard />);
+    const row = screen.getByTestId('mail-diagnostic-header-row');
+    expect(row).not.toContainElement(screen.getByTestId('mail-diagnostic-mode'));
+
+    clickSend();
+
+    const outcome = await screen.findByTestId('mail-diagnostic-outcome');
+    expect(row).not.toContainElement(outcome);
+    expect(screen.getByTestId('mail-diagnostic-card')).toContainElement(outcome);
+  });
+
   it('Scenario 1 — envía con cuerpo vacío (sin destinatario) y confirma "revisa bandeja y spam"', async () => {
     vi.mocked(api.post).mockResolvedValue(okBody({ messageId: '<m1>' }));
     render(<MailDiagnosticCard />);
