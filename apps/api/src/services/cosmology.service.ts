@@ -7,6 +7,7 @@ import { findPendingUsers } from './universeUserLinking.repository';
 import EncryptionService from './encryption';
 import { assertUniqueUniverseLabel } from './universeManagement.service';
 import { UniverseMutationError } from './universeLabel';
+import { invalidateUniverseCapabilities } from './universeCapabilities.service';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -73,6 +74,7 @@ export async function addSupercluster(
   const found = await findValidSupercluster(tenantId, superclusterCode);
   if (!('id' in found)) return found;
   await CosmologyRepository.activateSupercluster(tenantId, found.id, callerId);
+  invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'supercluster',
     entity_id: `${tenantId}:${superclusterCode}`,
@@ -104,6 +106,7 @@ export async function removeSupercluster(
   } finally {
     connection.release();
   }
+  invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'supercluster',
     entity_id: `${tenantId}:${superclusterCode}`,
@@ -136,6 +139,7 @@ export async function addCluster(
     };
   }
   await CosmologyRepository.activateCluster(tenantId, found.id, callerId);
+  invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'cluster',
     entity_id: `${tenantId}:${clusterCode}`,
@@ -156,6 +160,7 @@ export async function removeCluster(
   const found = await findValidCluster(tenantId, clusterCode);
   if (!('id' in found)) return found;
   await CosmologyRepository.suspendCluster(tenantId, found.id);
+  invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'cluster',
     entity_id: `${tenantId}:${clusterCode}`,
@@ -384,6 +389,7 @@ export async function destroyUniverse(
   } finally {
     connection.release();
   }
+  invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'universe',
     entity_id: String(tenantId),

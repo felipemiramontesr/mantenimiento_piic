@@ -4,6 +4,12 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import buildApp from '../index';
 import { outboundFetch } from '../services/outboundFetch';
 
+// FC193 F2 — este archivo prueba la lógica de negocio de las rutas, no el gate de capacidad (lo cubre
+// capabilityRoutes.test.ts con la app real): sus tokens de tenant no traen tenant_id.
+vi.mock('../middleware/requireUniverseCapability', () => ({
+  requireUniverseCapability: () => async (): Promise<void> => undefined,
+}));
+
 // FC 062 F4 — el call-site migró a outboundFetch; se mockea el módulo, no fetch global
 vi.mock('../services/outboundFetch', () => ({ outboundFetch: vi.fn() }));
 

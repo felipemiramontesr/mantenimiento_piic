@@ -13,25 +13,29 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import db from './services/db';
 import authRoutes from './routes/auth';
+import {
+  fleetRoutes,
+  journeyRoutes,
+  realtimeTelemetryRoutes,
+  fleetIntelligenceRoutes,
+  anomalyDetectionRoutes,
+  operatorScorecardRoutes,
+  co2Routes,
+  fleetMaintenanceRoutes,
+  workOrderRoutes,
+  reportsRoutes,
+  fleetRecallsRoutes,
+  recallsNhtsaRoutes,
+  recallsInternalRoutes,
+  financeRoutes,
+  fleetTcoRoutes,
+  economicLifeRoutes,
+} from './routes/capabilityRoutes';
 import telemetryRoutes from './routes/telemetry';
-import fleetRoutes from './routes/fleet';
-import journeyRoutes from './routes/fleetRoutes';
 import catalogRoutes from './routes/catalogs';
 import userRoutes from './routes/users';
 import geolocationRoutes from './routes/geolocation';
-import fleetMaintenanceRoutes from './routes/fleetMaintenance';
-import financeRoutes from './routes/finance';
 import alertsRoutes from './routes/alerts';
-import workOrderRoutes from './routes/workOrders';
-import fleetTcoRoutes from './routes/fleetTco';
-import fleetRecallsRoutes from './routes/fleetRecalls';
-import fleetIntelligenceRoutes from './routes/fleetIntelligence';
-import economicLifeRoutes from './routes/economicLife';
-import anomalyDetectionRoutes from './routes/anomalyDetection';
-import operatorScorecardRoutes from './routes/operatorScorecard';
-import co2Routes from './routes/co2';
-import recallsNhtsaRoutes from './routes/recallsNhtsa';
-import recallsInternalRoutes from './routes/recallsInternal';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
 // FC 082 F0c — purga 084_AN v3.1: serviceCenters, crm* (5) y portal
@@ -40,9 +44,7 @@ import areasRoutes from './routes/areas';
 import ownerProfileRoutes from './routes/ownerProfile';
 import onboardingRoutes from './routes/onboarding';
 import securityRoutes from './routes/security';
-import realtimeTelemetryRoutes from './routes/realtimeTelemetry';
 import socialRoutes from './routes/social';
-import reportsRoutes from './routes/reports';
 import universeContextPlugin from './plugins/universeContext';
 import {
   logSecurityEvent,

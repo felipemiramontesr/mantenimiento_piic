@@ -4,6 +4,12 @@ import RouteService from '../services/routeService';
 import NotificationService from '../services/notification.service';
 import { CatalogMappingError } from '../services/catalogMapper';
 
+// FC193 F2 — este archivo prueba la lógica de negocio de las rutas, no el gate de capacidad (lo cubre
+// capabilityRoutes.test.ts con la app real): sus tokens de tenant no traen tenant_id.
+vi.mock('../middleware/requireUniverseCapability', () => ({
+  requireUniverseCapability: () => async (): Promise<void> => undefined,
+}));
+
 // 🔱 Nucleus Mocks
 // FC126 F1 — routes/fleetRoutes.ts is now zero-SQL (I1): it never imports
 // '../services/db' anymore, so this suite no longer mocks it. Ownership-scope

@@ -7,6 +7,12 @@ import FleetService from '../services/fleetService';
 import { buildRecallItem } from './fleetRecalls';
 import type { RecallItem } from './fleetRecalls';
 
+// FC193 F2 — este archivo prueba la lógica de negocio de las rutas, no el gate de capacidad (lo cubre
+// capabilityRoutes.test.ts con la app real): sus tokens de tenant no traen tenant_id.
+vi.mock('../middleware/requireUniverseCapability', () => ({
+  requireUniverseCapability: () => async (): Promise<void> => undefined,
+}));
+
 vi.mock('../services/db', () => ({
   default: {
     execute: vi.fn().mockResolvedValue([[], undefined]),

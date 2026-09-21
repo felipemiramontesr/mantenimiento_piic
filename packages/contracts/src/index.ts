@@ -237,3 +237,6 @@ export const assetTypesResponseSchema = z.object({
   count: z.number(),
   data: z.array(assetTypeEntrySchema),
 });
+
+/** FC193 F2 — manifiesto de capacidades (Supercúmulo ↔ Cúmulo) compartido API/web. */
+export * from './capabilities';
