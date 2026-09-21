@@ -7,6 +7,14 @@ import AnomalyDetectionService from '../services/anomalyDetectionService';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
+// FC193 F2 — este archivo prueba la lógica de negocio de la ruta (scope de owners, BOLA…), no el gate de
+// capacidad (lo cubre capabilityRoutes.test.ts con la app real). Sin este mock, sus tokens de tenant sin
+// tenant_id recibirían 403 CAPABILITY_NOT_ACTIVE antes de llegar al handler: los tests seguirían en verde
+// pero por la razón equivocada y dejarían de cubrir el handler.
+vi.mock('../middleware/requireUniverseCapability', () => ({
+  requireUniverseCapability: () => async (): Promise<void> => undefined,
+}));
+
 vi.mock('../services/db', () => ({
   default: {
     execute: vi.fn().mockResolvedValue([[], undefined]),
