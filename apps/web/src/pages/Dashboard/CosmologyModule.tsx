@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Globe, Trash2 } from 'lucide-react';
+import { Globe, Pencil, Trash2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import api from '../../api/client';
@@ -9,6 +9,7 @@ import {
   CreateUniverseForm,
   DestroyUniverseModal,
 } from './CosmologyModule/CosmologyForms';
+import RenameUniverseModal from './CosmologyModule/RenameUniverseModal';
 
 /**
  * FC161 F1 — Cosmology_Admin_Ui: Universes_List_Create_Destroy.
@@ -36,6 +37,7 @@ function useUniverses(enabled: boolean): {
   loading: boolean;
   error: boolean;
   refetch: () => void;
+  renameLocal: (universeId: number, label: string) => void;
 } {
   const [universes, setUniverses] = useState<UniverseRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,11 @@ function useUniverses(enabled: boolean): {
   }, [enabled, epoch]);
 
   const refetch = useCallback((): void => setEpoch((e) => e + 1), []);
-  return { universes, loading, error, refetch };
+  /** FC192 — refleja un renombrado en la lista sin recargar (el servidor ya guardó el nombre). */
+  const renameLocal = useCallback((universeId: number, label: string): void => {
+    setUniverses((current) => current.map((u) => (u.id === universeId ? { ...u, label } : u)));
+  }, []);
+  return { universes, loading, error, refetch, renameLocal };
 }
 
 const TypeBadge: React.FC<{ code: string }> = ({ code }) => (
@@ -75,11 +81,12 @@ const TypeBadge: React.FC<{ code: string }> = ({ code }) => (
 
 interface UniverseTableRowProps {
   readonly row: UniverseRow;
+  readonly onRename: (u: UniverseRow) => void;
   readonly onDestroy: (u: UniverseRow) => void;
 }
 
 /** Single table row — extracted so `UniversesTable` stays under budget. */
-function UniverseTableRow({ row, onDestroy }: UniverseTableRowProps): React.ReactElement {
+function UniverseTableRow({ row, onRename, onDestroy }: UniverseTableRowProps): React.ReactElement {
   return (
     <tr
       key={row.id}
@@ -93,14 +100,24 @@ function UniverseTableRow({ row, onDestroy }: UniverseTableRowProps): React.Reac
       <td className="py-3 px-3 text-center text-pinnacle-navy/60">{row.activeSuperclusters}</td>
       <td className="py-3 px-3 text-center text-pinnacle-navy/60">{row.activeClusters}</td>
       <td className="py-3 px-3 text-right">
-        <button
-          type="button"
-          onClick={(): void => onDestroy(row)}
-          data-testid={`cosmology-universe-destroy-${row.id}`}
-          className="inline-flex items-center gap-1 text-red-500 hover:text-red-700 text-xs font-bold uppercase tracking-widest"
-        >
-          <Trash2 size={12} /> Destruir
-        </button>
+        <div className="inline-flex items-center gap-4">
+          <button
+            type="button"
+            onClick={(): void => onRename(row)}
+            data-testid={`cosmology-universe-rename-${row.id}`}
+            className="inline-flex items-center gap-1 text-pinnacle-navy/70 hover:text-pinnacle-navy text-xs font-bold uppercase tracking-widest"
+          >
+            <Pencil size={12} /> Renombrar
+          </button>
+          <button
+            type="button"
+            onClick={(): void => onDestroy(row)}
+            data-testid={`cosmology-universe-destroy-${row.id}`}
+            className="inline-flex items-center gap-1 text-red-500 hover:text-red-700 text-xs font-bold uppercase tracking-widest"
+          >
+            <Trash2 size={12} /> Destruir
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -110,6 +127,7 @@ interface UniversesTableProps {
   readonly universes: UniverseRow[];
   readonly loading: boolean;
   readonly error: boolean;
+  readonly onRename: (u: UniverseRow) => void;
   readonly onDestroy: (u: UniverseRow) => void;
 }
 
@@ -117,6 +135,7 @@ function UniversesTable({
   universes,
   loading,
   error,
+  onRename,
   onDestroy,
 }: UniversesTableProps): React.JSX.Element {
   if (error) {
@@ -137,7 +156,9 @@ function UniversesTable({
       testId="cosmology-universes-table"
       variant="embedded"
       emptyMessage="No hay Universos registrados."
-      renderRow={(row): React.ReactNode => <UniverseTableRow row={row} onDestroy={onDestroy} />}
+      renderRow={(row): React.ReactNode => (
+        <UniverseTableRow row={row} onRename={onRename} onDestroy={onDestroy} />
+      )}
     />
   );
 }
@@ -146,6 +167,7 @@ interface UniversesDirectoryCardProps {
   readonly universes: UniverseRow[];
   readonly loading: boolean;
   readonly error: boolean;
+  readonly onRename: (u: UniverseRow) => void;
   readonly onDestroy: (u: UniverseRow) => void;
 }
 
@@ -154,6 +176,7 @@ function UniversesDirectoryCard({
   universes,
   loading,
   error,
+  onRename,
   onDestroy,
 }: UniversesDirectoryCardProps): React.JSX.Element {
   return (
@@ -165,7 +188,13 @@ function UniversesDirectoryCard({
         <Globe size={22} className="text-[var(--card-accent)]" />
         <h3 className="card-sovereign-title text-archon-xl opacity-100">Universos Registrados</h3>
       </div>
-      <UniversesTable universes={universes} loading={loading} error={error} onDestroy={onDestroy} />
+      <UniversesTable
+        universes={universes}
+        loading={loading}
+        error={error}
+        onRename={onRename}
+        onDestroy={onDestroy}
+      />
     </div>
   );
 }
@@ -176,7 +205,7 @@ function useCosmologySectionHeader(refetch: () => void): void {
   useEffect(() => {
     setSectionData(
       'Cosmología — Universos',
-      'Crear, listar y destruir Universos del Multiverso Archon (§24.5 AUTORIDAD_Ω)',
+      'Crear, listar, renombrar y destruir Universos del Multiverso Archon (§24.5 AUTORIDAD_Ω)',
       null,
       {
         variant: 'yellow',
@@ -197,8 +226,9 @@ function useCosmologySectionHeader(refetch: () => void): void {
 const CosmologyModule: React.FC = (): React.ReactElement => {
   const { isOmegaStrict } = usePermissions();
   const omega = isOmegaStrict();
-  const { universes, loading, error, refetch } = useUniverses(omega);
+  const { universes, loading, error, refetch, renameLocal } = useUniverses(omega);
   const [destroyTarget, setDestroyTarget] = useState<UniverseRow | null>(null);
+  const [renameTarget, setRenameTarget] = useState<UniverseRow | null>(null);
   useCosmologySectionHeader(refetch);
 
   if (!omega) {
@@ -220,10 +250,20 @@ const CosmologyModule: React.FC = (): React.ReactElement => {
             universes={universes}
             loading={loading}
             error={error}
+            onRename={setRenameTarget}
             onDestroy={setDestroyTarget}
           />
         </div>
       </section>
+
+      <RenameUniverseModal
+        universe={renameTarget}
+        onClose={(): void => setRenameTarget(null)}
+        onRenamed={(universeId, label): void => {
+          renameLocal(universeId, label);
+          setRenameTarget(null);
+        }}
+      />
 
       <DestroyUniverseModal
         universe={destroyTarget}

@@ -5,6 +5,8 @@ import { recordAuditLog } from './auditService';
 import { prepareUserLink, linkUserInTx, PreparedUserLink } from './universeUserLinking';
 import { findPendingUsers } from './universeUserLinking.repository';
 import EncryptionService from './encryption';
+import { assertUniqueUniverseLabel } from './universeManagement.service';
+import { UniverseMutationError } from './universeLabel';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -248,8 +250,9 @@ async function validateUniverseCreateTypes(
   return { ok: true, universeTypeId: universeType.id, ownerTypeId: ownerType.id };
 }
 
-/** F2-I3 — the single TX: mint id → insert tenant → seed SC+Cúmulo blueprint → (FC177 F3)
- *  optionally link an existing quarantined user as MU, same TX (Cond.R-177 R3 "MISMA TX"). */
+/** F2-I3 — the single TX: (FC192) name uniqueness → mint id → insert tenant → seed SC+Cúmulo
+ *  blueprint → (FC177 F3) optionally link an existing quarantined user as MU, same TX (Cond.R-177
+ *  R3 "MISMA TX"). La unicidad va DENTRO de la TX (Cond.R-192 A2), antes de acuñar el id. */
 async function runCreateUniverseTransaction(
   label: string,
   universeTypeId: number,
@@ -260,6 +263,7 @@ async function runCreateUniverseTransaction(
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    await assertUniqueUniverseLabel(connection, label);
     const code = generateUniverseTenantCode(label);
     const tenantId = await CosmologyRepository.mintUniverseTenantId(code, label, connection);
     await CosmologyRepository.insertTenant(
@@ -289,7 +293,7 @@ async function runCreateUniverseTransaction(
   }
 }
 
-/** T5 — CREATE_UNIVERSE. Single TX: mint id → insert tenant → seed SC+Cúmulo blueprint →
+/** T5 — CREATE_UNIVERSE. Single TX: (FC192) unique name → mint id → insert tenant → seed SC+Cúmulo blueprint →
  *  (FC177 F3) optionally link an existing quarantined user as its MU → audit. `linkedUserId`
  *  absent preserves FC160 F1 behavior exactly (truth table row "Ausente"). FC176 F2's
  *  `initialAdmin` (inline user creation) is retired — Cond.R-177 R3 (Bravo). */
@@ -310,13 +314,20 @@ export async function createUniverse(
     userLink = prepared;
   }
 
-  const tenantId = await runCreateUniverseTransaction(
-    label,
-    types.universeTypeId,
-    types.ownerTypeId,
-    callerId,
-    userLink
-  );
+  let tenantId: number;
+  try {
+    tenantId = await runCreateUniverseTransaction(
+      label,
+      types.universeTypeId,
+      types.ownerTypeId,
+      callerId,
+      userLink
+    );
+  } catch (e) {
+    // FC192 — 409 UNIVERSE_NAME_ALREADY_EXISTS (nada se persistió: la TX ya hizo ROLLBACK).
+    if (e instanceof UniverseMutationError) return { ok: false, ...e.failure };
+    throw e;
+  }
   await recordAuditLog({
     entity_type: 'universe',
     entity_id: String(tenantId),

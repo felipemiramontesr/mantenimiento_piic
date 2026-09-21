@@ -4,6 +4,8 @@ import { requireOmega } from '../middleware/cosmonautMiddleware';
 import * as CosmologyService from '../services/cosmology.service';
 import { resetUserMfa } from '../services/mfa.service';
 import { buildMailTestRoute, handleMailTest } from './cosmologyMailTest';
+import handleRenameUniverse from './cosmologyUniverseLabel';
+import { labelFailureCode, universeLabelSchema } from '../services/universeLabel';
 import type {
   MutationResult,
   ListResult,
@@ -68,7 +70,7 @@ const addClusterBodySchema = z.object({ clusterCode: z.string().min(1) });
 /** FC177 F3 — links an existing quarantined user (FC177 F2 public signup) as the Universo's MU.
  *  Replaces FC176 F2's `initialAdmin` (inline user creation, retired — Cond.R-177 R3 Bravo). */
 const createUniverseBodySchema = z.object({
-  label: z.string().min(1).max(255),
+  label: universeLabelSchema,
   universeTypeCode: z.string().min(1),
   ownerTypeCode: z.string().min(1),
   linkedUserId: z.coerce.number().int().positive().optional(),
@@ -186,7 +188,8 @@ async function handleCreateUniverse(
 ): Promise<FastifyReply> {
   const body = createUniverseBodySchema.safeParse(request.body);
   if (!body.success) {
-    return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+    // FC192 — `INVALID_LABEL_LENGTH` solo si el culpable es `label`; el resto de fallos sigue siendo VALIDATION_ERROR.
+    return reply.code(400).send({ success: false, code: labelFailureCode(body.error) });
   }
   const result = await CosmologyService.createUniverse(
     body.data.label,
@@ -246,7 +249,7 @@ async function handleResetUserMfa(
   return sendMutationResult(reply, result);
 }
 
-/** Registers the 12 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1), all Ω-exclusive. */
+/** Registers the 13 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1 + 1 FC192), all Ω-exclusive. */
 export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
@@ -264,4 +267,5 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.get('/pending-users', omegaGuard, handleListPendingUsers);
   fastify.post('/users/:id/mfa/reset', omegaGuard, handleResetUserMfa);
   fastify.post('/mail/test', buildMailTestRoute(omegaGuard.onRequest), handleMailTest);
+  fastify.patch('/universes/:tenantId/label', omegaGuard, handleRenameUniverse);
 }

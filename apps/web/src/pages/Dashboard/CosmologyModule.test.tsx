@@ -14,7 +14,7 @@ import api from '../../api/client';
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 
 vi.mock('../../api/client', () => ({
-  default: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },
 }));
 
 const mockPerms = (opts: { omega?: boolean } = {}): void => {
@@ -598,5 +598,124 @@ describe('CosmologyModule', () => {
         data: { reason: 'Ya no se usa este Universo' },
       });
     });
+  });
+});
+
+describe('FC192 — renombrar un Universo desde Cosmología', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url === '/auth/refresh') throw new Error('no session');
+      throw new Error(`unmocked: ${url}`);
+    });
+    vi.mocked(api.get).mockImplementation(async () => ({
+      data: { success: true, data: MOCK_UNIVERSES },
+    }));
+  });
+
+  const openRename = async (): Promise<void> => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('cosmology-universe-rename-1'));
+  };
+
+  it('Ω ve un botón "Renombrar" por universo; un no-Ω no ve ninguno (el módulo le niega el acceso)', async () => {
+    mockPerms({ omega: true });
+    const { unmount } = render(<CosmologyModule />);
+    expect(await screen.findByTestId('cosmology-universe-rename-1')).toHaveTextContent('Renombrar');
+    unmount();
+
+    mockPerms({ omega: false });
+    render(<CosmologyModule />);
+    expect(await screen.findByText(/sin acceso/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('cosmology-universe-rename-1')).toBeNull();
+  });
+
+  it('Scenario 1 — renombrar: el nombre se actualiza en la lista sin recargar (0 GET extra) y el modal se cierra', async () => {
+    vi.mocked(api.patch).mockResolvedValue({
+      data: { success: true, universe: { id: 1, code: 'UNIV_FMS_BASE', label: 'FMS Central' } },
+    });
+    await openRename();
+
+    fireEvent.change(screen.getByTestId('rename-universe-input'), {
+      target: { value: '  FMS   Central ' },
+    });
+    fireEvent.click(screen.getByTestId('rename-universe-submit'));
+
+    await waitFor(() => {
+      expect(screen.getByText('FMS Central')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('FMS Base')).toBeNull();
+    expect(screen.queryByTestId('rename-universe-form')).toBeNull();
+    expect(api.patch).toHaveBeenCalledWith('/cosmology/universes/1/label', {
+      label: 'FMS Central',
+    });
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('renombrar UN universo no toca a los demás de la lista (solo cambia la fila con ese id)', async () => {
+    vi.mocked(api.get).mockImplementation(async () => ({
+      data: {
+        success: true,
+        data: [
+          ...MOCK_UNIVERSES,
+          {
+            id: 2,
+            label: 'Transportes Norte',
+            universeTypeCode: 'FMS',
+            activeSuperclusters: 5,
+            activeClusters: 1,
+          },
+        ],
+      },
+    }));
+    vi.mocked(api.patch).mockResolvedValue({
+      data: { success: true, universe: { id: 2, code: 'UNIV_TN', label: 'Transportes Sur' } },
+    });
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-2')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('cosmology-universe-rename-2'));
+    fireEvent.change(screen.getByTestId('rename-universe-input'), {
+      target: { value: 'Transportes Sur' },
+    });
+    fireEvent.click(screen.getByTestId('rename-universe-submit'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-2')).toHaveTextContent('Transportes Sur');
+    });
+    expect(screen.getByTestId('cosmology-universe-row-1')).toHaveTextContent('FMS Base');
+  });
+
+  it('Scenario 2 — 409 de nombre repetido: mensaje claro, el modal sigue abierto y la lista NO cambia', async () => {
+    vi.mocked(api.patch).mockRejectedValue({
+      response: { data: { code: 'UNIVERSE_NAME_ALREADY_EXISTS' } },
+    });
+    await openRename();
+
+    fireEvent.change(screen.getByTestId('rename-universe-input'), {
+      target: { value: 'Flota Central' },
+    });
+    fireEvent.click(screen.getByTestId('rename-universe-submit'));
+
+    expect(await screen.findByText('Ya existe un universo con este nombre')).toBeInTheDocument();
+    expect(screen.getByTestId('rename-universe-form')).toBeInTheDocument();
+    expect(screen.getByTestId('cosmology-universe-row-1')).toHaveTextContent('FMS Base');
+  });
+
+  it('cancelar el modal lo cierra sin llamar al API ni tocar la lista', async () => {
+    await openRename();
+
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    expect(screen.queryByTestId('rename-universe-form')).toBeNull();
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(screen.getByTestId('cosmology-universe-row-1')).toHaveTextContent('FMS Base');
   });
 });

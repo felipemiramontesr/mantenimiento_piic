@@ -392,7 +392,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
         headers: arcHeader(),
         payload:
           method === 'POST'
-            ? { label: 'X', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' }
+            ? { label: 'Universo X', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' }
             : undefined,
       });
       expect(res.statusCode).toBe(403);
@@ -404,6 +404,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
     mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 900, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
@@ -417,7 +418,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(900);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(4);
+    expect(mockConnection.execute).toHaveBeenCalledTimes(5); // FC192: 1 consulta de unicidad + mint + tenant + 2 seeds
   });
 
   // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — cosmology.service.ts unc line 217 ──
@@ -426,6 +427,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
     mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 902, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
@@ -437,7 +439,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       payload: { label: '!!!', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
     });
     expect(res.statusCode).toBe(201);
-    const mintCall = mockConnection.execute.mock.calls[0] as [string, unknown[]];
+    const mintCall = mockConnection.execute.mock.calls[1] as [string, unknown[]]; // [0] = consulta de unicidad (FC192)
     expect(mintCall[1][0]).toMatch(/^UNIV_X_[0-9A-F]{6}$/);
   });
 
@@ -447,7 +449,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       method: 'POST',
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
-      payload: { label: 'X', universeTypeCode: 'BOGUS', ownerTypeCode: 'FLOTILLA' },
+      payload: { label: 'Universo X', universeTypeCode: 'BOGUS', ownerTypeCode: 'FLOTILLA' },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).code).toBe('UNIVERSE_TYPE_NOT_FOUND');
@@ -462,7 +464,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       method: 'POST',
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
-      payload: { label: 'X', universeTypeCode: 'FMS', ownerTypeCode: 'BOGUS' },
+      payload: { label: 'Universo X', universeTypeCode: 'FMS', ownerTypeCode: 'BOGUS' },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).code).toBe('OWNER_TYPE_NOT_FOUND');
@@ -474,6 +476,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
       .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
     mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 901, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockRejectedValueOnce(new Error('DB connection lost mid-seed')); // seedSuperclusterBlueprint
@@ -508,6 +511,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[]]) // findTenantMembershipOwnerIds → 0 (not a member anywhere)
       .mockResolvedValueOnce([[billingRow]]); // findBillingProfile
     mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 950, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
@@ -533,7 +537,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(950);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(11);
+    expect(mockConnection.execute).toHaveBeenCalledTimes(12); // FC192: +1 consulta de unicidad
   });
 
   it('COSMOLOGY-LINK-FAILCLOSED-MUROLE: R_global MU role absent — 500 MU_ROLE_NOT_CONFIGURED, no TX opened (Cond.R-177 R3 Bravo)', async () => {
@@ -546,7 +550,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 501,
@@ -568,7 +572,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 999,
@@ -590,7 +594,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 501,
@@ -613,7 +617,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 501,
@@ -637,7 +641,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 501,
@@ -657,6 +661,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[billingRow]]);
     mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 951, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
@@ -685,7 +690,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: arcHeader(),
       payload: {
-        label: 'X',
+        label: 'Universo X',
         universeTypeCode: 'FMS',
         ownerTypeCode: 'FLOTILLA',
         linkedUserId: 501,
@@ -961,7 +966,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
   });
 
-  it('COSMOLOGY-VALIDATION-7: POST create universe with empty label — 400 VALIDATION_ERROR', async () => {
+  it('COSMOLOGY-VALIDATION-7: POST create universe with empty label — 400 INVALID_LABEL_LENGTH (FC192: el culpable es label)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes',
@@ -969,7 +974,89 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       payload: { label: '', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
     });
     expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('INVALID_LABEL_LENGTH');
+  });
+
+  it.each([
+    ['2 caracteres', 'ab'],
+    ['101 caracteres', 'a'.repeat(101)],
+    ['solo espacios', '     '],
+  ])(
+    'FC192 Scenario 3-b: label de %s — 400 INVALID_LABEL_LENGTH y 0 consultas',
+    async (_case, label) => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/cosmology/universes',
+        headers: omegaHeader(),
+        payload: { label, universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('INVALID_LABEL_LENGTH');
+      expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+      expect(db.execute).not.toHaveBeenCalled();
+    }
+  );
+
+  it('FC192: un fallo de body que NO es del label sigue siendo VALIDATION_ERROR (contrato vigente)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'Nuevo Universo', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('FC192 Scenario 3: crear con un nombre ya existente (otro caso/espacios) — 409 UNIVERSE_NAME_ALREADY_EXISTS, ROLLBACK, sin mint ni tenant', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute.mockResolvedValueOnce([[{ id: 7 }]]); // assertUniqueUniverseLabel → colisión
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: {
+        label: '  transportes   NORTE ',
+        universeTypeCode: 'FMS',
+        ownerTypeCode: 'FLOTILLA',
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.body).code).toBe('UNIVERSE_NAME_ALREADY_EXISTS');
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
+    expect(mockConnection.execute).toHaveBeenCalledTimes(1); // solo la consulta de unicidad
+    const [sql, params] = mockConnection.execute.mock.calls[0] as [string, unknown[]];
+    expect(sql).toContain('LOWER(TRIM(label)) = LOWER(?)');
+    expect(params).toEqual(['transportes NORTE', 0]); // normalizado; sin exclusión (crear)
+  });
+
+  it('FC192: crear GUARDA el label normalizado (trim + espacios colapsados) y audita ese valor', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]])
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]);
+    mockConnection.execute
+      .mockResolvedValueOnce([[]]) // unicidad: sin colisión
+      .mockResolvedValueOnce([{ insertId: 903, affectedRows: 1 }]) // mint
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: '  Flota    Norte  ', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(201);
+    const insertTenant = mockConnection.execute.mock.calls[2] as [string, unknown[]];
+    expect(insertTenant[1][1]).toBe('Flota Norte');
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO administrative_audit_logs'),
+      expect.arrayContaining(['CREATE', expect.stringContaining('"label":"Flota Norte"')])
+    );
   });
 });
 

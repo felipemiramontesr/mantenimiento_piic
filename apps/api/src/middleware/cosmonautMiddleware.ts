@@ -66,11 +66,17 @@ export function requireMuOrOmega(
   };
 }
 
+/** Ω = `roleId 0` o el comodín `*`. Fuente ÚNICA del predicado: la usan `requireOmega` (ruta) y las
+ *  políticas de servicio (FC192 `canMutateUniverse`), para que no puedan divergir. */
+export function isOmegaCaller(caller: { roleId?: number; permissions?: string[] }): boolean {
+  return caller.roleId === 0 || (caller.permissions ?? []).includes('*');
+}
+
 /** Prehandler: caller must be Ω (roleId=0). Protects R_global mutations and MU creation. */
 export function requireOmega(): (request: FastifyRequest, reply: FastifyReply) => Promise<void> {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const caller = request.user as { roleId?: number; permissions?: string[] };
-    if (caller.roleId === 0 || (caller.permissions ?? []).includes('*')) return;
+    if (isOmegaCaller(caller)) return;
     reply.code(403).send({
       success: false,
       code: 'FORBIDDEN',
