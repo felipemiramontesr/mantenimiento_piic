@@ -6,6 +6,7 @@ import SovereignSubheader from '../../components/Navigation/SovereignSubheader';
 import SovereignFooter from '../../components/Navigation/SovereignFooter';
 import ArchonNetworkBanner from '../../components/Navigation/ArchonNetworkBanner';
 import ItinerantArcBanner from '../../components/Navigation/ItinerantArcBanner';
+import CapabilityNotice from '../../components/Navigation/CapabilityNotice';
 import PanicButton from '../../components/Security/PanicButton';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
@@ -68,7 +69,10 @@ const DashboardLayout: React.FC = () => {
                 {shouldRedirectItinerant ? (
                   <Navigate to={ITINERANT_ALLOWED_PATH} replace />
                 ) : (
-                  <Outlet />
+                  <>
+                    <CapabilityNotice />
+                    <Outlet />
+                  </>
                 )}
               </div>
 

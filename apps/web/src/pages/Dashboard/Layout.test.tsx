@@ -86,6 +86,25 @@ describe('DashboardLayout (composition smoke)', () => {
     expect(screen.getByText('Soberano')).toBeInTheDocument();
   });
 
+  it('FC193 F3 — muestra el aviso amable cuando CapabilityRoute rebotó al Comando (state.capabilityNotice)', () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{ pathname: '/dashboard', state: { capabilityNotice: 'FINANZAS' } }]}
+      >
+        <Routes>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<div data-testid="outlet-child">Módulo activo</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId('capability-notice')).toHaveTextContent(
+      'El módulo Finanzas y TCO no está activo en tu universo.'
+    );
+    expect(screen.getByTestId('outlet-child')).toBeInTheDocument();
+  });
+
   it('toggles the sidebar collapsed state when the collapse trigger is clicked', () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/dashboard']}>

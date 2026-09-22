@@ -7,6 +7,10 @@ import { MultiMembershipHaltError } from '../middleware/cosmonautMiddleware';
 import * as SessionService from '../services/authSession.service';
 import * as UserManagementService from '../services/authUserManagement.service';
 import * as MfaService from '../services/mfa.service';
+import {
+  resolveSessionCapabilities,
+  SessionCapabilities,
+} from '../services/sessionCapabilities.service';
 import { ScopedUser } from '../services/ownerScopeResolver';
 
 /**
@@ -67,14 +71,27 @@ interface SessionSuccessResult {
   availableTenants: number[];
 }
 
+/** FC193 F3 — `activeCapabilities` del payload de sesión (misma fuente que el gate del API). */
+function sessionCapabilitiesOf(result: {
+  mapped: SessionService.MappedUser;
+  permissions: string[];
+  tenantId: number | null;
+}): Promise<SessionCapabilities> {
+  return resolveSessionCapabilities(
+    { roleId: result.mapped.roleId, permissions: result.permissions },
+    result.tenantId
+  );
+}
+
 /** Firma access+refresh JWT y responde con la cookie httpOnly — único punto de
  * emisión de sesión para /login y /switch-tenant (FC166 Track A.2). */
-function issueSessionResponse(
+async function issueSessionResponse(
   request: FastifyRequest,
   reply: FastifyReply,
   result: SessionSuccessResult
-): FastifyReply {
+): Promise<FastifyReply> {
   const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+  const activeCapabilities = await sessionCapabilitiesOf(result);
   const token = request.server.jwt.sign({
     id: result.userId,
     username: result.username,
@@ -92,7 +109,7 @@ function issueSessionResponse(
   return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
     success: true,
     token,
-    user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+    user: { ...mapped, permissions, ownerType, tenantId, availableTenants, activeCapabilities },
   });
 }
 
@@ -153,7 +170,7 @@ async function handleLogin(
       // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
       return reply.code(result.status).send({ error: result.errorCode });
     }
-    return issueSessionResponse(request, reply, result);
+    return await issueSessionResponse(request, reply, result);
   } catch (e) {
     if (e instanceof MultiMembershipHaltError) {
       return haltMultiMembership(request, reply, e);
@@ -178,6 +195,7 @@ async function handleRefresh(request: FastifyRequest, reply: FastifyReply): Prom
       return reply.code(401).send({ error: result.errorCode });
     }
     const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+    const activeCapabilities = await sessionCapabilitiesOf(result);
     const accessToken = request.server.jwt.sign({
       id: result.userId,
       username: result.username,
@@ -191,7 +209,7 @@ async function handleRefresh(request: FastifyRequest, reply: FastifyReply): Prom
     return reply.send({
       success: true,
       token: accessToken,
-      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+      user: { ...mapped, permissions, ownerType, tenantId, availableTenants, activeCapabilities },
     });
   } catch (e) {
     if (e instanceof MultiMembershipHaltError) {
@@ -238,7 +256,7 @@ async function handleSwitchTenant(
     }
     // R2b (Bravo) — reemitir la cookie con los MISMOS atributos que /login,
     // si no la cookie vieja sin tenant_id gana en el próximo /refresh.
-    return issueSessionResponse(request, reply, result);
+    return await issueSessionResponse(request, reply, result);
   } catch (e) {
     request.log.error({ route: '/switch-tenant', err: e }, 'Switch-tenant failed');
     return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });
@@ -449,9 +467,17 @@ async function handleGetMe(request: FastifyRequest, reply: FastifyReply): Promis
         .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
     }
     const { mapped, permissions, tenantId, ownerType, availableTenants } = result;
+    const activeCapabilities = await sessionCapabilitiesOf(result);
     return reply.send({
       success: true,
-      data: { ...mapped, capabilities: permissions, tenantId, ownerType, availableTenants },
+      data: {
+        ...mapped,
+        capabilities: permissions,
+        tenantId,
+        ownerType,
+        availableTenants,
+        activeCapabilities,
+      },
     });
   } catch (error) {
     if (error instanceof MultiMembershipHaltError) {
@@ -592,7 +618,7 @@ async function handleMfaVerify(
         .code(result.status)
         .send({ success: false, code: result.code, message: result.message });
     }
-    return issueSessionResponse(request, reply, result);
+    return await issueSessionResponse(request, reply, result);
   } catch (e) {
     request.log.error(e);
     return reply

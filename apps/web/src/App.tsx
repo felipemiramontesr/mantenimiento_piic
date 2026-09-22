@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
+import type { SuperclusterCode } from '@mantenimiento/contracts';
+import CapabilityRoute from './components/Auth/CapabilityRoute';
 import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import DashboardLayout from './pages/Dashboard/Layout';
@@ -62,6 +64,14 @@ const ERROR_BOUNDARY_ELEMENT = (
   </ArchonErrorBoundary>
 );
 
+/** FC193 F3 — módulo de negocio gateado por Supercúmulo: sin él en el universo de la sesión, la URL directa
+ *  rebota al Comando con un aviso (el API ya responde 403; esto es UX). Mismo mapa ruta→SC que el API
+ *  (`capabilityRoutes.ts`): flota/rutas/incidencias/rastreo → RASTREO, mantenimiento → MANTENIMIENTO,
+ *  finanzas → FINANZAS. El resto de rutas (Comando, alertas, personal, seguridad…) es BUILTIN. */
+function guarded(supercluster: SuperclusterCode, element: React.ReactElement): React.ReactElement {
+  return <CapabilityRoute supercluster={supercluster}>{element}</CapabilityRoute>;
+}
+
 /** Los módulos hijos de `/dashboard` — extraído como VALOR de `element=`, no
  *  como lista de `<Route>` (react-router v6 exige que los `<Route>` de una
  *  `<Routes>` sean hijos directos/Fragment, nunca detrás de un componente). */
@@ -69,13 +79,13 @@ function DashboardChildRoutes(): React.ReactElement {
   return (
     <Route element={ERROR_BOUNDARY_ELEMENT}>
       <Route index element={<ArchonCenter />} />
-      <Route path="fleet" element={<FleetModule />} />
-      <Route path="fleet/:unitId" element={<FleetUnitNode />} />
-      <Route path="maintenance" element={<MaintenanceModule />} />
-      <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
-      <Route path="routes" element={<RoutesModule />} />
-      <Route path="routes/:uuid" element={<RouteNode />} />
-      <Route path="financial" element={<FinancialHealthModule />} />
+      <Route path="fleet" element={guarded('RASTREO', <FleetModule />)} />
+      <Route path="fleet/:unitId" element={guarded('RASTREO', <FleetUnitNode />)} />
+      <Route path="maintenance" element={guarded('MANTENIMIENTO', <MaintenanceModule />)} />
+      <Route path="maintenance/:uuid" element={guarded('MANTENIMIENTO', <MaintenanceNode />)} />
+      <Route path="routes" element={guarded('RASTREO', <RoutesModule />)} />
+      <Route path="routes/:uuid" element={guarded('RASTREO', <RouteNode />)} />
+      <Route path="financial" element={guarded('FINANZAS', <FinancialHealthModule />)} />
       <Route path="logs" element={<LogsModule />} />
       <Route path="settings" element={<SettingsModule />} />
       <Route path="system-settings" element={<SystemSettingsModule />} />
@@ -90,11 +100,11 @@ function DashboardChildRoutes(): React.ReactElement {
           cualquier bookmark/navegación antigua. */}
       <Route path="cosmology" element={<CosmologyModule />} />
       <Route path="onboarding" element={<Navigate to="/dashboard/cosmology" replace />} />
-      <Route path="incidents" element={<IncidentsModule />} />
-      <Route path="incidents/:uuid" element={<IncidentNode />} />
+      <Route path="incidents" element={guarded('RASTREO', <IncidentsModule />)} />
+      <Route path="incidents/:uuid" element={guarded('RASTREO', <IncidentNode />)} />
       <Route path="users" element={<UsersModule />} />
       <Route path="users/:uuid" element={<UserNode />} />
-      <Route path="tracking" element={<RealtimeTrackingModule />} />
+      <Route path="tracking" element={guarded('RASTREO', <RealtimeTrackingModule />)} />
       <Route path="social" element={<ProfileView />} />
       <Route path="talleres" element={<TalleresDirectory />} />
     </Route>

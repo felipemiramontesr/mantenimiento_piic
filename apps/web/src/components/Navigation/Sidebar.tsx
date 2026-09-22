@@ -20,7 +20,9 @@ import {
   Settings,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
+import type { SuperclusterCode } from '@mantenimiento/contracts';
 import usePermissions from '../../hooks/usePermissions';
+import useCapabilities from '../../hooks/useCapabilities';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import api from '../../api/client';
@@ -378,6 +380,8 @@ interface PermCheckers {
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmegaStrict: () => boolean;
   isItinerantArc: () => boolean;
+  /** FC193 F3 — ¿el Supercúmulo está activo en el universo de la sesión? (menú dinámico). */
+  isSuperclusterActive: (code: SuperclusterCode) => boolean;
 }
 
 interface NavEntryConfig {
@@ -393,7 +397,7 @@ interface NavEntryConfig {
 /** Alertas/Comando/Finanzas — extracted so `buildNavEntries` stays under budget. */
 function buildCoreNavEntries(
   pathname: string,
-  { hasAnyPermission }: PermCheckers,
+  { hasAnyPermission, isSuperclusterActive }: PermCheckers,
   alertsCount: number
 ): NavEntryConfig[] {
   return [
@@ -420,7 +424,9 @@ function buildCoreNavEntries(
       label: 'Finanzas',
       path: '/dashboard/financial',
       active: pathname === '/dashboard/financial',
-      visible: hasAnyPermission(['finance:dashboard:view:any', 'finance:dashboard:view:own']),
+      visible:
+        hasAnyPermission(['finance:dashboard:view:any', 'finance:dashboard:view:own']) &&
+        isSuperclusterActive('FINANZAS'),
     },
   ];
 }
@@ -444,7 +450,7 @@ function buildArcsialEntry(pathname: string): NavEntryConfig {
 /** Unidades/Rastreo GPS/Arcsial/Talleres — extracted so `buildNavEntries` stays under budget. */
 function buildFleetNavEntries(
   pathname: string,
-  { hasAnyPermission }: PermCheckers
+  { hasAnyPermission, isSuperclusterActive }: PermCheckers
 ): NavEntryConfig[] {
   return [
     {
@@ -453,7 +459,9 @@ function buildFleetNavEntries(
       label: 'Unidades',
       path: '/dashboard/fleet',
       active: pathname === '/dashboard/fleet',
-      visible: hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']),
+      visible:
+        hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']) &&
+        isSuperclusterActive('RASTREO'),
     },
     {
       key: 'tracking',
@@ -461,12 +469,13 @@ function buildFleetNavEntries(
       label: 'Rastreo GPS',
       path: '/dashboard/tracking',
       active: pathname === '/dashboard/tracking',
-      visible: hasAnyPermission([
-        'geolocation:view:any',
-        'geolocation:realtime:view',
-        'fleet:unit:view:any',
-        'fleet:unit:view:own',
-      ]),
+      visible:
+        hasAnyPermission([
+          'geolocation:view:any',
+          'geolocation:realtime:view',
+          'fleet:unit:view:any',
+          'fleet:unit:view:own',
+        ]) && isSuperclusterActive('RASTREO'),
     },
     buildArcsialEntry(pathname),
     {
@@ -483,7 +492,7 @@ function buildFleetNavEntries(
 /** Rutas/Incidencias/Mantenimiento — extracted so `buildNavEntries` stays under budget. */
 function buildOperationsNavEntries(
   pathname: string,
-  { hasAnyPermission }: PermCheckers
+  { hasAnyPermission, isSuperclusterActive }: PermCheckers
 ): NavEntryConfig[] {
   return [
     {
@@ -492,7 +501,9 @@ function buildOperationsNavEntries(
       label: 'Rutas',
       path: '/dashboard/routes',
       active: pathname === '/dashboard/routes',
-      visible: hasAnyPermission(['route:record:view:any', 'route:record:view:own']),
+      visible:
+        hasAnyPermission(['route:record:view:any', 'route:record:view:own']) &&
+        isSuperclusterActive('RASTREO'),
     },
     {
       key: 'incidencias',
@@ -500,7 +511,9 @@ function buildOperationsNavEntries(
       label: 'Incidencias',
       path: '/dashboard/incidents',
       active: pathname.startsWith('/dashboard/incidents'),
-      visible: hasAnyPermission(['route:record:view:any', 'route:record:view:own']),
+      visible:
+        hasAnyPermission(['route:record:view:any', 'route:record:view:own']) &&
+        isSuperclusterActive('RASTREO'),
     },
     {
       key: 'mantenimiento',
@@ -508,7 +521,9 @@ function buildOperationsNavEntries(
       label: 'Mantenimiento',
       path: '/dashboard/maintenance',
       active: pathname === '/dashboard/maintenance',
-      visible: hasAnyPermission(['maint:record:view:any', 'maint:record:view:own']),
+      visible:
+        hasAnyPermission(['maint:record:view:any', 'maint:record:view:own']) &&
+        isSuperclusterActive('MANTENIMIENTO'),
     },
   ];
 }
@@ -599,9 +614,10 @@ function SidebarNavList({
   alertsCount,
   scrollRef,
 }: SidebarNavListProps): React.ReactElement {
+  const { isSuperclusterActive } = useCapabilities();
   const entries = buildNavEntries(
     pathname,
-    { hasPermission, hasAnyPermission, isOmegaStrict, isItinerantArc },
+    { hasPermission, hasAnyPermission, isOmegaStrict, isItinerantArc, isSuperclusterActive },
     alertsCount
   );
   return (

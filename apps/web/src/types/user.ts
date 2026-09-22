@@ -33,4 +33,7 @@ export interface UserIndustrial {
   ownerType?: 'FLOTILLA' | 'ARCHONAUT' | null;
   tenantId?: number | null;
   availableTenants?: number[];
+  /** FC193 F3 — Supercúmulos/Cúmulos ACTIVOS del universo de la sesión (payload de login/refresh/me).
+   *  Ausente ⇒ API anterior a F3: la UI no oculta nada (ver `useCapabilities`). */
+  activeCapabilities?: { superclusters: string[]; clusters: string[] };
 }
