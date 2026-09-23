@@ -3,9 +3,8 @@ import db from './db';
 import * as CosmologyRepository from './cosmology.repository';
 import { recordAuditLog } from './auditService';
 import { prepareUserLink, linkUserInTx, PreparedUserLink } from './universeUserLinking';
-import { findPendingUsers } from './universeUserLinking.repository';
-import EncryptionService from './encryption';
 import { assertUniqueUniverseLabel } from './universeManagement.service';
+import { NOT_FOUND_TENANT } from './cosmology.queries';
 import { UniverseMutationError } from './universeLabel';
 import { invalidateUniverseCapabilities } from './universeCapabilities.service';
 
@@ -25,16 +24,11 @@ export type CreateUniverseResult =
   | { ok: true; tenantId: number }
   | { ok: false; status: number; code: string; message: string };
 
-export type ListResult<T> =
-  | { ok: true; data: T[] }
-  | { ok: false; status: number; code: string; message: string };
-
-const NOT_FOUND_TENANT = {
-  ok: false as const,
-  status: 404,
-  code: 'TENANT_NOT_FOUND',
-  message: 'Universo no encontrado',
-};
+// Listados de solo lectura (listSuperclusters/listClusters/listUniverses/listPendingUsers,
+// ListResult/NOT_FOUND_TENANT) viven en cosmology.queries.ts (extraído por el tope de 400 líneas,
+// FC193 F4); re-exportados aquí para que `routes/cosmology.ts` (import `* as CosmologyService`) no
+// cambie.
+export * from './cosmology.queries';
 
 async function findValidSupercluster(
   tenantId: number,
@@ -65,7 +59,9 @@ async function findValidCluster(
   return { ok: true, id: cluster.id, superclusterId: cluster.supercluster_id };
 }
 
-/** T1 — ADD_SUPERCLUSTER. Idempotent: reactivates a SUSPENDED row. */
+/** T1 — ADD_SUPERCLUSTER. Idempotent: reactivates a SUSPENDED row. FC193 F4 (Invariante 4, Scenario 5)
+ *  — transaccional: activa el SC Y todos sus clusters del catálogo en la MISMA TX, erradicando la
+ *  asimetría histórica con `removeSupercluster` (que sí cascadeaba desde F1 de FC160). */
 export async function addSupercluster(
   tenantId: number,
   superclusterCode: string,
@@ -73,13 +69,29 @@ export async function addSupercluster(
 ): Promise<MutationResult> {
   const found = await findValidSupercluster(tenantId, superclusterCode);
   if (!('id' in found)) return found;
-  await CosmologyRepository.activateSupercluster(tenantId, found.id, callerId);
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    await CosmologyRepository.activateSupercluster(tenantId, found.id, callerId, connection);
+    await CosmologyRepository.activateClustersUnderSupercluster(
+      tenantId,
+      found.id,
+      callerId,
+      connection
+    );
+    await connection.commit();
+  } catch (e) {
+    await connection.rollback();
+    throw e;
+  } finally {
+    connection.release();
+  }
   invalidateUniverseCapabilities(tenantId);
   await recordAuditLog({
     entity_type: 'supercluster',
     entity_id: `${tenantId}:${superclusterCode}`,
     action: 'UPDATE',
-    snapshot_after: { state: 'ACTIVE' },
+    snapshot_after: { state: 'ACTIVE', cascade: 'clusters_activated' },
     reason: 'ADD_SUPERCLUSTER (§24.5)',
     user_id: callerId,
   });
@@ -170,47 +182,6 @@ export async function removeCluster(
     user_id: callerId,
   });
   return { ok: true };
-}
-
-export interface SuperclusterView {
-  code: string;
-  name: string;
-  state: 'ACTIVE' | 'SUSPENDED' | 'REMOVED' | 'NEVER_ACTIVATED';
-}
-
-/** T4 — lists the 5 catalog SCs with their mutability state for this Universo. */
-export async function listSuperclusters(tenantId: number): Promise<ListResult<SuperclusterView>> {
-  if (!(await CosmologyRepository.tenantExists(tenantId))) return NOT_FOUND_TENANT;
-  const rows = await CosmologyRepository.listSuperclustersForTenant(tenantId);
-  return {
-    ok: true,
-    data: rows.map((r) => ({ code: r.code, name: r.name, state: r.state ?? 'NEVER_ACTIVATED' })),
-  };
-}
-
-export interface ClusterView {
-  code: string;
-  name: string;
-  superclusterCode: string;
-  state: 'ACTIVE' | 'SUSPENDED' | 'REMOVED' | 'NEVER_ACTIVATED';
-}
-
-/** T4 — lists catalog Cúmulos with their mutability state, optionally scoped to one Supercúmulo. */
-export async function listClusters(
-  tenantId: number,
-  superclusterCode: string | undefined
-): Promise<ListResult<ClusterView>> {
-  if (!(await CosmologyRepository.tenantExists(tenantId))) return NOT_FOUND_TENANT;
-  const rows = await CosmologyRepository.listClustersForTenant(tenantId, superclusterCode);
-  return {
-    ok: true,
-    data: rows.map((r) => ({
-      code: r.code,
-      name: r.name,
-      superclusterCode: r.superclusterCode,
-      state: r.state ?? 'NEVER_ACTIVATED',
-    })),
-  };
 }
 
 // ─── Fase 2 — Universe_Create_And_Destroy (Cond.R-160-F2-Impl) ─────────────────
@@ -399,66 +370,4 @@ export async function destroyUniverse(
     user_id: callerId,
   });
   return { ok: true };
-}
-
-export interface UniverseView {
-  id: number;
-  label: string;
-  universeTypeCode: string;
-  activeSuperclusters: number;
-  activeClusters: number;
-}
-
-/** T7 — lists every Universo with a quick operational census. */
-export async function listUniverses(): Promise<ListResult<UniverseView>> {
-  const rows = await CosmologyRepository.listUniverses();
-  return {
-    ok: true,
-    data: rows.map((r) => ({
-      id: r.id,
-      label: r.label,
-      universeTypeCode: r.universeTypeCode,
-      activeSuperclusters: Number(r.activeSuperclusters),
-      activeClusters: Number(r.activeClusters),
-    })),
-  };
-}
-
-export interface PendingUserView {
-  id: number;
-  username: string;
-  fullName: string;
-  email: string;
-  rfc: string;
-  razonSocial: string;
-}
-
-/** No `ok`-union like `ListResult<T>`/`CreateUniverseResult` — unlike its siblings, this read has
- *  no failure path of its own (auth is `requireOmega()` at the route guard, before this ever
- *  runs); a manufactured `ok: false` branch would just be permanently dead code under Zenith's
- *  100% coverage invariant. */
-export interface PendingUsersListResult {
-  data: PendingUserView[];
-  total: number;
-}
-
-/** FC177 F3 — the candidate pool for `linkedUserId`: quarantined users with a billing snapshot
- *  and no tenant yet. Email is decrypted here (Ω-only listing) so GrayMan can identify who's
- *  who — the encrypted column alone isn't human-readable. FC179 adds `total`: the queue has no
- *  natural ceiling (unlike a fixed catalog), so Ω needs to know if 200 rows is everyone or a
- *  truncated view of a larger backlog. */
-export async function listPendingUsers(): Promise<PendingUsersListResult> {
-  const { rows, total } = await findPendingUsers();
-  return {
-    data: rows.map((r) => ({
-      id: r.id,
-      username: r.username,
-      fullName: r.full_name,
-      // FC189 — mismo guard que authSession/authUserManagement: `r.email` NULL no debe tronar.
-      email: r.email ? EncryptionService.decrypt(r.email) : '',
-      rfc: r.rfc,
-      razonSocial: r.razon_social,
-    })),
-    total,
-  };
 }

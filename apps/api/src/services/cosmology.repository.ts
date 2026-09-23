@@ -114,6 +114,27 @@ export async function suspendSupercluster(
   );
 }
 
+/** FC193 F4 (Invariante 4 · simetría inseparable de clusters, Scenario 5) — activa (o reactiva) TODOS
+ *  los clusters del catálogo bajo `superclusterId` para este tenant, en un solo INSERT…SELECT…ON
+ *  DUPLICATE KEY UPDATE: mismo patrón UPSERT que `activateCluster`. Un SC sin clusters en el catálogo
+ *  (CRM, RASTREO, RRHH hoy) es un no-op — el SELECT no devuelve filas. */
+export async function activateClustersUnderSupercluster(
+  tenantId: number,
+  superclusterId: number,
+  callerId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    `INSERT INTO universe_clusters (tenant_id, cluster_id, state, added_by_user_id)
+     SELECT ?, cc.id, 'ACTIVE', ?
+     FROM clusters_catalog cc
+     WHERE cc.supercluster_id = ?
+     ON DUPLICATE KEY UPDATE state = 'ACTIVE', removed_at = NULL,
+       added_by_user_id = VALUES(added_by_user_id), added_at = NOW()`,
+    [tenantId, callerId, superclusterId]
+  );
+}
+
 /** T2 cascade (mandatory, Cond.R-160-F1-R3) — suspends every ACTIVE cluster of that supercluster. */
 export async function suspendClustersUnderSupercluster(
   tenantId: number,

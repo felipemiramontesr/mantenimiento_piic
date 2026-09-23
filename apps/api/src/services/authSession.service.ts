@@ -11,6 +11,7 @@ import {
   deriveOwnerType,
   getAvailableTenants,
   isTenantAssignmentActive,
+  ceilEffectivePermissions,
 } from '../middleware/cosmonautMiddleware';
 
 /**
@@ -267,11 +268,14 @@ export async function switchTenant(
   }
   const mapped = mapUserResponse(user);
 
-  const [permissions, ownerType, availableTenants] = await Promise.all([
+  const [rawPermissions, ownerType, availableTenants] = await Promise.all([
     resolveEffectivePermissions(mapped.id, tenantId),
     deriveOwnerType(tenantId),
     getAvailableTenants(mapped.id),
   ]);
+  // FC193 F4 — mismo techo de permisos que login/refresh/me (Cond.7 paridad); Ω nunca llega aquí
+  // (short-circuit OMEGA_NO_TENANT arriba).
+  const permissions = await ceilEffectivePermissions(rawPermissions, tenantId);
 
   return {
     ok: true,

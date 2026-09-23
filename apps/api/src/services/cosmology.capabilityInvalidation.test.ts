@@ -29,6 +29,7 @@ vi.mock('./cosmology.repository', () => ({
   tenantExists: vi.fn(),
   findSuperclusterByCode: vi.fn(),
   activateSupercluster: vi.fn(),
+  activateClustersUnderSupercluster: vi.fn(),
   suspendSupercluster: vi.fn(),
   suspendClustersUnderSupercluster: vi.fn(),
   findClusterByCode: vi.fn(),

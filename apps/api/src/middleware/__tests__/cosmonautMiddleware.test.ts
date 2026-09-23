@@ -30,6 +30,15 @@ vi.mock('../../services/db', () => ({
     getConnection: vi.fn(),
   },
 }));
+// FC193 F4 — resolveAuthContext(ForRefresh) ahora techa los permisos vía getUniverseCapabilities; se
+// mockea aparte (no por db.execute) para no acoplar este archivo al esquema de universeCapabilities.
+// Ninguno de los slugs usados en este archivo (fleet:read, maint:view…) está en el mapa de techo
+// (permissionCeiling.test.ts los cubre aparte), así que el valor exacto del Set es irrelevante aquí.
+vi.mock('../../services/universeCapabilities.service', () => ({
+  getUniverseCapabilities: vi
+    .fn()
+    .mockResolvedValue({ superclusters: new Set(), clusters: new Set() }),
+}));
 
 type MockDb = { execute: ReturnType<typeof vi.fn> };
 

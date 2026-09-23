@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import * as CosmonautRepository from '../services/cosmonaut.repository';
+import { getUniverseCapabilities } from '../services/universeCapabilities.service';
+import { applyPermissionCeiling } from '../services/permissionCeiling';
 
 /**
  * FC24 FaseC — Cosmonaut Middleware
@@ -175,10 +177,30 @@ export interface ResolvedAuthContext {
   availableTenants: number[];
 }
 
+/** FC193 F4 (Invariante 3 · Anti-Escalamiento I8/A1-S) — techo de permisos: filtra `permissions` a
+ *  los núcleo (`permissionCeiling.ts`) más los de los Supercúmulos ACTIVE del universo. Alcance
+ *  DELIBERADO (dejado en H para O/R): solo las 3 rutas de emisión de sesión (login/refresh/me vía
+ *  `resolveAuthContext(ForRefresh)`, switch-tenant vía `ceilEffectivePermissions` en
+ *  `authSession.service.ts`) — NO `antiEscalationGuard` ni `GET /cosmonauts/me/permissions`/
+ *  `arcs` (mismo `resolveEffectivePermissions`, sin techar): el Scenario 4 del FC habla de "al
+ *  iniciar sesión"; extenderlo es un cambio de alcance para Alfa/Bravo, no una decisión de driver.
+ *  Sin universo (Arc itinerante, `tenantId` null) ⇒ 0 Supercúmulos activos, sin consultar la DB
+ *  (mismo D3 que el gate de F2): su whitelist de 170_f3a no tiene ningún slug mapeado, no-op probado. */
+async function ceilEffectivePermissions(
+  permissions: readonly string[],
+  tenantId: number | null
+): Promise<string[]> {
+  if (tenantId === null) return applyPermissionCeiling(permissions, new Set());
+  const { superclusters } = await getUniverseCapabilities(tenantId);
+  return applyPermissionCeiling(permissions, superclusters);
+}
+
 /** Punto único de resolución para /login y /me — Cond.7 "paridad login/me".
  *  Ω (roleId=0) nunca toca resolveEffectivePermissions (§6.4/Cond.1 — cosmonaut_roles
  *  GrayMan tiene 0 filas de permisos, el bypass '*' es intencionalmente runtime).
  */
+export { ceilEffectivePermissions };
+
 export async function resolveAuthContext(
   userId: number,
   roleId: number
@@ -187,11 +209,12 @@ export async function resolveAuthContext(
     return { tenantId: null, permissions: ['*'], ownerType: null, availableTenants: [] };
   }
   const tenantId = await resolvePrimaryTenant(userId);
-  const [permissions, ownerType, availableTenants] = await Promise.all([
+  const [rawPermissions, ownerType, availableTenants] = await Promise.all([
     resolveEffectivePermissions(userId, tenantId),
     deriveOwnerType(tenantId),
     getAvailableTenants(userId),
   ]);
+  const permissions = await ceilEffectivePermissions(rawPermissions, tenantId);
   return { tenantId, permissions, ownerType, availableTenants };
 }
 
@@ -211,11 +234,12 @@ export async function resolveAuthContextForRefresh(
   if (claimedTenantId !== undefined && claimedTenantId !== null) {
     const stillActive = await isTenantAssignmentActive(userId, claimedTenantId);
     if (stillActive) {
-      const [permissions, ownerType, availableTenants] = await Promise.all([
+      const [rawPermissions, ownerType, availableTenants] = await Promise.all([
         resolveEffectivePermissions(userId, claimedTenantId),
         deriveOwnerType(claimedTenantId),
         getAvailableTenants(userId),
       ]);
+      const permissions = await ceilEffectivePermissions(rawPermissions, claimedTenantId);
       return { tenantId: claimedTenantId, permissions, ownerType, availableTenants };
     }
   }

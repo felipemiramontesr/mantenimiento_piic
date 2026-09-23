@@ -90,11 +90,12 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
 
   // ─── T1 ADD_SUPERCLUSTER ──────────────────────────────────────────────────
 
-  it('T1: Ω activates a supercluster — 200', async () => {
+  it('T1: Ω activates a supercluster — 200 (FC193 F4: TX activa el SC y sus clusters, mockConnection)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
-      .mockResolvedValueOnce([[{ id: 4, code: 'FINANZAS', name: 'Finanzas y TCO' }]]) // findSuperclusterByCode
-      .mockResolvedValueOnce([{ affectedRows: 1 }]); // activateSupercluster UPSERT
+      .mockResolvedValueOnce([[{ id: 4, code: 'FINANZAS', name: 'Finanzas y TCO' }]]); // findSuperclusterByCode
+    // activateSupercluster + activateClustersUnderSupercluster ahora corren en TX (mockConnection,
+    // default [[], undefined] del beforeEach — ver COSMOLOGY-SYMMETRY-1 para el aserto detallado).
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/universes/5/superclusters',
@@ -103,6 +104,9 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
+    expect(mockConnection.beginTransaction).toHaveBeenCalledTimes(1);
+    expect(mockConnection.commit).toHaveBeenCalledTimes(1);
+    expect(mockConnection.rollback).not.toHaveBeenCalled();
   });
 
   it('T1: unknown tenant — 404 TENANT_NOT_FOUND', async () => {
@@ -181,6 +185,54 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).code).toBe('CLUSTER_NOT_FOUND');
+  });
+
+  // ─── T1 ADD_SUPERCLUSTER — COSMOLOGY-SYMMETRY-1 (FC193 F4, Invariante 4, Scenario 5) ─────
+
+  it('COSMOLOGY-SYMMETRY-1: T1 activates the SC and its clusters in the SAME transaction', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[{ id: 4, code: 'FINANZAS', name: 'Finanzas y TCO' }]]); // findSuperclusterByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // activateSupercluster
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // activateClustersUnderSupercluster (GASTOS_EGRESOS)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/5/superclusters',
+      headers: omegaHeader(),
+      payload: { superclusterCode: 'FINANZAS' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(mockConnection.beginTransaction).toHaveBeenCalled();
+    expect(mockConnection.commit).toHaveBeenCalled();
+    expect(mockConnection.execute).toHaveBeenCalledTimes(2);
+    const [activateSql] = mockConnection.execute.mock.calls[0] as [string];
+    const [clustersSql, clustersParams] = mockConnection.execute.mock.calls[1] as [
+      string,
+      unknown[]
+    ];
+    expect(activateSql).toContain('INSERT INTO universe_superclusters');
+    expect(clustersSql).toContain('INSERT INTO universe_clusters');
+    expect(clustersParams).toEqual([5, 1, 4]); // [tenantId, callerId, superclusterId]
+  });
+
+  it('COSMOLOGY-SYMMETRY-ROLLBACK-1: T1 rolls back if activateClustersUnderSupercluster fails mid-TX (no fila stale)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[{ id: 4, code: 'FINANZAS', name: 'Finanzas y TCO' }]]); // findSuperclusterByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // activateSupercluster
+      .mockRejectedValueOnce(new Error('DB connection lost mid-symmetry')); // activateClustersUnderSupercluster
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/5/superclusters',
+      headers: omegaHeader(),
+      payload: { superclusterCode: 'FINANZAS' },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
   });
 
   // ─── T2 REMOVE_SUPERCLUSTER — COSMOLOGY-CASCADE-1 ────────────────────────

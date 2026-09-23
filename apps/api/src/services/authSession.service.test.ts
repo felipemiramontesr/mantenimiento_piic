@@ -24,6 +24,16 @@ vi.mock('./encryption', () => ({
     decrypt: vi.fn((v: string) => (v ? v.replace('enc_', '') : '')),
   },
 }));
+// FC193 F4 — resolveAuthContext techa los permisos vía getUniverseCapabilities (su propia caché por
+// proceso, no `db.execute`): se mockea aparte del resto del chasis (que sigue siendo real, ver
+// docstring del archivo) para no acoplar este test a esa tabla, y con RASTREO activo porque
+// AT-FC176-F1-1 espera fleet:unit:view:any (RASTREO en permissionCeiling.ts) intacto — el caso
+// "blueprint por defecto" (152/160), no-op probado en el propio mapa.
+vi.mock('./universeCapabilities.service', () => ({
+  getUniverseCapabilities: vi
+    .fn()
+    .mockResolvedValue({ superclusters: new Set(['RASTREO']), clusters: new Set() }),
+}));
 
 type MockDb = { execute: ReturnType<typeof vi.fn> };
 
