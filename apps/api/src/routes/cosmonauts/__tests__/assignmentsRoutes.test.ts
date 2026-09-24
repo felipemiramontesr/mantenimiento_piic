@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
+import type { LightMyRequestResponse } from 'fastify';
 import buildApp from '../../../index';
 import db from '../../../services/db';
+import { getUniverseCapabilities } from '../../../services/universeCapabilities.service';
 
 /**
  * AT-FC24-C-ASSIGN: Cosmonaut Assignments Routes
@@ -24,6 +26,22 @@ vi.mock('../../../services/encryption', () => ({
   },
 }));
 
+// FC194 (Cond.O-194.2 / Cond.R-194 R3) — los GETs de introspección techan los permisos con las
+// capacidades del universo. Se mockean aparte (no por `db.execute`: su caché por proceso haría que
+// el orden de los tests importara). Por defecto, blueprint completo (152): el techo es un no-op.
+vi.mock('../../../services/universeCapabilities.service', () => ({
+  getUniverseCapabilities: vi.fn(),
+  invalidateUniverseCapabilities: vi.fn(),
+}));
+
+const capabilities = getUniverseCapabilities as Mock;
+
+const activeSc = (...superclusters: string[]): void => {
+  capabilities.mockResolvedValue({ superclusters: new Set(superclusters), clusters: new Set() });
+};
+
+const ALL_SC = ['CRM', 'RASTREO', 'MANTENIMIENTO', 'FINANZAS', 'RRHH'];
+
 describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
   const app = buildApp();
   let omegaToken: string;
@@ -40,6 +58,7 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    activeSc(...ALL_SC);
   });
 
   // ─── AT-FC24-C-GH5: Arc sin roles → permissions=[] ───────────────────────
@@ -57,7 +76,8 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     expect(body.data.permissions).toEqual([]);
   });
 
-  it('AT-FC24-C-ASSIGN-2: GET /me/permissions retorna unión de permisos multi-role', async () => {
+  it('AT-FC24-C-ASSIGN-2: GET /me/permissions retorna unión de permisos multi-role (FC194: SC activos)', async () => {
+    activeSc('MANTENIMIENTO', 'RASTREO'); // Cond.O-194.2: los 3 slugs son de SC activos
     (db.execute as Mock).mockResolvedValueOnce([
       [
         { slug: 'maint:record:view:any' },
@@ -73,6 +93,7 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     const body = JSON.parse(res.body);
     expect(body.data.permissions).toHaveLength(3);
     expect(body.data.permissions).toContain('maint:record:view:any');
+    expect(capabilities).toHaveBeenCalledWith(5);
   });
 
   // ─── AT-FC24-C-GH1: MU no puede crear otro MU (I2/I3) ────────────────────
@@ -141,8 +162,9 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
 
   // ─── GET /cosmonauts/arcs ─────────────────────────────────────────────────
 
-  it('AT-FC24-C-ASSIGN-7: GET /arcs returns Arcs with effective_permissions (OQ-5)', async () => {
-    // requireMuOrOmega → Ω bypass
+  it('AT-FC24-C-ASSIGN-7: GET /arcs returns Arcs with effective_permissions (OQ-5; FC194 R1c: SC del Arc)', async () => {
+    // requireMuOrOmega → Ω bypass. R1c: el techo es del ARC (tenant 5), aunque consulte Ω.
+    activeSc('MANTENIMIENTO');
     (db.execute as Mock)
       .mockResolvedValueOnce([
         [
@@ -165,6 +187,7 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     const body = JSON.parse(res.body);
     expect(body.data[0]).toHaveProperty('effective_permissions');
     expect(body.data[0].effective_permissions).toContain('maint:record:view:any');
+    expect(capabilities).toHaveBeenCalledWith(5);
   });
 
   it('AT-FC24-C-ASSIGN-8: GET /arcs without tenantId returns 400', async () => {
@@ -392,4 +415,110 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
   });
+
+  // ─── FC194 — Permission_Introspection_Ceiling_Parity (Cond.R-194 R1 partida) ─────────────
+
+  const getMine = (token: string, query = '?tenantId=5'): Promise<LightMyRequestResponse> =>
+    app.inject({
+      method: 'GET',
+      url: `/v1/cosmonauts/me/permissions${query}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+  /** Permisos crudos que devolverá `resolveEffectivePermissions` (una consulta `db.execute`). */
+  const rawPerms = (...slugs: string[]): void => {
+    (db.execute as Mock).mockResolvedValueOnce([slugs.map((slug) => ({ slug }))]);
+  };
+
+  it('FC194 Scenario 1 — no-Ω con FINANZAS suspendido: /me/permissions deja de listar sus slugs (paridad con la sesión)', async () => {
+    activeSc('RASTREO');
+    rawPerms('fleet:unit:view:any', 'finance:dashboard:view:any', 'users:collaborator:view');
+
+    const res = await getMine(arcToken);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data.permissions).toEqual([
+      'fleet:unit:view:any',
+      'users:collaborator:view',
+    ]);
+    expect(capabilities).toHaveBeenCalledWith(5);
+  });
+
+  it('FC194 Scenario 2 (R1a) — Ω en /me/permissions: idéntico a hoy, sin recorte y SIN consultar capacidades', async () => {
+    activeSc(); // aunque su universo no tuviera nada activo
+    rawPerms('fleet:unit:view:any', 'crm:contact:view');
+
+    const res = await getMine(omegaToken);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data.permissions).toEqual([
+      'fleet:unit:view:any',
+      'crm:contact:view',
+    ]);
+    expect(capabilities).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['sin ?tenantId (Arc itinerante)', ''],
+    ['?tenantId no numérico', '?tenantId=abc'],
+    ['?tenantId cero', '?tenantId=0'],
+    ['?tenantId negativo', '?tenantId=-3'],
+  ])(
+    'FC194 — no-Ω %s: techo con 0 SC activos, sin consultar capacidades (fail-closed, paridad F3)',
+    async (_case, query) => {
+      rawPerms('fleet:unit:view:any', 'users:collaborator:view');
+
+      const res = await getMine(arcToken, query);
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).data.permissions).toEqual(['users:collaborator:view']);
+      expect(capabilities).not.toHaveBeenCalled();
+    }
+  );
+
+  it('FC194 — fail-closed: si no se pueden leer las capacidades, /me/permissions responde 500 y NO lista permisos', async () => {
+    capabilities.mockRejectedValue(new Error('db down'));
+    rawPerms('fleet:unit:view:any');
+
+    const res = await getMine(arcToken);
+
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body)).not.toHaveProperty('data');
+  });
+
+  const ARC_ROW = {
+    id: 20,
+    username: 'arc.user',
+    email: 'arc@test.com',
+    cosmonaut_type: 'ARC',
+    tenant_id: 5,
+  };
+
+  it.each([
+    ['Ω', (): string => omegaToken, false],
+    ['un MU', (): string => muToken, true],
+  ])(
+    'FC194 Scenario 3 (R1b) — consultando %s, un Arc con MANTENIMIENTO suspendido NO lista sus slugs (el sujeto es el Arc)',
+    async (_who, token, needsMembership) => {
+      activeSc('RASTREO');
+      if (needsMembership) {
+        (db.execute as Mock).mockResolvedValueOnce([[{ cosmonaut_type: 'MU' }]]); // requireMuOrOmega
+      }
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[ARC_ROW]]) // arcs list (ningún Arc con '*', nota de Bravo 381_AN)
+        .mockResolvedValueOnce([
+          [{ slug: 'maint:record:view:any' }, { slug: 'fleet:unit:view:any' }],
+        ]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/cosmonauts/arcs?tenantId=5',
+        headers: { authorization: `Bearer ${token()}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).data[0].effective_permissions).toEqual(['fleet:unit:view:any']);
+      expect(capabilities).toHaveBeenCalledWith(5);
+    }
+  );
 });
