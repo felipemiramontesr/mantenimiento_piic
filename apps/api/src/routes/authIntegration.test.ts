@@ -13,6 +13,13 @@ import {
   MultiMembershipHaltError,
   type ResolvedAuthContext,
 } from '../middleware/cosmonautMiddleware';
+import { resolveMfaStatus, type MfaStatus } from '../services/mfaPolicy.service';
+
+const MFA_OK: MfaStatus = {
+  totpRequired: false,
+  loginChannel: 'totp',
+  allowedMethods: ['totp', 'email'],
+};
 
 /**
  * 🔱 Archon Integration Test: Nucleus Saturation (v.43.0.0)
@@ -47,6 +54,12 @@ vi.mock('../services/encryption', () => ({
     encrypt: vi.fn((v) => `enc_${v}`),
     decrypt: vi.fn((v) => (v ? v.replace('enc_', '') : '')),
   },
+}));
+// FC195 — refresh/switch-tenant consultan la política 2FA; aquí se prueba el resto del flujo, así
+// que por defecto el usuario tiene un método que le basta (la política tiene su propio test).
+vi.mock('../services/mfaPolicy.service', () => ({
+  resolveMfaStatus: vi.fn(),
+  isTotpRequired: vi.fn(),
 }));
 vi.mock('../middleware/cosmonautMiddleware', async () => {
   const actual = await vi.importActual<typeof import('../middleware/cosmonautMiddleware')>(
@@ -106,6 +119,7 @@ describe('authIntegration.test', () => {
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    vi.mocked(resolveMfaStatus).mockResolvedValue(MFA_OK);
     // FC 082 F3b — default: Arc puro sin tenant (la mayoría de los tests de este
     // bloque no ejercitan la resolución de tenant/permisos en sí, solo el flujo).
     vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
@@ -117,7 +131,10 @@ describe('authIntegration.test', () => {
     Authorization: `Bearer ${mockToken}`,
   });
 
-  it('Path: Successful Login Matrix', async () => {
+  it('Path: Successful Login Matrix (FC195: la sesión la emite /refresh o /mfa/verify)', async () => {
+    const refreshCookie = {
+      refresh_token: app.jwt.sign({ id: 1, type: 'refresh' }, { expiresIn: '7d' }),
+    };
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -133,7 +150,11 @@ describe('authIntegration.test', () => {
       ],
       undefined,
     ]);
-    const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    const r1 = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: refreshCookie,
+    });
     expect(r1.statusCode).toBe(200);
     expect(JSON.parse(r1.body).user.imageUrl).toContain('/profile-image');
 
@@ -153,7 +174,11 @@ describe('authIntegration.test', () => {
       ],
       undefined,
     ]);
-    const r1b = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    const r1b = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: refreshCookie,
+    });
     expect(r1b.statusCode).toBe(200);
     expect(JSON.parse(r1b.body).user.imageUrl).toContain('data:image/jpeg;base64,');
 
@@ -187,8 +212,10 @@ describe('authIntegration.test', () => {
       url: '/v1/auth/login',
       payload: { username: email, password: 'p' },
     });
+    // Login por correo (findUserByEmail) — D-Ω1: llega al reto, nunca a una sesión directa.
     expect(r2.statusCode).toBe(200);
-    expect(JSON.parse(r2.body).user.imageUrl).toContain('/profile-image');
+    expect(JSON.parse(r2.body)).toMatchObject({ mfaRequired: true, channel: 'totp' });
+    expect(JSON.parse(r2.body).token).toBeUndefined();
   });
 
   // FC 082 F0c — "Register & Conflict Sovereign Logic" murió con POST /register
@@ -954,7 +981,7 @@ describe('authIntegration.test', () => {
 
   // ─── POST /login — access token claims ───────────────────────────────────────
 
-  it('POST /login — access token has exp claim and type=access', async () => {
+  it('FC195 D-Ω1 — POST /login con contraseña correcta NO emite access token ni cookie (solo el reto)', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -976,10 +1003,12 @@ describe('authIntegration.test', () => {
       payload: validCreds,
     });
     expect(res.statusCode).toBe(200);
-    const { token } = JSON.parse(res.body);
-    const decoded = app.jwt.decode<{ exp: number; type: string }>(token);
-    expect(decoded).not.toBeNull();
-    expect(decoded!.type).toBe('access');
+    const body = JSON.parse(res.body);
+    expect(body.token).toBeUndefined();
+    expect(res.headers['set-cookie']).toBeUndefined();
+    const decoded = app.jwt.decode<{ exp: number; scope: string; type?: string }>(body.mfaToken);
+    expect(decoded!.scope).toBe('mfa_challenge');
+    expect(decoded!.type).toBeUndefined();
     expect(typeof decoded!.exp).toBe('number');
   });
 
@@ -1540,6 +1569,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    vi.mocked(resolveMfaStatus).mockResolvedValue(MFA_OK);
     vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
     vi.mocked(resolveAuthContextForRefresh).mockResolvedValue({ ...ARC_NO_TENANT });
   });
@@ -1550,7 +1580,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
 
   // FC 082 F0c — AUTH-BC-1/2 (escenarios de /register) murieron con el
   // endpoint; AUTH-BC-3 muta: sin eje suite el login ya no expone user.suite.
-  it('AUTH-BC-3 (FC082 F0c): POST /login sin eje suite → user.suite ausente', async () => {
+  it('AUTH-BC-3 (FC082 F0c, FC195 vía /refresh): sesión sin eje suite → user.suite ausente', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -1568,8 +1598,10 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     ]);
     const res = await bcApp.inject({
       method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'admin_test', password: 'password123' },
+      url: '/v1/auth/refresh',
+      cookies: {
+        refresh_token: bcApp.jwt.sign({ id: 2, type: 'refresh' }, { expiresIn: '7d' }),
+      },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).user.suite).toBeUndefined();
@@ -1580,7 +1612,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
   // participa del cutover — cosmonaut_role_assignments no tiene equivalente
   // de "unión de varios roleIds legacy simultáneos" (089_AN §9, Cond.5/9).
 
-  it('AUTH-BC-5 (FC082 F3b): POST /login Arc R_global sin tenant → ownerType/tenantId null', async () => {
+  it('AUTH-BC-5 (FC082 F3b, FC195 vía /refresh): sesión Arc R_global sin tenant → ownerType/tenantId null', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -1596,11 +1628,13 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       ],
       undefined,
     ]);
-    vi.mocked(resolveAuthContext).mockResolvedValueOnce({ ...ARC_NO_TENANT });
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({ ...ARC_NO_TENANT });
     const res = await bcApp.inject({
       method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'admin_test', password: 'password123' },
+      url: '/v1/auth/refresh',
+      cookies: {
+        refresh_token: bcApp.jwt.sign({ id: 5, type: 'refresh' }, { expiresIn: '7d' }),
+      },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -1608,7 +1642,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     expect(body.user.tenantId).toBeNull();
   });
 
-  it('AUTH-BC-6 (FC082 F3b): POST /login MU con 1 tenant → ownerType FLOTILLA derivado', async () => {
+  it('AUTH-BC-6 (FC082 F3b, FC195 vía /refresh): sesión MU con 1 tenant → ownerType FLOTILLA derivado', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -1624,7 +1658,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       ],
       undefined,
     ]);
-    vi.mocked(resolveAuthContext).mockResolvedValueOnce({
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
       tenantId: 4,
       permissions: ['admin:owner:view'],
       ownerType: 'FLOTILLA',
@@ -1632,8 +1666,10 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     });
     const res = await bcApp.inject({
       method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'admin_test', password: 'password123' },
+      url: '/v1/auth/refresh',
+      cookies: {
+        refresh_token: bcApp.jwt.sign({ id: 6, type: 'refresh' }, { expiresIn: '7d' }),
+      },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -1642,7 +1678,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     expect(body.user.availableTenants).toEqual([4]);
   });
 
-  it('AUTH-BC-7 (FC082 F3b): POST /login Arc con N tenants → availableTenants expone todos', async () => {
+  it('AUTH-BC-7 (FC082 F3b, FC195 vía /refresh): sesión Arc con N tenants → availableTenants expone todos', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -1658,7 +1694,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       ],
       undefined,
     ]);
-    vi.mocked(resolveAuthContext).mockResolvedValueOnce({
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
       tenantId: 4,
       permissions: ['fleet:read'],
       ownerType: 'FLOTILLA',
@@ -1666,8 +1702,10 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     });
     const res = await bcApp.inject({
       method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'admin_test', password: 'password123' },
+      url: '/v1/auth/refresh',
+      cookies: {
+        refresh_token: bcApp.jwt.sign({ id: 7, type: 'refresh' }, { expiresIn: '7d' }),
+      },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).user.availableTenants).toEqual([4, 9]);
@@ -1746,6 +1784,7 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    vi.mocked(resolveMfaStatus).mockResolvedValue(MFA_OK);
     vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
     vi.mocked(resolveAuthContextForRefresh).mockResolvedValue({ ...ARC_NO_TENANT });
     process.env.NODE_ENV = 'production';
@@ -1760,7 +1799,44 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
     await prodApp.close();
   });
 
-  it('AUTH-BC-10: POST /login production → rate limit max=10 + cookie domain .piic.com.mx (B63+B90)', async () => {
+  it('AUTH-BC-10: sesión en production (switch-tenant) → cookie domain .piic.com.mx endurecida (B63+B90)', async () => {
+    vi.mocked(isTenantAssignmentActive).mockResolvedValueOnce(true);
+    vi.mocked(resolveEffectivePermissions).mockResolvedValueOnce([]);
+    vi.mocked(getAvailableTenants).mockResolvedValueOnce([4]);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 7,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 1,
+          role_name: 'Admin',
+          profile_picture_url: null,
+          is_active: 1,
+        },
+      ],
+      undefined,
+    ]);
+    const res = await prodApp.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: {
+        Authorization: `Bearer ${prodApp.jwt.sign({ id: 7, roleId: 2, type: 'access' })}`,
+      },
+      payload: { tenantId: 4 },
+    });
+    expect(res.statusCode).toBe(200);
+    const setCookieRaw = res.headers['set-cookie'];
+    const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+    expect(setCookie).toContain('.piic.com.mx');
+    // FC 062 F1 (A05) — refresh cookie hardened flags in production
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('SameSite=Strict');
+  });
+
+  it('AUTH-BC-10b: POST /login production (límite 10/min) → solo el reto: 0 cookie', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
@@ -1782,13 +1858,8 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    const setCookieRaw = res.headers['set-cookie'];
-    const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
-    expect(setCookie).toContain('.piic.com.mx');
-    // FC 062 F1 (A05) — refresh cookie hardened flags in production
-    expect(setCookie).toContain('HttpOnly');
-    expect(setCookie).toContain('Secure');
-    expect(setCookie).toContain('SameSite=Strict');
+    expect(JSON.parse(res.body).mfaRequired).toBe(true);
+    expect(res.headers['set-cookie']).toBeUndefined();
   });
 
   it('AUTH-BC-11: POST /logout production → clearCookie domain .piic.com.mx (B113)', async () => {
@@ -1817,6 +1888,7 @@ describe('POST /v1/auth/switch-tenant', () => {
     vi.resetAllMocks();
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     vi.mocked(isTenantAssignmentActive).mockResolvedValue(false);
+    vi.mocked(resolveMfaStatus).mockResolvedValue(MFA_OK);
   });
 
   it('400 OMEGA_NO_TENANT — Ω no puede hacer switch-tenant', async () => {

@@ -2,8 +2,7 @@ import { RowDataPacket } from 'mysql2';
 import { verify as argon2Verify } from '@node-rs/argon2';
 import EncryptionService from './encryption';
 import * as SessionRepository from './authSession.repository';
-import * as MfaRepository from './mfa.repository';
-import * as CosmonautRepository from './cosmonaut.repository';
+import { resolveMfaStatus, MfaMethod } from './mfaPolicy.service';
 import {
   resolveAuthContext,
   resolveAuthContextForRefresh,
@@ -90,60 +89,52 @@ export async function findUserByEmail(username: string): Promise<RowDataPacket |
   return SessionRepository.findUserWithRoleAndDepartmentById(found.id as number);
 }
 
+/** FC195 D-Ω1 — `/login` nunca emite sesión completa: o falla, o pide el reto (`MFA_REQUIRED`), o
+ *  pide enrolar un método (`MFA_SETUP_REQUIRED`). La sesión la emite `/mfa/verify`. */
 export type LoginResult =
-  | {
-      ok: true;
-      userId: number;
-      username: string;
-      mapped: MappedUser;
-      tenantId: number | null;
-      permissions: string[];
-      ownerType: string | null;
-      availableTenants: number[];
-    }
   | { ok: false; status: 401; errorCode: 'L3' | 'L4' }
   | { ok: false; status: 403; errorCode: 'ACCOUNT_PENDING_ACTIVATION' }
-  | { ok: false; status: 200; errorCode: 'MFA_REQUIRED'; userId: number }
-  | { ok: false; status: 200; errorCode: 'MFA_SETUP_REQUIRED'; userId: number; username: string };
+  | { ok: false; status: 200; errorCode: 'MFA_REQUIRED'; userId: number; channel: MfaMethod }
+  | {
+      ok: false;
+      status: 200;
+      errorCode: 'MFA_SETUP_REQUIRED';
+      userId: number;
+      username: string;
+      allowedMethods: readonly MfaMethod[];
+    };
 
-/** FC185 F2 — Ω/MU mandatory, Arc opt-in (FC185 Invariante 4, 340_AN). `tenantId !== null` por sí
- *  solo NO basta para detectar "es MU": `assignmentsRoutes.ts` permite sub-usuarios con
- *  `cosmonaut_type: 'ARC'` y un Universo real asignado (verificado en código antes de asumir lo
- *  contrario) — así que un ARC con tenant sigue siendo opt-in, igual que un ARC itinerante puro.
- *  `findCosmonautType` es el único chequeo que distingue correctamente ambos casos. */
-async function isMfaMandatoryRole(
-  userId: number,
-  roleId: number,
-  tenantId: number | null
-): Promise<boolean> {
-  if (roleId === 0) return true;
-  if (tenantId === null) return false;
-  const cosmonautType = await CosmonautRepository.findCosmonautType(userId, tenantId);
-  return cosmonautType === 'MU';
-}
-
-/** FC185 F2 — corre después de `resolveAuthContext`, antes de emitir sesión completa. Un
- *  credencial TOTP confirmada (enrolada por cualquier rol, opt-in incluido) siempre exige el
- *  segundo paso; si no existe ninguna y el rol es mandatorio, bloquea con `MFA_SETUP_REQUIRED` en
- *  vez de dejarlo operar sin protección. */
-async function evaluateMfaGate(
-  mapped: MappedUser,
-  tenantId: number | null
-): Promise<LoginResult | null> {
-  const credential = await MfaRepository.findCredentialByUserId(mapped.id, 'totp');
-  if (credential?.is_confirmed) {
-    return { ok: false, status: 200, errorCode: 'MFA_REQUIRED', userId: mapped.id };
-  }
-  if (await isMfaMandatoryRole(mapped.id, mapped.roleId, tenantId)) {
+/** FC195 F2 — corre después de `resolveAuthContext`, antes de emitir sesión completa. D-Ω1: el
+ *  2FA es obligatorio para cualquier usuario — sin un método que le sirva, `MFA_SETUP_REQUIRED` (con los
+ *  métodos que puede enrolar); con uno, `MFA_REQUIRED` por ese canal. La regla de quién puede usar
+ *  qué (Ω/MU solo TOTP, Invariante 9) vive en `mfaPolicy.service.ts`. */
+async function evaluateMfaGate(mapped: MappedUser): Promise<LoginResult> {
+  const status = await resolveMfaStatus(mapped.id, mapped.roleId);
+  if (status.loginChannel) {
     return {
       ok: false,
       status: 200,
-      errorCode: 'MFA_SETUP_REQUIRED',
+      errorCode: 'MFA_REQUIRED',
       userId: mapped.id,
-      username: mapped.username,
+      channel: status.loginChannel,
     };
   }
-  return null;
+  return {
+    ok: false,
+    status: 200,
+    errorCode: 'MFA_SETUP_REQUIRED',
+    userId: mapped.id,
+    username: mapped.username,
+    allowedMethods: status.allowedMethods,
+  };
+}
+
+/** FC195 R10 — refresh y switch-tenant emiten sesión sin pasar por el reto: si el usuario ya no
+ *  tiene un método que le sirva (p. ej. un Arc con 2FA por correo que ahora es MU, o una cuenta
+ *  cuyo 2FA reseteó Ω) no se le renueva la sesión y debe volver a iniciarla. */
+async function hasSufficientMfa(mapped: MappedUser): Promise<boolean> {
+  const status = await resolveMfaStatus(mapped.id, mapped.roleId);
+  return status.loginChannel !== null;
 }
 
 /** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly.
@@ -167,22 +158,12 @@ export async function login(username: string, password: string): Promise<LoginRe
   // FC 082 F3b — cutover al chasis cosmonauta (089_AN §9, O✓Alfa/R✓Bravo). Ω
   // (roleId=0) nunca toca resolveEffectivePermissions (§6.4). Puede lanzar
   // MultiMembershipHaltError — se propaga al caller (route), sin capturar aquí.
-  const { tenantId, permissions, ownerType, availableTenants } = await resolveAuthContext(
-    mapped.id,
-    mapped.roleId
-  );
-  const mfaGate = await evaluateMfaGate(mapped, tenantId);
-  if (mfaGate) return mfaGate;
-  return {
-    ok: true,
-    userId: user.id,
-    username: user.username,
-    mapped,
-    tenantId,
-    permissions,
-    ownerType,
-    availableTenants,
-  };
+  // Se conserva la resolución del contexto ANTES del reto: un usuario multi-universo sin resolver
+  // sigue recibiendo su HALT (MultiMembershipHaltError) en vez de un reto que no podría canjear.
+  await resolveAuthContext(mapped.id, mapped.roleId);
+  // D-Ω1 (FC195): nunca hay sesión completa directa desde /login — siempre reto o enrolamiento. La
+  // sesión la emite /mfa/verify (vía `refresh`), que vuelve a resolver el contexto.
+  return evaluateMfaGate(mapped);
 }
 
 export type RefreshResult =
@@ -196,7 +177,7 @@ export type RefreshResult =
       ownerType: string | null;
       availableTenants: number[];
     }
-  | { ok: false; status: 401; errorCode: 'USER_NOT_FOUND' };
+  | { ok: false; status: 401; errorCode: 'USER_NOT_FOUND' | 'MFA_SETUP_REQUIRED' };
 
 /** POST /refresh — resolves the active user + re-derived auth context for a validated refresh JWT. */
 export async function refresh(
@@ -208,6 +189,9 @@ export async function refresh(
     return { ok: false, status: 401, errorCode: 'USER_NOT_FOUND' };
   }
   const mapped = mapUserResponse(user);
+  if (!(await hasSufficientMfa(mapped))) {
+    return { ok: false, status: 401, errorCode: 'MFA_SETUP_REQUIRED' };
+  }
   // FC 082 F3b §9.2.1 — si el token trae tenant_id y la asignación sigue activa,
   // se re-firma CON ESE tenant (evita revertir un switch-tenant en silencio).
   const { tenantId, permissions, ownerType, availableTenants } = await resolveAuthContextForRefresh(
@@ -267,6 +251,9 @@ export async function switchTenant(
     return { ok: false, status: 404, code: 'NOT_FOUND' };
   }
   const mapped = mapUserResponse(user);
+  if (!(await hasSufficientMfa(mapped))) {
+    return { ok: false, status: 401, code: 'MFA_SETUP_REQUIRED', message: 'Configura tu 2FA' };
+  }
 
   const [rawPermissions, ownerType, availableTenants] = await Promise.all([
     resolveEffectivePermissions(mapped.id, tenantId),

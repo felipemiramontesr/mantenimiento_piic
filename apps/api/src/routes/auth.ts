@@ -7,6 +7,9 @@ import { MultiMembershipHaltError } from '../middleware/cosmonautMiddleware';
 import * as SessionService from '../services/authSession.service';
 import * as UserManagementService from '../services/authUserManagement.service';
 import * as MfaService from '../services/mfa.service';
+import * as EmailMfaService from '../services/emailMfa.service';
+import type { MfaMethod } from '../services/mfaPolicy.service';
+import registerEmailMfaRoutes from './authMfaEmail';
 import {
   resolveSessionCapabilities,
   SessionCapabilities,
@@ -115,18 +118,35 @@ async function issueSessionResponse(
 
 /** FC185 F2 (Scenario 1) — crea la fila de rastreo (`MfaService.createChallenge`) y firma el
  *  `mfaToken` efímero (TTL 5m, scope `mfa_challenge`) — el único punto donde ese JWT se emite,
- *  igual que `issueSessionResponse` es el único punto para el de sesión completa. */
+ *  igual que `issueSessionResponse` es el único punto para el de sesión completa. FC195: el reto
+ *  por correo firma el token a 10 min, la misma vida que su código (el de TOTP queda en 5 min). */
 async function issueMfaChallengeResponse(
   request: FastifyRequest,
   reply: FastifyReply,
-  userId: number
+  userId: number,
+  channel: MfaMethod
 ): Promise<FastifyReply> {
+  if (channel === 'email') {
+    const email = await EmailMfaService.startLoginChallenge(userId, request.server.mailTransport);
+    const mfaToken = request.server.jwt.sign(
+      { id: userId, challengeId: email.challengeId, scope: 'mfa_challenge' },
+      { expiresIn: '10m' }
+    );
+    return reply.send({
+      success: true,
+      mfaRequired: true,
+      mfaToken,
+      channel,
+      maskedEmail: email.maskedEmail,
+      codeSent: email.codeSent,
+    });
+  }
   const challengeId = await MfaService.createChallenge(userId);
   const mfaToken = request.server.jwt.sign(
     { id: userId, challengeId, scope: 'mfa_challenge' },
     { expiresIn: '5m' }
   );
-  return reply.send({ success: true, mfaRequired: true, mfaToken });
+  return reply.send({ success: true, mfaRequired: true, mfaToken, channel });
 }
 
 /** FC185 F2 — Ω/MU sin MFA aún: token de alcance mínimo (`type: 'mfa_setup'`, sin permisos) que
@@ -135,14 +155,19 @@ async function issueMfaChallengeResponse(
 function issueMfaSetupResponse(
   request: FastifyRequest,
   reply: FastifyReply,
-  userId: number,
-  username: string
+  result: { userId: number; username: string; allowedMethods: readonly MfaMethod[] }
 ): FastifyReply {
   const setupToken = request.server.jwt.sign(
-    { id: userId, username, type: 'mfa_setup' },
+    { id: result.userId, username: result.username, type: 'mfa_setup' },
     { expiresIn: '10m' }
   );
-  return reply.send({ success: true, mfaSetupRequired: true, setupToken });
+  // FC195 — la web ofrece solo los métodos permitidos (Ω/MU: únicamente TOTP).
+  return reply.send({
+    success: true,
+    mfaSetupRequired: true,
+    setupToken,
+    allowedMethods: result.allowedMethods,
+  });
 }
 
 async function handleLogin(
@@ -157,20 +182,18 @@ async function handleLogin(
     return reply.code(400).send({ error: 'L2' });
   }
   try {
+    // FC195 D-Ω1 — /login nunca emite sesión completa: la emite /mfa/verify.
     const result = await SessionService.login(username, password);
-    if (!result.ok) {
-      // FC185 F2 — MFA_REQUIRED/MFA_SETUP_REQUIRED llevan cuerpo propio (mfaToken/setupToken), no
-      // el {error: code} genérico del resto de fallos de login.
-      if (result.errorCode === 'MFA_REQUIRED') {
-        return issueMfaChallengeResponse(request, reply, result.userId);
-      }
-      if (result.errorCode === 'MFA_SETUP_REQUIRED') {
-        return issueMfaSetupResponse(request, reply, result.userId, result.username);
-      }
-      // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
-      return reply.code(result.status).send({ error: result.errorCode });
+    // FC185 F2 — MFA_REQUIRED/MFA_SETUP_REQUIRED llevan cuerpo propio (mfaToken/setupToken), no
+    // el {error: code} genérico del resto de fallos de login.
+    if (result.errorCode === 'MFA_REQUIRED') {
+      return await issueMfaChallengeResponse(request, reply, result.userId, result.channel);
     }
-    return await issueSessionResponse(request, reply, result);
+    if (result.errorCode === 'MFA_SETUP_REQUIRED') {
+      return issueMfaSetupResponse(request, reply, result);
+    }
+    // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
+    return reply.code(result.status).send({ error: result.errorCode });
   } catch (e) {
     if (e instanceof MultiMembershipHaltError) {
       return haltMultiMembership(request, reply, e);
@@ -530,7 +553,15 @@ async function handleMfaSetup(request: FastifyRequest, reply: FastifyReply): Pro
   const { id, username } = request.user as { id: number; username: string };
   try {
     const result = await MfaService.beginSetup(id, username);
-    return reply.send({ success: true, data: result });
+    if (!result.ok) {
+      return reply
+        .code(result.status)
+        .send({ success: false, code: result.code, message: result.message });
+    }
+    return reply.send({
+      success: true,
+      data: { secretBase32: result.secretBase32, otpauthUri: result.otpauthUri },
+    });
   } catch (e) {
     request.log.error(e);
     return reply
@@ -627,7 +658,7 @@ async function handleMfaVerify(
   }
 }
 
-/** Registers the 15 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
+/** Registers the 18 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: { username?: string; password?: string } }>(
     '/login',
@@ -662,4 +693,6 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.post<{ Body: { code?: string } }>('/mfa/confirm', handleMfaConfirm);
   // FC185 F2 — POST /v1/auth/mfa/verify (canje de código por sesión completa, login de 2 pasos).
   fastify.post<{ Body: { mfaToken?: string; code?: string } }>('/mfa/verify', handleMfaVerify);
+  // FC195 F2 — 2FA por correo: enrolamiento (setup/verify-setup) y reenvío de código.
+  registerEmailMfaRoutes(fastify);
 }

@@ -3,6 +3,7 @@ import {
   buildEmailVerificationEmail,
   buildMailTestEmail,
   buildPasswordResetEmail,
+  buildMfaCodeEmail,
 } from './mailTemplates';
 
 /** FC187 F1 — una sola plantilla genera HTML y texto plano; todo dato dinámico se escapa. */
@@ -93,5 +94,30 @@ describe('FC188 F1 — buildMailTestEmail (informativo, sin botón)', () => {
     });
     expect(hostile.html).not.toContain('<img src=x>');
     expect(hostile.html).toContain('&lt;img src=x&gt;');
+  });
+});
+
+describe('FC195 F2 — buildMfaCodeEmail', () => {
+  it('login: el código va en el asunto, en grande en el HTML y en el texto plano', () => {
+    const email = buildMfaCodeEmail('ABCDEFGH', 'login');
+
+    expect(email.subject).toBe('ABCDEFGH es tu código de verificación — Archon ERP');
+    expect(email.html).toContain('Tu código para iniciar sesión');
+    expect(email.html).toContain('letter-spacing:6px');
+    expect(email.html).toContain('>ABCDEFGH</p>');
+    expect(email.text.split('\n\n')).toContain('ABCDEFGH');
+    expect(email.text).toContain('caduca en 10 minutos');
+    expect(email.html).not.toContain('<a href');
+  });
+
+  it('setup: texto de activación', () => {
+    const email = buildMfaCodeEmail('ABCDEFGH', 'setup');
+
+    expect(email.html).toContain('Activa tu verificación por correo');
+    expect(email.text).toContain('activar la verificación en dos pasos');
+  });
+
+  it('el código se escapa en el HTML', () => {
+    expect(buildMfaCodeEmail('<b>', 'login').html).toContain('&lt;b&gt;');
   });
 });

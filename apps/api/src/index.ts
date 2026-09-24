@@ -57,6 +57,7 @@ import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
+import registerTokenTypeGuard from './plugins/tokenTypeGuard';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -127,6 +128,8 @@ function registerCorePlugins(fastify: FastifyInstance): void {
     cookie: { cookieName: 'refresh_token', signed: false },
     sign: { expiresIn: '15m' },
   });
+  // FC195 F2 — un token de reto o de enrolamiento (solo contraseña) no autentica otras rutas.
+  registerTokenTypeGuard(fastify);
 
   // 🔱 Rate Limiting: Environment-Aware Shield
   fastify.register(rateLimit, {

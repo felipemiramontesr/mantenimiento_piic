@@ -23,6 +23,8 @@ interface ActionEmailSpec {
   readonly intro: string;
   /** Sin `action` el correo es solo informativo (p. ej. el de prueba del sistema). */
   readonly action?: EmailAction;
+  /** FC195 — código de un solo uso mostrado en grande (2FA por correo). */
+  readonly code?: string;
   readonly notes: readonly string[];
 }
 
@@ -50,6 +52,13 @@ function renderActionHtml(action: EmailAction): string {
   );
 }
 
+function renderCodeHtml(code: string): string {
+  return (
+    `<p style="margin:0 0 24px;font-family:'Courier New',monospace;font-size:30px;` +
+    `font-weight:bold;letter-spacing:6px;color:${NAVY};">${escapeHtml(code)}</p>`
+  );
+}
+
 function renderHtmlBody(spec: ActionEmailSpec): string {
   const notes = spec.notes
     .map((n) => `<p style="margin:0 0 8px;font-size:13px;color:#5b6b7b;">${escapeHtml(n)}</p>`)
@@ -59,6 +68,7 @@ function renderHtmlBody(spec: ActionEmailSpec): string {
     `<p style="margin:0 0 24px;font-size:15px;line-height:1.5;color:${NAVY};">${escapeHtml(
       spec.intro
     )}</p>` +
+    `${spec.code ? renderCodeHtml(spec.code) : ''}` +
     `${spec.action ? renderActionHtml(spec.action) : ''}${notes}`
   );
 }
@@ -81,8 +91,9 @@ function renderHtml(spec: ActionEmailSpec): string {
 }
 
 function renderText(spec: ActionEmailSpec): string {
+  const codeLine = spec.code ? [spec.code] : [];
   const actionLine = spec.action ? [`${spec.action.label}: ${spec.action.url}`] : [];
-  return [BRAND, spec.heading, spec.intro, ...actionLine, ...spec.notes].join('\n\n');
+  return [BRAND, spec.heading, spec.intro, ...codeLine, ...actionLine, ...spec.notes].join('\n\n');
 }
 
 function renderActionEmail(spec: ActionEmailSpec): EmailContent {
@@ -115,6 +126,27 @@ export function buildEmailVerificationEmail(verifyUrl: string): EmailContent {
     notes: [
       'No compartas este enlace con nadie.',
       'Si no creaste una cuenta, ignora este mensaje.',
+    ],
+  });
+}
+
+/** FC195 — para qué se pide el código: activar el 2FA por correo o iniciar sesión. */
+export type MfaCodePurpose = 'setup' | 'login';
+
+/** FC195 F2 — código de 2FA por correo (8 caracteres, 10 min, un solo uso). */
+export function buildMfaCodeEmail(code: string, purpose: MfaCodePurpose): EmailContent {
+  const isSetup = purpose === 'setup';
+  return renderActionEmail({
+    subject: `${code} es tu código de verificación — ${BRAND}`,
+    heading: isSetup ? 'Activa tu verificación por correo' : 'Tu código para iniciar sesión',
+    intro: isSetup
+      ? 'Escribe este código en Archon para activar la verificación en dos pasos por correo.'
+      : 'Escribe este código en Archon para terminar de iniciar sesión.',
+    code,
+    notes: [
+      'El código caduca en 10 minutos y solo puede usarse una vez.',
+      'Nadie de Archon te lo pedirá nunca por teléfono, chat ni correo.',
+      'Si no fuiste tú, ignora este mensaje y cambia tu contraseña: alguien la conoce.',
     ],
   });
 }

@@ -45,6 +45,19 @@ export async function findCosmonautType(
   return rows.length > 0 ? (rows[0].cosmonaut_type as string) : null;
 }
 
+/** FC195 R10 / Invariante 9 — true si userId es MU en CUALQUIER universo (no solo el del login):
+ *  quien administra algún universo queda obligado a TOTP en todos. */
+export async function hasAnyMuMembership(
+  userId: number,
+  executor: Executor = db
+): Promise<boolean> {
+  const [rows] = await executor.execute<RowDataPacket[]>(
+    "SELECT 1 FROM tenant_user_memberships WHERE user_id = ? AND cosmonaut_type = 'MU' LIMIT 1",
+    [userId]
+  );
+  return rows.length > 0;
+}
+
 /** True if userId has role_id=0 (Ω) — used by antiEscalationGuard's Ω bypass. */
 export async function isOmegaUser(userId: number, executor: Executor = db): Promise<boolean> {
   const [rows] = await executor.execute<RowDataPacket[]>(

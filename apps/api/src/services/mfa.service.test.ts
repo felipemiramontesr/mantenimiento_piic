@@ -9,6 +9,7 @@ import {
   createChallenge,
   verifyChallenge,
   resetUserMfa,
+  recordFailedAttempt,
 } from './mfa.service';
 
 /**
@@ -20,6 +21,8 @@ vi.mock('./db', () => ({
   default: { getConnection: vi.fn() },
 }));
 vi.mock('./mfa.repository', () => ({
+  listCredentials: vi.fn(),
+  replaceOtherMethods: vi.fn(),
   upsertPendingCredential: vi.fn(),
   findCredentialByUserId: vi.fn(),
   confirmCredential: vi.fn(),
@@ -75,6 +78,7 @@ describe('FC185 F1 — beginSetup()', () => {
   });
 
   it('genera un secreto, lo cifra y lo guarda como pendiente; responde el secreto en claro + URI', async () => {
+    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue(null);
     (TotpService.generateTotpSecret as Mock).mockReturnValue('SECRETBASE32');
 
     const result = await beginSetup(501, 'grayman');
@@ -84,9 +88,35 @@ describe('FC185 F1 — beginSetup()', () => {
       'totp',
       'enc_SECRETBASE32'
     );
+    if (!result.ok) throw new Error('se esperaba ok');
     expect(result.secretBase32).toBe('SECRETBASE32');
     expect(result.otpauthUri).toContain('otpauth://totp/');
     expect(result.otpauthUri).toContain('secret=SECRETBASE32');
+  });
+
+  it('un TOTP pendiente (no confirmado) se puede reiniciar: reemplaza el secreto', async () => {
+    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({ id: 9, is_confirmed: 0 });
+    (TotpService.generateTotpSecret as Mock).mockReturnValue('OTHERSECRET');
+
+    const result = await beginSetup(501, 'grayman');
+
+    expect(result.ok).toBe(true);
+    expect(MfaRepository.upsertPendingCredential).toHaveBeenCalled();
+  });
+
+  it('FC195 — con un TOTP ya confirmado responde 409 y NO lo devuelve a pendiente', async () => {
+    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({ id: 9, is_confirmed: 1 });
+
+    const result = await beginSetup(501, 'grayman');
+
+    expect(result).toEqual({
+      ok: false,
+      status: 409,
+      code: 'MFA_ALREADY_ENROLLED',
+      message: 'La app autenticadora ya está configurada',
+    });
+    expect(MfaRepository.upsertPendingCredential).not.toHaveBeenCalled();
+    expect(TotpService.generateTotpSecret).not.toHaveBeenCalled();
   });
 });
 
@@ -125,6 +155,8 @@ describe('FC185 F1 — confirmSetup()', () => {
       lastUsedStep: null,
     });
     expect(MfaRepository.confirmCredential).toHaveBeenCalledWith(9, 12345, conn);
+    // FC195 — un solo método: el correo previo y sus respaldos se retiran en la misma TX.
+    expect(MfaRepository.replaceOtherMethods).toHaveBeenCalledWith(501, 'totp', conn);
     expect(MfaRepository.insertBackupCodes).toHaveBeenCalledWith(
       501,
       [
@@ -155,6 +187,22 @@ describe('FC185 F1 — confirmSetup()', () => {
         'HHHHH-88888',
       ],
     });
+  });
+
+  it('FC195 (391_AN) — una credencial TOTP sin secreto nunca se confirma: 404, fail-closed', async () => {
+    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({
+      id: 9,
+      user_id: 501,
+      type: 'totp',
+      secret_encrypted: null,
+      is_confirmed: 0,
+      last_used_step: null,
+    });
+
+    const result = await confirmSetup(501, '123456');
+
+    expect(result).toMatchObject({ ok: false, status: 404, code: 'SETUP_NOT_FOUND' });
+    expect(TotpService.verifyTotpCode).not.toHaveBeenCalled();
   });
 
   it('Scenario — 404 SETUP_NOT_FOUND cuando no hay credencial pendiente para el usuario', async () => {
@@ -252,7 +300,15 @@ const CHALLENGE_ROW = {
   user_id: 501,
   attempts_used: 0,
   revoked: 0,
+  channel: 'totp',
+  code_hash: null,
+  resend_count: 0,
+  is_live: 0,
+  cooldown_over: 1,
 };
+
+const asChallengeRow = (row: object): MfaRepository.MfaChallengeRow =>
+  row as unknown as MfaRepository.MfaChallengeRow;
 
 const SESSION_SUCCESS = {
   ok: true as const,
@@ -453,13 +509,146 @@ describe('FC185 F2 — verifyChallenge()', () => {
   });
 });
 
+describe('FC195 F2 — verifyChallenge() por canal (correo y R10)', () => {
+  const EMAIL_CHALLENGE = {
+    ...CHALLENGE_ROW,
+    channel: 'email',
+    code_hash: 'argon2-of-code',
+    is_live: 1,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('Scenario 3 — código de correo válido (en minúsculas y con espacios): sesión y reto quemado', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(EMAIL_CHALLENGE);
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (SessionService.refresh as Mock).mockResolvedValue(SESSION_SUCCESS);
+
+    const result = await verifyChallenge('uuid-1', 'abcd efgh');
+
+    expect(argon2Verify).toHaveBeenCalledWith('argon2-of-code', 'ABCDEFGH');
+    expect(MfaRepository.revokeChallenge).toHaveBeenCalledWith(1);
+    expect(result).toEqual(SESSION_SUCCESS);
+    expect(TotpService.verifyTotpCode).not.toHaveBeenCalled();
+  });
+
+  it('Scenario 4 — código de correo incorrecto: cuenta el intento y no emite sesión', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(EMAIL_CHALLENGE);
+    (argon2Verify as Mock).mockResolvedValue(false);
+
+    const result = await verifyChallenge('uuid-1', 'ABCDEFGH');
+
+    expect(result).toMatchObject({ ok: false, code: 'MFA_INVALID_CODE' });
+    expect(MfaRepository.incrementChallengeAttempts).toHaveBeenCalledWith(1);
+    expect(SessionService.refresh).not.toHaveBeenCalled();
+  });
+
+  it('Invariante 4 — código de correo caducado (is_live=0, reloj de la DB): 401 sin verificar nada', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue({ ...EMAIL_CHALLENGE, is_live: 0 });
+
+    const result = await verifyChallenge('uuid-1', 'ABCDEFGH');
+
+    expect(result).toMatchObject({ ok: false, code: 'TOKEN_EXPIRED_OR_REVOKED' });
+    expect(argon2Verify).not.toHaveBeenCalled();
+    expect(MfaRepository.incrementChallengeAttempts).not.toHaveBeenCalled();
+  });
+
+  it('reto de correo sin hash guardado: el código cuenta como fallo (defensivo, 0 crash)', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue({
+      ...EMAIL_CHALLENGE,
+      code_hash: null,
+    });
+
+    const result = await verifyChallenge('uuid-1', 'ABCDEFGH');
+
+    expect(result).toMatchObject({ ok: false, code: 'MFA_INVALID_CODE' });
+    expect(argon2Verify).not.toHaveBeenCalled();
+  });
+
+  it('reto de correo + código de respaldo (XXXXX-XXXXX): va por la rama de respaldos', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(EMAIL_CHALLENGE);
+    (MfaRepository.findUnusedBackupCodes as Mock).mockResolvedValue([{ id: 70, code_hash: 'h70' }]);
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (MfaRepository.markBackupCodeUsed as Mock).mockResolvedValue(true);
+    (SessionService.refresh as Mock).mockResolvedValue(SESSION_SUCCESS);
+
+    const result = await verifyChallenge('uuid-1', 'AAAAA-11111');
+
+    expect(argon2Verify).toHaveBeenCalledWith('h70', 'AAAAA-11111');
+    expect(MfaRepository.markBackupCodeUsed).toHaveBeenCalledWith(70);
+    expect(result).toEqual(SESSION_SUCCESS);
+  });
+
+  it('reto TOTP con un código de 8 caracteres: nunca se compara contra un hash de correo', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(CHALLENGE_ROW);
+    (MfaRepository.findUnusedBackupCodes as Mock).mockResolvedValue([]);
+
+    const result = await verifyChallenge('uuid-1', 'ABCDEFGH');
+
+    expect(result).toMatchObject({ ok: false, code: 'MFA_INVALID_CODE' });
+    expect(argon2Verify).not.toHaveBeenCalled();
+  });
+
+  it('TOTP confirmado pero sin secreto (fail-closed, 391_AN): cuenta como fallo', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(CHALLENGE_ROW);
+    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({
+      id: 9,
+      is_confirmed: 1,
+      secret_encrypted: null,
+      last_used_step: null,
+    });
+
+    const result = await verifyChallenge('uuid-1', '123456');
+
+    expect(result).toMatchObject({ ok: false, code: 'MFA_INVALID_CODE' });
+    expect(TotpService.verifyTotpCode).not.toHaveBeenCalled();
+  });
+
+  it('R10 — código correcto pero su método ya no le basta (ahora es MU): 401 MFA_SETUP_REQUIRED', async () => {
+    (MfaRepository.findChallengeById as Mock).mockResolvedValue(EMAIL_CHALLENGE);
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (SessionService.refresh as Mock).mockResolvedValue({
+      ok: false,
+      status: 401,
+      errorCode: 'MFA_SETUP_REQUIRED',
+    });
+
+    const result = await verifyChallenge('uuid-1', 'ABCDEFGH');
+
+    expect(result).toEqual({
+      ok: false,
+      status: 401,
+      code: 'MFA_SETUP_REQUIRED',
+      message: expect.any(String),
+    });
+    expect(MfaRepository.revokeChallenge).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('FC195 — recordFailedAttempt()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('cuenta el intento y revoca solo al quinto', async () => {
+    await recordFailedAttempt(asChallengeRow({ ...CHALLENGE_ROW, attempts_used: 3 }));
+    expect(MfaRepository.incrementChallengeAttempts).toHaveBeenCalledWith(1);
+    expect(MfaRepository.revokeChallenge).not.toHaveBeenCalled();
+
+    await recordFailedAttempt(asChallengeRow({ ...CHALLENGE_ROW, attempts_used: 4 }));
+    expect(MfaRepository.revokeChallenge).toHaveBeenCalledWith(1);
+  });
+});
+
 describe('FC185 F2 — resetUserMfa()', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('404 MFA_NOT_ENROLLED cuando el usuario no tiene credencial — 0 transacción abierta', async () => {
-    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue(null);
+    (MfaRepository.listCredentials as Mock).mockResolvedValue([]);
     const result = await resetUserMfa(501, 1);
     expect(result).toEqual({
       ok: false,
@@ -473,7 +662,8 @@ describe('FC185 F2 — resetUserMfa()', () => {
   it('borra credencial+backups en 1 TX y registra auditoría (invariante: 0 auto-reset, callerId≠targetUserId permitido)', async () => {
     const conn = mockConnection();
     (db.getConnection as Mock).mockResolvedValue(conn);
-    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({ id: 9, is_confirmed: 1 });
+    // FC195 — cualquier método cuenta: aquí, un 2FA por correo.
+    (MfaRepository.listCredentials as Mock).mockResolvedValue([{ type: 'email', confirmed: true }]);
 
     const result = await resetUserMfa(501, 1);
 
@@ -486,7 +676,7 @@ describe('FC185 F2 — resetUserMfa()', () => {
   it('hace rollback y relanza si la eliminación falla a mitad de la transacción', async () => {
     const conn = mockConnection();
     (db.getConnection as Mock).mockResolvedValue(conn);
-    (MfaRepository.findCredentialByUserId as Mock).mockResolvedValue({ id: 9, is_confirmed: 1 });
+    (MfaRepository.listCredentials as Mock).mockResolvedValue([{ type: 'totp', confirmed: true }]);
     (MfaRepository.deleteMfaCredentialAndBackups as Mock).mockRejectedValue(new Error('DB_DOWN'));
 
     await expect(resetUserMfa(501, 1)).rejects.toThrow('DB_DOWN');

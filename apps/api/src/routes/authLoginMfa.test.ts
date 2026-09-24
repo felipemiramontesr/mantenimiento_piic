@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import * as SessionService from '../services/authSession.service';
 import * as MfaService from '../services/mfa.service';
+import * as EmailMfaService from '../services/emailMfa.service';
 
 /**
  * FC185 F2 — POST /v1/auth/login: prueba SOLO cómo la ruta traduce los nuevos resultados de
@@ -18,6 +19,11 @@ vi.mock('../services/authSession.service', () => ({
 vi.mock('../services/mfa.service', () => ({
   createChallenge: vi.fn(),
 }));
+vi.mock('../services/emailMfa.service', () => ({
+  startLoginChallenge: vi.fn(),
+}));
+
+type DecodedToken = Record<string, unknown> & { iat: number; exp: number };
 
 describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
   const app = buildApp();
@@ -36,6 +42,7 @@ describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
       status: 200,
       errorCode: 'MFA_REQUIRED',
       userId: 501,
+      channel: 'totp',
     });
     (MfaService.createChallenge as Mock).mockResolvedValue('challenge-uuid-1');
 
@@ -47,16 +54,59 @@ describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toMatchObject({ success: true, mfaRequired: true });
+    expect(body).toMatchObject({ success: true, mfaRequired: true, channel: 'totp' });
     expect(typeof body.mfaToken).toBe('string');
 
-    const { jwt } = app as unknown as { jwt: { decode: (t: string) => Record<string, unknown> } };
+    const { jwt } = app as unknown as { jwt: { decode: (t: string) => DecodedToken } };
     const decoded = jwt.decode(body.mfaToken);
     expect(decoded).toMatchObject({
       id: 501,
       scope: 'mfa_challenge',
       challengeId: 'challenge-uuid-1',
     });
+    // El reto TOTP conserva su vida de 5 min (R8, 387_AN).
+    expect(decoded.exp - decoded.iat).toBe(300);
+    expect(EmailMfaService.startLoginChallenge).not.toHaveBeenCalled();
+  });
+
+  it('FC195 Scenario 3 — reto por correo: envía el código y firma el mfaToken a 10 min', async () => {
+    (SessionService.login as Mock).mockResolvedValue({
+      ok: false,
+      status: 200,
+      errorCode: 'MFA_REQUIRED',
+      userId: 30,
+      channel: 'email',
+    });
+    (EmailMfaService.startLoginChallenge as Mock).mockResolvedValue({
+      challengeId: 'challenge-email-1',
+      maskedEmail: 'ar•••@piic.com.mx',
+      codeSent: true,
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'arc', password: 'pw' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body).toMatchObject({
+      success: true,
+      mfaRequired: true,
+      channel: 'email',
+      maskedEmail: 'ar•••@piic.com.mx',
+      codeSent: true,
+    });
+    const { jwt } = app as unknown as { jwt: { decode: (t: string) => DecodedToken } };
+    const decoded = jwt.decode(body.mfaToken);
+    expect(decoded).toMatchObject({
+      id: 30,
+      scope: 'mfa_challenge',
+      challengeId: 'challenge-email-1',
+    });
+    expect(decoded.exp - decoded.iat).toBe(600);
+    expect(MfaService.createChallenge).not.toHaveBeenCalled();
   });
 
   it('MFA_SETUP_REQUIRED (Ω/MU sin enrolar): responde mfaSetupRequired:true con un setupToken firmado', async () => {
@@ -66,6 +116,7 @@ describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
       errorCode: 'MFA_SETUP_REQUIRED',
       userId: 1,
       username: 'grayman',
+      allowedMethods: ['totp'],
     });
 
     const res = await app.inject({
@@ -76,7 +127,11 @@ describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toMatchObject({ success: true, mfaSetupRequired: true });
+    expect(body).toMatchObject({
+      success: true,
+      mfaSetupRequired: true,
+      allowedMethods: ['totp'],
+    });
     expect(typeof body.setupToken).toBe('string');
 
     const { jwt } = app as unknown as { jwt: { decode: (t: string) => Record<string, unknown> } };
@@ -84,29 +139,16 @@ describe('POST /v1/auth/login — ramas MFA (FC185 F2)', () => {
     expect(decoded).toMatchObject({ id: 1, username: 'grayman', type: 'mfa_setup' });
   });
 
-  it('sin MFA de por medio (ok:true) sigue emitiendo la sesión completa de siempre — 0 regresión', async () => {
-    (SessionService.login as Mock).mockResolvedValue({
-      ok: true,
-      userId: 20,
-      username: 'arc_itinerante',
-      mapped: { id: 20, roleId: 3, roleName: 'Arc' },
-      tenantId: null,
-      permissions: ['social:post:view:own'],
-      ownerType: null,
-      availableTenants: [],
-    });
+  it('fallo de credenciales (L4) sigue respondiendo {error} con su status — nunca sesión', async () => {
+    (SessionService.login as Mock).mockResolvedValue({ ok: false, status: 401, errorCode: 'L4' });
 
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
-      payload: { username: 'arc_itinerante', password: 'pw' },
+      payload: { username: 'arc_itinerante', password: 'bad' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
-    expect(body.success).toBe(true);
-    expect(typeof body.token).toBe('string');
-    expect(body.mfaRequired).toBeUndefined();
-    expect(body.mfaSetupRequired).toBeUndefined();
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body)).toEqual({ error: 'L4' });
   });
 });

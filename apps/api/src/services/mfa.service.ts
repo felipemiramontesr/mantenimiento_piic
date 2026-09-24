@@ -3,6 +3,7 @@ import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import db from './db';
 import * as MfaRepository from './mfa.repository';
 import * as TotpService from './totp.service';
+import { EMAIL_CODE_PATTERN, normalizeEmailCode } from './totp.service';
 import EncryptionService from './encryption';
 import { refresh as refreshSession, RefreshResult } from './authSession.service';
 import { recordAuditLog } from './auditService';
@@ -15,20 +16,34 @@ import { recordAuditLog } from './auditService';
  * auth (tenantId/permissions/ownerType) que un login normal — 0 duplicación de esa lógica.
  */
 
-export interface BeginSetupResult {
-  secretBase32: string;
-  otpauthUri: string;
-}
+export type BeginSetupResult =
+  | { ok: true; secretBase32: string; otpauthUri: string }
+  | { ok: false; status: 409; code: 'MFA_ALREADY_ENROLLED'; message: string };
 
 /** POST /v1/auth/mfa/setup — genera un secreto TOTP nuevo, lo cifra (`EncryptionService`,
  *  invariante 2) y lo guarda como PENDIENTE (`is_confirmed = 0`). El secreto en texto plano solo
  *  existe en esta respuesta — nunca se persiste ni se vuelve a mostrar; llamar a `setup` de nuevo
- *  antes de confirmar reemplaza el pendiente (upsert), no acumula filas huérfanas. */
+ *  antes de confirmar reemplaza el pendiente (upsert), no acumula filas huérfanas.
+ *  FC195 — con un TOTP YA confirmado responde 409 sin tocarlo: el upsert lo devolvía a pendiente y
+ *  cualquiera con un token válido podía apagar el 2FA ajeno (el único reset es el de Ω). */
 export async function beginSetup(userId: number, accountLabel: string): Promise<BeginSetupResult> {
+  const existing = await MfaRepository.findCredentialByUserId(userId, 'totp');
+  if (existing?.is_confirmed) {
+    return {
+      ok: false,
+      status: 409,
+      code: 'MFA_ALREADY_ENROLLED',
+      message: 'La app autenticadora ya está configurada',
+    };
+  }
   const secretBase32 = TotpService.generateTotpSecret();
   const secretEncrypted = EncryptionService.encrypt(secretBase32);
   await MfaRepository.upsertPendingCredential(userId, 'totp', secretEncrypted);
-  return { secretBase32, otpauthUri: TotpService.buildTotpUri(secretBase32, accountLabel) };
+  return {
+    ok: true,
+    secretBase32,
+    otpauthUri: TotpService.buildTotpUri(secretBase32, accountLabel),
+  };
 }
 
 export type ConfirmSetupResult =
@@ -52,7 +67,8 @@ function setupNotFound(): ConfirmSetupResult {
  *  `publicSignup.service.ts::runSignupTransaction` (FC177 F2). */
 export async function confirmSetup(userId: number, code: string): Promise<ConfirmSetupResult> {
   const credential = await MfaRepository.findCredentialByUserId(userId, 'totp');
-  if (!credential || credential.is_confirmed) {
+  // FC195 (391_AN): una credencial TOTP sin secreto nunca se confirma — fail-closed.
+  if (!credential?.secret_encrypted || credential.is_confirmed) {
     return setupNotFound();
   }
   const secretBase32 = EncryptionService.decrypt(credential.secret_encrypted);
@@ -78,6 +94,9 @@ export async function confirmSetup(userId: number, code: string): Promise<Confir
       verification.matchedStep as number,
       connection
     );
+    // FC195 — un solo método: TOTP reemplaza a un 2FA por correo previo (p. ej. un Arc que ahora es
+    // MU, Invariante 9) y a sus códigos de respaldo.
+    await MfaRepository.replaceOtherMethods(userId, 'totp', connection);
     await MfaRepository.insertBackupCodes(userId, codeHashes, connection);
     await connection.commit();
   } catch (e) {
@@ -104,7 +123,8 @@ export async function createChallenge(userId: number): Promise<string> {
 export type VerifyChallengeResult =
   | Extract<RefreshResult, { ok: true }>
   | { ok: false; status: 401; code: 'MFA_INVALID_CODE'; message: string }
-  | { ok: false; status: 401; code: 'TOKEN_EXPIRED_OR_REVOKED'; message: string };
+  | { ok: false; status: 401; code: 'TOKEN_EXPIRED_OR_REVOKED'; message: string }
+  | { ok: false; status: 401; code: 'MFA_SETUP_REQUIRED'; message: string };
 
 function invalidCodeResult(): VerifyChallengeResult {
   return {
@@ -128,7 +148,7 @@ function revokedResult(): VerifyChallengeResult {
  *  `confirmSetup` (F1), pero contra una credencial YA confirmada. */
 async function tryTotpCode(userId: number, code: string): Promise<boolean> {
   const credential = await MfaRepository.findCredentialByUserId(userId, 'totp');
-  if (!credential?.is_confirmed) return false;
+  if (!credential?.is_confirmed || !credential.secret_encrypted) return false;
   const secretBase32 = EncryptionService.decrypt(credential.secret_encrypted);
   const verification = TotpService.verifyTotpCode(secretBase32, code, {
     lastUsedStep: credential.last_used_step,
@@ -154,6 +174,15 @@ async function tryBackupCode(userId: number, code: string): Promise<boolean> {
   return matchedId === null ? false : MfaRepository.markBackupCodeUsed(matchedId);
 }
 
+/** Cuenta un intento fallido y revoca el reto al quinto. FC195: también lo usa el enrolamiento
+ *  por correo (`emailMfa.service.ts`), para que ambos flujos compartan el mismo límite. */
+export async function recordFailedAttempt(challenge: MfaRepository.MfaChallengeRow): Promise<void> {
+  await MfaRepository.incrementChallengeAttempts(challenge.id);
+  if (challenge.attempts_used + 1 >= MAX_MFA_ATTEMPTS) {
+    await MfaRepository.revokeChallenge(challenge.id);
+  }
+}
+
 /** Camino de fallo de `verifyChallenge`: cuenta el intento y revoca el reto al llegar al límite.
  *  Extraído (no inline en un `if` con varios `await`) porque V8 reporta un conteo de rama
  *  negativo para el "else" implícito de ese patrón, que SonarCloud lee como condición sin
@@ -161,19 +190,53 @@ async function tryBackupCode(userId: number, code: string): Promise<boolean> {
 async function registerFailedAttempt(
   challenge: MfaRepository.MfaChallengeRow
 ): Promise<VerifyChallengeResult> {
-  await MfaRepository.incrementChallengeAttempts(challenge.id);
-  if (challenge.attempts_used + 1 >= MAX_MFA_ATTEMPTS) {
-    await MfaRepository.revokeChallenge(challenge.id);
-  }
+  await recordFailedAttempt(challenge);
   return invalidCodeResult();
 }
 
-/** Elige la rama TOTP o de respaldo según el formato del código. Helper síncrono (los brazos
- *  devuelven la promesa, no la esperan): un ternario con `await` en sus brazos justo antes de un
- *  `if` hace que V8 reporte un conteo de rama negativo para ese `if` (límite de v8→istanbul que
- *  SonarCloud lee como condición sin cubrir aunque ambas ramas estén probadas). */
-function verifyCodeForUser(userId: number, code: string): Promise<boolean> {
-  return TOTP_CODE_PATTERN.test(code) ? tryTotpCode(userId, code) : tryBackupCode(userId, code);
+/** FC195 — rama de correo: el código vigente del reto contra su hash Argon2id. */
+async function tryEmailCode(
+  challenge: MfaRepository.MfaChallengeRow,
+  code: string
+): Promise<boolean> {
+  if (!challenge.code_hash) return false;
+  return argon2Verify(challenge.code_hash, code);
+}
+
+/** Elige la rama según el canal del reto y el formato del código: TOTP (6 dígitos) o correo (8
+ *  caracteres) según el canal, y cualquier otro formato como código de respaldo. Helper síncrono
+ *  (los brazos devuelven la promesa, no la esperan): un ternario con `await` en sus brazos justo
+ *  antes de un `if` hace que V8 reporte un conteo de rama negativo para ese `if` (límite de
+ *  v8→istanbul que SonarCloud lee como condición sin cubrir aunque ambas ramas estén probadas). */
+function verifyCodeForChallenge(
+  challenge: MfaRepository.MfaChallengeRow,
+  code: string
+): Promise<boolean> {
+  if (challenge.channel === 'email') {
+    const emailCode = normalizeEmailCode(code);
+    return EMAIL_CODE_PATTERN.test(emailCode)
+      ? tryEmailCode(challenge, emailCode)
+      : tryBackupCode(challenge.user_id, code);
+  }
+  return TOTP_CODE_PATTERN.test(code)
+    ? tryTotpCode(challenge.user_id, code)
+    : tryBackupCode(challenge.user_id, code);
+}
+
+/** Reto inutilizable: no existe, fue revocado, o es de correo y su código ya caducó (el reloj es
+ *  el de la DB: `is_live`, Invariante 4). */
+function isChallengeClosed(challenge: MfaRepository.MfaChallengeRow | null): boolean {
+  if (!challenge || challenge.revoked) return true;
+  return challenge.channel === 'email' && !challenge.is_live;
+}
+
+function setupRequiredResult(): VerifyChallengeResult {
+  return {
+    ok: false,
+    status: 401,
+    code: 'MFA_SETUP_REQUIRED',
+    message: 'Tu cuenta requiere configurar la app autenticadora — inicia sesión de nuevo',
+  };
 }
 
 /** POST /v1/auth/mfa/verify (Scenario 2/3/4, FC185). `challengeId` ya viene decodificado y
@@ -186,18 +249,20 @@ export async function verifyChallenge(
   code: string
 ): Promise<VerifyChallengeResult> {
   const challenge = await MfaRepository.findChallengeById(challengeId);
-  if (!challenge || challenge.revoked) {
+  if (!challenge || isChallengeClosed(challenge)) {
     return revokedResult();
   }
 
-  const isValid = await verifyCodeForUser(challenge.user_id, code);
+  const isValid = await verifyCodeForChallenge(challenge, code);
 
   if (!isValid) return registerFailedAttempt(challenge);
 
   // Un solo uso — igual que un código de respaldo, un challenge no se reutiliza ni tras un éxito.
   await MfaRepository.revokeChallenge(challenge.id);
   const session = await refreshSession(challenge.user_id, undefined);
-  return session.ok ? session : invalidCodeResult();
+  if (session.ok) return session;
+  // FC195 R10 — el código era correcto pero su método ya no le basta (p. ej. ahora es MU).
+  return session.errorCode === 'MFA_SETUP_REQUIRED' ? setupRequiredResult() : invalidCodeResult();
 }
 
 export type ResetMfaResult =
@@ -216,8 +281,9 @@ export async function resetUserMfa(
   targetUserId: number,
   callerId: number
 ): Promise<ResetMfaResult> {
-  const credential = await MfaRepository.findCredentialByUserId(targetUserId, 'totp');
-  if (!credential) {
+  // FC195 — cualquier método (TOTP o correo, pendiente o confirmado) cuenta como "MFA configurado".
+  const credentials = await MfaRepository.listCredentials(targetUserId);
+  if (credentials.length === 0) {
     return {
       ok: false,
       status: 404,

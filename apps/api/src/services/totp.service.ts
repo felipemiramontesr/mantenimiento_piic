@@ -155,13 +155,35 @@ const BACKUP_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const BACKUP_CODE_COUNT = 8;
 const BACKUP_CODE_LENGTH = 10;
 
-function randomBackupCode(): string {
-  const bytes = crypto.randomBytes(BACKUP_CODE_LENGTH);
+/** `length` caracteres CSPRNG del alfabeto de respaldo. 256 es múltiplo de 32 (el tamaño del
+ *  alfabeto), así que el módulo no introduce sesgo. */
+function randomAlphabetString(length: number): string {
+  const bytes = crypto.randomBytes(length);
   let raw = '';
-  for (let i = 0; i < BACKUP_CODE_LENGTH; i += 1) {
+  for (let i = 0; i < length; i += 1) {
     raw += BACKUP_CODE_ALPHABET[bytes[i] % BACKUP_CODE_ALPHABET.length];
   }
+  return raw;
+}
+
+function randomBackupCode(): string {
+  const raw = randomAlphabetString(BACKUP_CODE_LENGTH);
   return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+}
+
+/** FC195 D-Ω4 — 8 caracteres del mismo alfabeto que los respaldos: 32^8 ≈ 1.1 × 10^12 valores. */
+const EMAIL_CODE_LENGTH = 8;
+/** Formato de un código de correo ya normalizado. Nunca coincide con un respaldo (`XXXXX-XXXXX`). */
+export const EMAIL_CODE_PATTERN = /^[2-9A-HJ-NP-Z]{8}$/;
+
+/** FC195 F2 — código de un solo uso para el 2FA por correo (el caller guarda solo su Argon2id). */
+export function generateEmailCode(): string {
+  return randomAlphabetString(EMAIL_CODE_LENGTH);
+}
+
+/** Tolera minúsculas y espacios que el usuario teclee al copiar el código del correo. */
+export function normalizeEmailCode(input: string): string {
+  return input.toUpperCase().replace(/\s/g, '');
 }
 
 /** 8 códigos de respaldo de un solo uso, texto plano (invariante 3 del FC) — el caller los

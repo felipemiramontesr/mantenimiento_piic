@@ -8,6 +8,9 @@ import {
   computeTotpCode,
   verifyTotpCode,
   generateBackupCodes,
+  generateEmailCode,
+  normalizeEmailCode,
+  EMAIL_CODE_PATTERN,
   TOTP_STEP_SECONDS,
 } from './totp.service';
 
@@ -143,5 +146,28 @@ describe('FC185 F1 — generateBackupCodes (invariante 3: single-use, 8 códigos
 
   it('respeta un count explícito', () => {
     expect(generateBackupCodes(3)).toHaveLength(3);
+  });
+});
+
+describe('FC195 F2 — código del 2FA por correo', () => {
+  it('8 caracteres del alfabeto de respaldo (sin 0/1/O/I), CSPRNG: no se repiten', () => {
+    const codes = Array.from({ length: 200 }, () => generateEmailCode());
+    codes.forEach((code) => {
+      expect(code).toMatch(EMAIL_CODE_PATTERN);
+      expect(code).not.toMatch(/[01OI]/);
+    });
+    expect(new Set(codes).size).toBe(200);
+  });
+
+  it('normaliza lo que el usuario teclea: minúsculas y espacios', () => {
+    expect(normalizeEmailCode(' abcd efgh ')).toBe('ABCDEFGH');
+    expect(normalizeEmailCode('ABCD\tEFGH')).toBe('ABCDEFGH');
+  });
+
+  it('el patrón del correo nunca coincide con un código de respaldo ni con un TOTP', () => {
+    expect(EMAIL_CODE_PATTERN.test(generateBackupCodes(1)[0])).toBe(false);
+    expect(EMAIL_CODE_PATTERN.test('123456')).toBe(false);
+    expect(EMAIL_CODE_PATTERN.test('ABCDEFG')).toBe(false);
+    expect(EMAIL_CODE_PATTERN.test('ABCDEFGHJ')).toBe(false);
   });
 });

@@ -93,18 +93,25 @@ describe('FC193 F3 — activeCapabilities en el payload de sesión', () => {
     activeOfTenant(['FINANZAS', 'RASTREO'], ['GASTOS_EGRESOS']);
   });
 
-  const login = (): Promise<LightMyRequestResponse> =>
-    app.inject({
+  // FC195 D-Ω1 — /login ya no emite sesión (siempre hay reto): la sesión tras la contraseña la emite
+  // /mfa/verify, así que es ahí donde se prueba el payload de capacidades.
+  const verifySession = (): Promise<LightMyRequestResponse> => {
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    return app.inject({
       method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'u', password: 'p' },
+      url: '/v1/auth/mfa/verify',
+      payload: {
+        mfaToken: jwt.sign({ id: 20, challengeId: 'c-1', scope: 'mfa_challenge' }),
+        code: '123456',
+      },
     });
+  };
 
-  describe('POST /login', () => {
+  describe('POST /mfa/verify (sesión tras el 2FA)', () => {
     it('tenant normal ⇒ las capacidades ACTIVE de su universo (5), ordenadas', async () => {
-      svc.login.mockResolvedValue(success(TENANT_MAPPED, 5, ['fleet:unit:view:own']));
+      mfa.verifyChallenge.mockResolvedValue(success(TENANT_MAPPED, 5, ['fleet:unit:view:own']));
 
-      const res = await login();
+      const res = await verifySession();
 
       expect(res.statusCode).toBe(200);
       expect(res.json().user.activeCapabilities).toEqual({
@@ -116,9 +123,9 @@ describe('FC193 F3 — activeCapabilities en el payload de sesión', () => {
 
     it('universo con MANTENIMIENTO suspendido ⇒ no aparece en el payload', async () => {
       activeOfTenant(['RASTREO']);
-      svc.login.mockResolvedValue(success(TENANT_MAPPED, 5, ['fleet:unit:view:own']));
+      mfa.verifyChallenge.mockResolvedValue(success(TENANT_MAPPED, 5, ['fleet:unit:view:own']));
 
-      const res = await login();
+      const res = await verifySession();
 
       expect(res.json().user.activeCapabilities).toEqual({
         superclusters: ['RASTREO'],
@@ -127,31 +134,35 @@ describe('FC193 F3 — activeCapabilities en el payload de sesión', () => {
     });
 
     it('Ω ⇒ todo el manifiesto, sin consultar capacidades', async () => {
-      svc.login.mockResolvedValue(success(OMEGA_MAPPED, null, ['*']));
+      mfa.verifyChallenge.mockResolvedValue(success(OMEGA_MAPPED, null, ['*']));
 
-      const res = await login();
+      const res = await verifySession();
 
       expect(res.json().user.activeCapabilities).toEqual(ALL);
       expect(capabilities).not.toHaveBeenCalled();
     });
 
     it('Arc itinerante (tenant_id null) ⇒ ninguna capacidad', async () => {
-      svc.login.mockResolvedValue(success(ARC_MAPPED, null, ['social:post:view']));
+      mfa.verifyChallenge.mockResolvedValue(success(ARC_MAPPED, null, ['social:post:view']));
 
-      const res = await login();
+      const res = await verifySession();
 
       expect(res.json().user.activeCapabilities).toEqual({ superclusters: [], clusters: [] });
       expect(capabilities).not.toHaveBeenCalled();
     });
 
-    it('fail-closed: si no se pueden leer las capacidades NO se emite la sesión (500 LOGIN_FAIL)', async () => {
-      svc.login.mockResolvedValue(success(TENANT_MAPPED, 5, []));
+    it('fail-closed: si no se pueden leer las capacidades NO se emite la sesión (500)', async () => {
+      mfa.verifyChallenge.mockResolvedValue(success(TENANT_MAPPED, 5, []));
       capabilities.mockRejectedValue(new Error('db down'));
 
-      const res = await login();
+      const res = await verifySession();
 
       expect(res.statusCode).toBe(500);
-      expect(res.json()).toEqual({ error: 'LOGIN_FAIL' });
+      expect(res.json()).toEqual({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'MFA_VERIFY_FAIL',
+      });
       expect(res.headers['set-cookie']).toBeUndefined();
     });
   });

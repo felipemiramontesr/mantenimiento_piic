@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { verify as argon2Verify } from '@node-rs/argon2';
 import db from './db';
-import { login } from './authSession.service';
+import { login, refresh } from './authSession.service';
 
 /**
  * FC176 F1 — Auth_Chassis_Measurement_And_Verification.
@@ -69,17 +69,17 @@ describe('FC176 F1 — authSession.service login() via cosmonautMiddleware real'
     (argon2Verify as Mock).mockResolvedValue(true);
   });
 
-  it('AT-FC176-F1-1: usuario tenant no-Omega recibe tenant/permisos/ownerType reales del chasis cosmonauta', async () => {
+  it('AT-FC176-F1-1 (actualizado FC195): la sesión de un usuario tenant no-Omega — que tras D-Ω1 emite /mfa/verify vía refresh() — trae tenant/permisos/ownerType reales del chasis cosmonauta', async () => {
     (db as unknown as MockDb).execute
-      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findUserWithRoleAndDepartmentByUsername
+      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findActiveUserWithRoleAndDepartmentById
+      .mockResolvedValueOnce([[], undefined]) // FC195 — hasAnyMuMembership: no es MU
+      .mockResolvedValueOnce([[{ type: 'totp', is_confirmed: 1 }], undefined]) // FC195 — listCredentials
       .mockResolvedValueOnce([[{ owner_id: 4 }], undefined]) // resolvePrimaryTenant → tenant_user_memberships
       .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined]) // resolveEffectivePermissions
       .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined]) // deriveOwnerType
-      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]) // getAvailableTenants
-      .mockResolvedValueOnce([[], undefined]) // FC185 F2 — findCredentialByUserId: 0 MFA enrolado
-      .mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }], undefined]); // FC185 F2 — findCosmonautType: sub-usuario, no MU → no mandatorio
+      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]); // getAvailableTenants
 
-    const result = await login('arc_tenant', 'password123');
+    const result = await refresh(10, undefined);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -87,6 +87,27 @@ describe('FC176 F1 — authSession.service login() via cosmonautMiddleware real'
     expect(result.permissions).toEqual(['fleet:unit:view:any']);
     expect(result.ownerType).toBe('FLOTILLA');
     expect(result.availableTenants).toEqual([4]);
+  });
+
+  it('AT-FC195-1: login() de ese mismo usuario ya no emite sesión — sin 2FA, MFA_SETUP_REQUIRED (Scenario 6)', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findUserWithRoleAndDepartmentByUsername
+      .mockResolvedValueOnce([[{ owner_id: 4 }], undefined]) // resolvePrimaryTenant (HALT multi-universo se conserva)
+      .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined]) // deriveOwnerType
+      .mockResolvedValueOnce([[{ tenantId: 4 }], undefined]) // getAvailableTenants
+      .mockResolvedValueOnce([[], undefined]) // hasAnyMuMembership: no es MU
+      .mockResolvedValueOnce([[], undefined]); // listCredentials: 0 métodos
+
+    const result = await login('arc_tenant', 'password123');
+
+    expect(result).toMatchObject({
+      ok: false,
+      status: 200,
+      errorCode: 'MFA_SETUP_REQUIRED',
+      userId: 10,
+      allowedMethods: ['totp', 'email'],
+    });
   });
 
   it('AT-FC176-F1-2 (actualizado FC185 F2): GrayMan (roleId=0) sigue bypaseando el chasis de permisos (0 consultas ahí), pero ahora el MFA es mandatorio — sin credencial enrolada, login() bloquea con MFA_SETUP_REQUIRED en vez de sesión completa', async () => {
@@ -151,12 +172,13 @@ describe('FC177 F1 — login() hard-gates is_active (Cond.R-177 R2, Bravo)', () 
       .mockResolvedValueOnce([[{ slug: 'fleet:unit:view:any' }], undefined])
       .mockResolvedValueOnce([[{ code: 'FLOTILLA' }], undefined])
       .mockResolvedValueOnce([[{ tenantId: 4 }], undefined])
-      .mockResolvedValueOnce([[], undefined]) // FC185 F2 — findCredentialByUserId: 0 MFA enrolado
-      .mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }], undefined]); // FC185 F2 — findCosmonautType: no MU
+      .mockResolvedValueOnce([[], undefined]) // FC195 — hasAnyMuMembership: no es MU
+      .mockResolvedValueOnce([[{ type: 'totp', is_confirmed: 1 }], undefined]); // FC195 — listCredentials
 
     const result = await login('arc_tenant', 'password123');
 
-    expect(result.ok).toBe(true);
+    // Pasa el gate de is_active y llega al reto de 2FA (FC195: nunca sesión directa desde /login).
+    expect(result).toMatchObject({ errorCode: 'MFA_REQUIRED', channel: 'totp' });
   });
 });
 
@@ -166,19 +188,20 @@ describe('FC182 (Scenario 2, Modelo B) — login() de un Arconauta Itinerante pu
     (argon2Verify as Mock).mockResolvedValue(true);
   });
 
-  it('AT-FC182-1: usuario activo con solo asignación global Arc resuelve tenantId=null y los permisos de Arc — sin cambio en authSession.service.ts, ya cubierto por el chasis cosmonauta real', async () => {
+  it('AT-FC182-1 (actualizado FC195): la sesión de un usuario activo con solo asignación global Arc — emitida por /mfa/verify vía refresh() — resuelve tenantId=null y los permisos de Arc con el chasis cosmonauta real', async () => {
     (db as unknown as MockDb).execute
-      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findUserWithRoleAndDepartmentByUsername (is_active:1, FC182 nace así)
+      .mockResolvedValueOnce([[TENANT_USER_ROW], undefined]) // findActiveUserWithRoleAndDepartmentById (is_active:1, FC182 nace así)
+      .mockResolvedValueOnce([[], undefined]) // FC195 — hasAnyMuMembership: no es MU
+      .mockResolvedValueOnce([[{ type: 'email', is_confirmed: 1 }], undefined]) // FC195 — listCredentials: 2FA por correo
       .mockResolvedValueOnce([[], undefined]) // resolvePrimaryTenant → findTenantMembershipOwnerIds → 0 filas
       .mockResolvedValueOnce([[], undefined]) // resolvePrimaryTenant → findEarliestActiveAssignmentTenantId → 0 filas (solo asignación global tenant_id NULL) → null
       .mockResolvedValueOnce([
         [{ slug: 'social:post:view:own' }, { slug: 'social:post:create:own' }],
         undefined,
       ]) // resolveEffectivePermissions(userId, null) → recoge la fila global vía `tenant_id IS NULL`
-      .mockResolvedValueOnce([[], undefined]) // getAvailableTenants → 0 (deriveOwnerType(null) no hace query, retorna null directo)
-      .mockResolvedValueOnce([[], undefined]); // FC185 F2 — findCredentialByUserId: 0 MFA enrolado (opt-in, tenantId=null → 0 findCosmonautType)
+      .mockResolvedValueOnce([[], undefined]); // getAvailableTenants → 0 (deriveOwnerType(null) no hace query, retorna null directo)
 
-    const result = await login('arc_tenant', 'password123');
+    const result = await refresh(10, undefined);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;

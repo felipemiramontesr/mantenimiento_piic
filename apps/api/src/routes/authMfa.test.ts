@@ -87,11 +87,50 @@ describe('POST /v1/auth/mfa/setup + /v1/auth/mfa/confirm (FC185 F1)', () => {
       expect(body.data.otpauthUri).toContain(`secret=${body.data.secretBase32}`);
       expect(body.data.otpauthUri).toContain('Archon');
 
-      // Se persiste cifrado (nunca en claro) como credencial pendiente.
-      const [sql, params] = (db.execute as Mock).mock.calls[0];
+      // 1ª consulta: ¿ya hay TOTP confirmado? (FC195). 2ª: se persiste cifrado como pendiente.
+      const [sql, params] = (db.execute as Mock).mock.calls[1];
       expect(sql).toContain('INSERT INTO user_mfa_credentials');
       expect(params[0]).toBe(501);
       expect(params[2]).toBe(`enc_${body.data.secretBase32}`);
+    });
+
+    it('FC195 — 409 MFA_ALREADY_ENROLLED con un TOTP ya confirmado: no lo devuelve a pendiente', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ id: 9, user_id: 501, type: 'totp', secret_encrypted: 'enc_X', is_confirmed: 1 }],
+        undefined,
+      ]);
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/mfa/setup',
+        headers: authHeader(token),
+      });
+      expect(res.statusCode).toBe(409);
+      expect(JSON.parse(res.body).code).toBe('MFA_ALREADY_ENROLLED');
+      expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('FC195 — el setupToken de /login (type mfa_setup) sí sirve para enrolar', async () => {
+      const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+      const setupToken = jwt.sign({ id: 501, username: 'archie', type: 'mfa_setup' });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/mfa/setup',
+        headers: authHeader(setupToken),
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it('FC195 — el mfaToken del reto (solo contraseña) NO sirve para enrolar: 401', async () => {
+      const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+      const mfaToken = jwt.sign({ id: 501, challengeId: 'c', scope: 'mfa_challenge' });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/mfa/setup',
+        headers: authHeader(mfaToken),
+      });
+      expect(res.statusCode).toBe(401);
+      expect(JSON.parse(res.body).code).toBe('TOKEN_TYPE_NOT_ALLOWED');
+      expect(db.execute).not.toHaveBeenCalled();
     });
 
     it('500 INTERNAL_ERROR cuando la persistencia falla', async () => {
@@ -192,6 +231,11 @@ describe('POST /v1/auth/mfa/setup + /v1/auth/mfa/confirm (FC185 F1)', () => {
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.rollback).not.toHaveBeenCalled();
 
+      // FC195 — un solo método: se retira cualquier otro tipo y los respaldos previos, en la TX.
+      const replaceCall = mockConnection.execute.mock.calls.find(([sql]) =>
+        String(sql).includes('AND type <> ?')
+      );
+      expect(replaceCall?.[1]).toEqual([501, 'totp']);
       // confirmCredential graba el step consumido.
       const confirmCall = mockConnection.execute.mock.calls.find(([sql]) =>
         String(sql).includes('SET is_confirmed = 1')
