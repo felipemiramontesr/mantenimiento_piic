@@ -48,3 +48,46 @@ export async function verifyMfaChallenge(
   const res = await api.post('/auth/mfa/verify', { mfaToken, code });
   return res.data as MfaVerifySuccess;
 }
+
+/** FC195 — métodos de segundo factor. Ω y MU solo pueden usar `totp` (el backend lo impone). */
+export type MfaMethod = 'totp' | 'email';
+
+export interface EmailMfaSetupData {
+  emailSetupToken: string;
+  maskedEmail: string;
+}
+
+/** FC195 F3 — POST /mfa/email/setup: envía el código de activación al correo registrado. */
+export async function beginEmailMfaSetup(token?: string): Promise<EmailMfaSetupData> {
+  const res = await api.post('/auth/mfa/email/setup', undefined, authConfig(token));
+  return res.data.data as EmailMfaSetupData;
+}
+
+/** FC195 F3 — POST /mfa/email/verify-setup: confirma con el código recibido; responde los 8
+ *  códigos de respaldo UNA sola vez. */
+export async function confirmEmailMfaSetup(
+  emailSetupToken: string,
+  code: string,
+  token?: string
+): Promise<string[]> {
+  const res = await api.post(
+    '/auth/mfa/email/verify-setup',
+    { emailSetupToken, code },
+    authConfig(token)
+  );
+  return res.data.data.backupCodes as string[];
+}
+
+export interface EmailMfaResendData {
+  token: string;
+  maskedEmail: string | null;
+  codeSent: boolean;
+  resendsLeft: number;
+}
+
+/** FC195 F3 — POST /mfa/email/resend: código nuevo (el anterior deja de servir) para un reto de
+ *  login o de enrolamiento; responde un token NUEVO del mismo reto, que reemplaza al anterior. */
+export async function resendEmailMfaCode(challengeToken: string): Promise<EmailMfaResendData> {
+  const res = await api.post('/auth/mfa/email/resend', { token: challengeToken });
+  return res.data.data as EmailMfaResendData;
+}

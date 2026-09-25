@@ -7,6 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import useMfaChallenge, { MfaChallengeState } from './useMfaChallenge';
 import LoginPanel from './LoginPanel';
 import { UserIndustrial } from '../../types/user';
+import { MfaMethod } from '../../api/mfa';
+import { ChallengeInfo } from './useEmailChallenge';
 
 interface LoginFormState {
   username: string;
@@ -20,6 +22,7 @@ interface LoginFormState {
   acceptCookies: () => void;
   dismissCookies: () => void;
   mfaSetupToken: string | null;
+  mfaAllowedMethods: readonly MfaMethod[];
   mfaJustActivated: boolean;
   handleMfaSetupComplete: () => void;
   mfaChallenge: MfaChallengeState;
@@ -58,7 +61,8 @@ interface LoginResponseHandlers {
   readonly navigate: (path: string) => void;
   readonly setError: (v: string | null) => void;
   readonly setMfaSetupToken: (v: string | null) => void;
-  readonly startMfaChallenge: (mfaToken: string) => void;
+  readonly setMfaAllowedMethods: (v: readonly MfaMethod[]) => void;
+  readonly startMfaChallenge: (mfaToken: string, info?: ChallengeInfo) => void;
 }
 
 interface LoginApiResponse {
@@ -67,6 +71,12 @@ interface LoginApiResponse {
     setupToken?: string;
     mfaRequired?: boolean;
     mfaToken?: string;
+    /** FC195 — métodos que puede enrolar (con `mfaSetupRequired`). */
+    allowedMethods?: MfaMethod[];
+    /** FC195 — canal del reto y a dónde se envió el código (con `mfaRequired`). */
+    channel?: MfaMethod;
+    maskedEmail?: string | null;
+    codeSent?: boolean;
     token?: string;
     user?: UserIndustrial;
   };
@@ -76,10 +86,16 @@ interface LoginApiResponse {
  *  F3, `mfaRequired` F4, o error de protocolo) — extraída de `handleLogin` para mantener
  *  `useLoginForm` bajo Gate 2, mismo comportamiento verbatim para las ramas preexistentes. */
 function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponseHandlers): void {
-  if (response.data.mfaSetupRequired) {
-    handlers.setMfaSetupToken(response.data.setupToken ?? null);
-  } else if (response.data.mfaRequired && response.data.mfaToken) {
-    handlers.startMfaChallenge(response.data.mfaToken);
+  const { data } = response;
+  if (data.mfaSetupRequired) {
+    handlers.setMfaAllowedMethods(data.allowedMethods ?? ['totp']);
+    handlers.setMfaSetupToken(data.setupToken ?? null);
+  } else if (data.mfaRequired && data.mfaToken) {
+    handlers.startMfaChallenge(data.mfaToken, {
+      channel: data.channel,
+      maskedEmail: data.maskedEmail,
+      codeSent: data.codeSent,
+    });
   } else if (response.data.token && response.data.user) {
     handlers.login(response.data.token, response.data.user);
     handlers.navigate('/dashboard');
@@ -93,11 +109,14 @@ function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponse
 function useMfaSetupFlow(setPassword: (v: string) => void): {
   mfaSetupToken: string | null;
   setMfaSetupToken: (v: string | null) => void;
+  mfaAllowedMethods: readonly MfaMethod[];
+  setMfaAllowedMethods: (v: readonly MfaMethod[]) => void;
   mfaJustActivated: boolean;
   setMfaJustActivated: (v: boolean) => void;
   handleMfaSetupComplete: () => void;
 } {
   const [mfaSetupToken, setMfaSetupToken] = useState<string | null>(null);
+  const [mfaAllowedMethods, setMfaAllowedMethods] = useState<readonly MfaMethod[]>(['totp']);
   const [mfaJustActivated, setMfaJustActivated] = useState(false);
 
   const handleMfaSetupComplete = (): void => {
@@ -109,6 +128,8 @@ function useMfaSetupFlow(setPassword: (v: string) => void): {
   return {
     mfaSetupToken,
     setMfaSetupToken,
+    mfaAllowedMethods,
+    setMfaAllowedMethods,
     mfaJustActivated,
     setMfaJustActivated,
     handleMfaSetupComplete,
@@ -168,13 +189,7 @@ function useLoginForm(): LoginFormState {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showCookies, acceptCookies, dismissCookies } = useCookieConsent();
-  const {
-    mfaSetupToken,
-    setMfaSetupToken,
-    mfaJustActivated,
-    setMfaJustActivated,
-    handleMfaSetupComplete,
-  } = useMfaSetupFlow(setPassword);
+  const setupFlow = useMfaSetupFlow(setPassword);
   const mfaChallenge = useMfaChallenge((token, user) => {
     login(token, user);
     navigate('/dashboard');
@@ -183,8 +198,15 @@ function useLoginForm(): LoginFormState {
   const handleLogin = makeHandleLogin(
     username,
     password,
-    { setLoading, setError, setMfaJustActivated },
-    { login, navigate, setError, setMfaSetupToken, startMfaChallenge: mfaChallenge.start }
+    { setLoading, setError, setMfaJustActivated: setupFlow.setMfaJustActivated },
+    {
+      login,
+      navigate,
+      setError,
+      setMfaSetupToken: setupFlow.setMfaSetupToken,
+      setMfaAllowedMethods: setupFlow.setMfaAllowedMethods,
+      startMfaChallenge: mfaChallenge.start,
+    }
   );
 
   return {
@@ -198,9 +220,10 @@ function useLoginForm(): LoginFormState {
     showCookies,
     acceptCookies,
     dismissCookies,
-    mfaSetupToken,
-    mfaJustActivated,
-    handleMfaSetupComplete,
+    mfaSetupToken: setupFlow.mfaSetupToken,
+    mfaAllowedMethods: setupFlow.mfaAllowedMethods,
+    mfaJustActivated: setupFlow.mfaJustActivated,
+    handleMfaSetupComplete: setupFlow.handleMfaSetupComplete,
     mfaChallenge,
   };
 }
@@ -303,6 +326,7 @@ const LoginPage: React.FC = () => {
     acceptCookies,
     dismissCookies,
     mfaSetupToken,
+    mfaAllowedMethods,
     mfaJustActivated,
     handleMfaSetupComplete,
     mfaChallenge,
@@ -329,6 +353,7 @@ const LoginPage: React.FC = () => {
         onSubmit={handleLogin}
         mfaJustActivated={mfaJustActivated}
         mfaSetupToken={mfaSetupToken}
+        mfaAllowedMethods={mfaAllowedMethods}
         onMfaSetupComplete={handleMfaSetupComplete}
         mfaChallenge={mfaChallenge}
       />

@@ -4,6 +4,7 @@ import PiicLogo from '../../components/Logo/PiicLogo';
 import MfaEnrollmentWizard from '../../components/Identity/MfaEnrollment/MfaEnrollmentWizard';
 import MfaChallengeStep from '../../components/Identity/MfaEnrollment/MfaChallengeStep';
 import { MfaChallengeState } from './useMfaChallenge';
+import { MfaMethod } from '../../api/mfa';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
 
 /**
@@ -247,16 +248,22 @@ interface LoginPanelProps {
   readonly onSubmit: (e: React.FormEvent) => void;
   readonly mfaJustActivated: boolean;
   readonly mfaSetupToken: string | null;
+  readonly mfaAllowedMethods: readonly MfaMethod[];
   readonly onMfaSetupComplete: () => void;
   readonly mfaChallenge: MfaChallengeState;
 }
 
 /** El contenido principal del panel es 1 de 3, mutuamente excluyentes — extraído a una función con
  *  if/else (no ternario anidado) para mantener `LoginPanel` legible y pasar `no-nested-ternary`. */
+interface MfaSetupView {
+  readonly token: string | null;
+  readonly allowedMethods: readonly MfaMethod[];
+  readonly onComplete: () => void;
+}
+
 function renderLoginPanelMain(
   mfaChallenge: MfaChallengeState,
-  mfaSetupToken: string | null,
-  onMfaSetupComplete: () => void,
+  setup: MfaSetupView,
   formProps: Omit<LoginFormProps, 'mfaChallengeExpired'>
 ): React.JSX.Element {
   if (mfaChallenge.mfaToken) {
@@ -272,14 +279,26 @@ function renderLoginPanelMain(
           onToggleBackupCode={mfaChallenge.toggleBackupCode}
           secondsRemaining={mfaChallenge.secondsRemaining}
           onBack={mfaChallenge.reset}
+          channel={mfaChallenge.email.channel}
+          maskedEmail={mfaChallenge.email.maskedEmail}
+          resend={{
+            secondsLeft: mfaChallenge.email.resendCooldown,
+            resendsLeft: mfaChallenge.email.resendsLeft,
+            sending: mfaChallenge.email.resending,
+            onResend: mfaChallenge.handleResend,
+          }}
         />
       </div>
     );
   }
-  if (mfaSetupToken) {
+  if (setup.token) {
     return (
       <div className="w-full max-w-[440px]" data-testid="mfa-mandatory-setup">
-        <MfaEnrollmentWizard token={mfaSetupToken} onComplete={onMfaSetupComplete} />
+        <MfaEnrollmentWizard
+          token={setup.token}
+          onComplete={setup.onComplete}
+          allowedMethods={setup.allowedMethods}
+        />
       </div>
     );
   }
@@ -290,7 +309,8 @@ function renderLoginPanelMain(
  *  Sub-Batch 4B-2; FC185 F3/F4 — `mfaChallenge.mfaToken` gana sobre `mfaSetupToken`, que gana
  *  sobre el formulario normal: un usuario nunca ve dos de los tres a la vez). */
 export default function LoginPanel(props: LoginPanelProps): React.JSX.Element {
-  const { mfaSetupToken, onMfaSetupComplete, mfaChallenge, ...formProps } = props;
+  const { mfaSetupToken, mfaAllowedMethods, onMfaSetupComplete, mfaChallenge, ...formProps } =
+    props;
   return (
     <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
       <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
@@ -299,7 +319,15 @@ export default function LoginPanel(props: LoginPanelProps): React.JSX.Element {
         </header>
 
         <main className="flex-1 flex flex-col justify-center px-6 md:px-16">
-          {renderLoginPanelMain(mfaChallenge, mfaSetupToken, onMfaSetupComplete, formProps)}
+          {renderLoginPanelMain(
+            mfaChallenge,
+            {
+              token: mfaSetupToken,
+              allowedMethods: mfaAllowedMethods,
+              onComplete: onMfaSetupComplete,
+            },
+            formProps
+          )}
         </main>
 
         <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
