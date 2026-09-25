@@ -10,6 +10,7 @@ import * as MfaService from '../services/mfa.service';
 import * as EmailMfaService from '../services/emailMfa.service';
 import type { MfaMethod } from '../services/mfaPolicy.service';
 import registerEmailMfaRoutes from './authMfaEmail';
+import { notifyPreviousAddress, EmailChange } from '../services/emailChange.service';
 import {
   resolveSessionCapabilities,
   SessionCapabilities,
@@ -311,6 +312,25 @@ async function handleGetUsers(request: FastifyRequest, reply: FastifyReply): Pro
   }
 }
 
+/** FC196 F2 — aviso al buzón anterior DESPUÉS del commit. Nunca cambia la respuesta: si no sale,
+ *  queda como advertencia en el log (y el resultado en la auditoría), sin revertir el cambio. */
+async function warnPreviousAddress(
+  request: FastifyRequest,
+  change: EmailChange,
+  targetUserId: number,
+  adminId: number
+): Promise<void> {
+  const status = await notifyPreviousAddress({
+    transport: request.server.mailTransport,
+    change,
+    targetUserId,
+    adminId,
+  });
+  if (status === 'failed' || status === 'disabled') {
+    request.log.warn({ targetUserId, status }, 'FC196: aviso de cambio de correo no enviado');
+  }
+}
+
 async function handlePatchUser(
   request: FastifyRequest,
   reply: FastifyReply
@@ -342,6 +362,9 @@ async function handlePatchUser(
     const result = await UserManagementService.updateUser(id, updates, reason, admin);
     if (!result.ok) {
       return reply.code(result.status).send({ error: result.code });
+    }
+    if (result.emailChange) {
+      await warnPreviousAddress(request, result.emailChange, Number(id), admin.id);
     }
     return reply.send({ success: true });
   } catch (e) {

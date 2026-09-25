@@ -256,6 +256,10 @@ describe('authIntegration.test', () => {
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot After 2
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 3
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 3
+      // FC196 F2 — el PATCH 3 trae un correo nuevo: se reinicia su verificación y su 2FA por correo
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // email_verified_at = NULL
+      .mockResolvedValueOnce([{ affectedRows: 0 }, undefined]) // sin credencial 'email' que quitar
+      .mockResolvedValueOnce([{ affectedRows: 0 }, undefined]) // revoca retos de correo abiertos
       .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After 3
     await app.inject({
       method: 'PATCH',

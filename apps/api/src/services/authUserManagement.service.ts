@@ -11,6 +11,8 @@ import withConnection from '../utils/withConnection';
 import * as UserRepository from './authUserManagement.repository';
 import { antiEscalationGuard, resolvePrimaryTenant } from '../middleware/cosmonautMiddleware';
 import { mapUserResponse, MappedUser } from './authSession.service';
+import * as MfaRepository from './mfa.repository';
+import { detectEmailChange, EmailChange } from './emailChange.service';
 
 /**
  * FC130 F1 — orchestration layer for auth.ts's user-administration endpoints
@@ -231,8 +233,9 @@ export async function syncGrayManCosmonautAssignment(
 // murieron con las bandas de roles {1,3,4} (084_AN v3.1 §1a). El alta de
 // usuarios/Arcs renace en F3 sobre el chasis §24.13 + Contrato §C (dual-door).
 
+/** FC196 F2 — `emailChange` viene solo si el correo cambió: la ruta avisa al buzón anterior. */
 export type UpdateUserResult =
-  | { ok: true }
+  | { ok: true; emailChange?: EmailChange }
   | { ok: false; status: number; code: string; message: string };
 
 /** FC 082 F3c Cond.1 (Bravo) — R4: ya NO se escribe user_roles (legacy); se refleja
@@ -258,6 +261,21 @@ async function syncRoleIdIfRequested(
   };
 }
 
+/** Aplica el SET del PATCH y, si el correo cambió, reinicia en la MISMA transacción su verificación
+ *  y su 2FA por correo (FC196 F2, Invariante 3). */
+async function applyUserFields(
+  connection: PoolConnection,
+  id: string,
+  updates: z.infer<typeof userUpdateSchema>['data'],
+  emailChange: EmailChange | null
+): Promise<void> {
+  const { fields, values } = await buildUserUpdateFields(updates);
+  if (fields.length > 0) {
+    await UserRepository.updateUserFields(id, fields.join(', '), values, connection);
+  }
+  if (emailChange) await MfaRepository.resetEmailFactor(Number(id), connection);
+}
+
 /** PATCH /users/:id — full transaction: lock, scope-guard, build+apply SET, GrayMan sync, audit. */
 export async function updateUser(
   id: string,
@@ -281,10 +299,8 @@ export async function updateUser(
       return { ok: false, status: 403, code: 'FORBIDDEN', message: 'User outside owner scope' };
     }
 
-    const { fields, values } = await buildUserUpdateFields(updates);
-    if (fields.length > 0) {
-      await UserRepository.updateUserFields(id, fields.join(', '), values, connection);
-    }
+    const emailChange = detectEmailChange(snapshotBefore.email, updates.email);
+    await applyUserFields(connection, id, updates, emailChange);
 
     const roleSyncError = await syncRoleIdIfRequested(connection, id, updates.roleId, admin.id);
     if (roleSyncError) return roleSyncError;
@@ -302,7 +318,7 @@ export async function updateUser(
 
     await connection.commit();
     connection.release();
-    return { ok: true };
+    return emailChange ? { ok: true, emailChange } : { ok: true };
   } catch (e) {
     await connection.rollback();
     connection.release();

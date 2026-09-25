@@ -151,6 +151,31 @@ export function buildMfaCodeEmail(code: string, purpose: MfaCodePurpose): EmailC
   });
 }
 
+/** FC196 F2 — datos del aviso de cambio de correo: la dirección NUEVA ya enmascarada, cuándo (ISO
+ *  UTC) y el ID del administrador que lo cambió. */
+export interface EmailChangedNoticeParams {
+  readonly maskedNewEmail: string;
+  readonly changedAtIso: string;
+  readonly changedByUserId: number;
+}
+
+/** FC196 F2 — aviso al buzón ANTERIOR de que su correo cambió. Solo informativo: sin enlaces ni
+ *  botones (no puede usarse como phishing) y sin la dirección nueva completa. */
+export function buildEmailChangedNotice(params: EmailChangedNoticeParams): EmailContent {
+  return renderActionEmail({
+    subject: `Tu correo de ${BRAND} cambió`,
+    heading: 'El correo de tu cuenta cambió',
+    intro:
+      `Un administrador cambió el correo asociado a tu cuenta de ${BRAND} a ` +
+      `${params.maskedNewEmail}. Desde ahora los avisos y códigos llegarán a esa dirección.`,
+    notes: [
+      `Fecha: ${params.changedAtIso} (UTC). Administrador: ID ${params.changedByUserId}.`,
+      'Si no reconoces este cambio, contacta de inmediato al administrador de tu empresa.',
+      'Este mensaje es solo informativo: no contiene enlaces y no necesitas responderlo.',
+    ],
+  });
+}
+
 /** Datos del correo de prueba: quién lo disparó, cuándo (ISO UTC) y con qué transporte. */
 export interface MailTestEmailParams {
   readonly actorName: string;

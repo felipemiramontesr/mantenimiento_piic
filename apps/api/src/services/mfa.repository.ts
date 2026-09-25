@@ -306,3 +306,31 @@ export async function revokeChallenge(id: number, executor: Executor = db): Prom
     id,
   ]);
 }
+
+/** FC196 F2 — el correo del usuario cambió: deja de estar verificado y su 2FA por correo (si lo
+ *  tenía) deja de valer, porque los códigos irían a un buzón que nadie probó. En la MISMA
+ *  transacción que el cambio de correo (Invariante 3): quita la credencial `email`, sus códigos
+ *  de respaldo si ya no le queda un método confirmado, y revoca sus retos de correo abiertos. Una
+ *  credencial TOTP no se toca. Regresa `true` si se quitó una credencial `email`. */
+export async function resetEmailFactor(userId: number, executor: Executor = db): Promise<boolean> {
+  await executor.execute<ResultSetHeader>(
+    'UPDATE users SET email_verified_at = NULL WHERE id = ?',
+    [userId]
+  );
+  const [removed] = await executor.execute<ResultSetHeader>(
+    "DELETE FROM user_mfa_credentials WHERE user_id = ? AND type = 'email'",
+    [userId]
+  );
+  if (removed.affectedRows > 0) {
+    await executor.execute<ResultSetHeader>(
+      `DELETE FROM user_mfa_backup_codes WHERE user_id = ?
+         AND NOT EXISTS (SELECT 1 FROM user_mfa_credentials c WHERE c.user_id = ? AND c.is_confirmed = 1)`,
+      [userId, userId]
+    );
+  }
+  await executor.execute<ResultSetHeader>(
+    "UPDATE mfa_challenges SET revoked = 1 WHERE user_id = ? AND channel = 'email' AND revoked = 0",
+    [userId]
+  );
+  return removed.affectedRows > 0;
+}
