@@ -476,9 +476,12 @@ async function handleGetRoles(request: FastifyRequest, reply: FastifyReply): Pro
   });
 }
 
+/** GET /me — perfil + capacidades de la sesión. FC196 F1: `jwtVerify()` va FUERA del try, como en
+ *  `handleSwitchTenant`: un token ausente/vencido/malformado lo serializa el manejador global como
+ *  401; el catch solo cubre fallos reales del servicio (500). */
 async function handleGetMe(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  await request.jwtVerify();
   try {
-    await request.jwtVerify();
     const { id, tenant_id: claimedTenantId } = request.user as {
       id: number;
       tenant_id?: number | null;
@@ -513,12 +516,14 @@ async function handleGetMe(request: FastifyRequest, reply: FastifyReply): Promis
   }
 }
 
+/** GET /users/:uuid/node — nodo soberano de un usuario (requiere `user:admin`). FC196 F1: token
+ *  inválido ⇒ 401 por el manejador global (`jwtVerify()` fuera del try), no 500. */
 async function handleGetUserNode(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<FastifyReply> {
+  await request.jwtVerify();
   try {
-    await request.jwtVerify();
     const perms = (request.user as { permissions: string[] }).permissions;
     if (!perms.includes('*') && !perms.includes('user:admin')) {
       return reply
