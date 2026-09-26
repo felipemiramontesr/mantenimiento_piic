@@ -4,3 +4,4 @@
 bun run protocol:verify
 bunx lint-staged
 bun scripts/checkDiffQuality.ts
+bun scripts/checkMigrationNaming.ts

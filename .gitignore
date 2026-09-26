@@ -49,6 +49,8 @@ apps/web/public/uploads/
 *.sql
 # Las migraciones canónicas (§2.7) SÍ se versionan — la regla *.sql solo bloquea dumps/datos
 !packages/database/migrations/*.sql
+# Huella de esquema (FC197 F3 · Regla 23): solo lee information_schema, sin datos
+!scripts/sql/schemaFingerprint.sql
 
 # Archon Dev Lore
 checkpoints.md

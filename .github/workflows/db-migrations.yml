@@ -37,12 +37,15 @@
 # ============================================================
 
 name: 🏛️ DB Migrations (PROD)
+# FC197 F3 · Regla 24 (R-MIGRATION-NAMING) — cada ejecución se titula con la migración: desde la 180
+# el nombre ya trae versión, FC/fase y fecha (NNN_V<versión>_FC<nnn>-F<n>_<AAAAMMDD>_<desc>.sql).
+run-name: 🏛️ ${{ inputs.migration_file }} · @${{ github.actor }}
 
 on:
   workflow_dispatch:
     inputs:
       migration_file:
-        description: 'Archivo en packages/database/migrations/ (ej. 157_zero_state.sql)'
+        description: 'Archivo en packages/database/migrations/ (desde la 180: NNN_V<versión>_FC<nnn>-F<n>_<AAAAMMDD>_<descripcion>.sql)'
         required: true
         type: string
 
@@ -81,6 +84,14 @@ jobs:
           esac
           if ! git ls-files --error-unmatch "packages/database/migrations/$MIGRATION_FILE" >/dev/null 2>&1; then
             echo "::error::$MIGRATION_FILE no existe en packages/database/migrations/ (HEAD versionado)"
+            exit 1
+          fi
+          # FC197 F3 · Regla 24 — desde la 180, solo el formato canónico (antes de cualquier respaldo).
+          # Mismo patrón que scripts/checkMigrationNaming.ts::CANONICAL_NAME. 001–179 quedan exentas.
+          NUM=$((10#${MIGRATION_FILE:0:3}))
+          CANONICAL='^[0-9]{3}_V[0-9]+\.[0-9]+\.[0-9]+_FC[0-9]{3}-F[0-9]+_[0-9]{8}_[a-z0-9]+(_[a-z0-9]+)*\.sql$'
+          if [ "$NUM" -ge 180 ] && ! [[ "$MIGRATION_FILE" =~ $CANONICAL ]]; then
+            echo "::error::Regla 24: desde la 180 el nombre debe ser NNN_V<versión>_FC<nnn>-F<n>_<AAAAMMDD>_<descripcion>.sql"
             exit 1
           fi
           echo "path=packages/database/migrations/$MIGRATION_FILE" >> "$GITHUB_OUTPUT"
@@ -207,6 +218,29 @@ jobs:
             "REPLACE INTO schema_migrations (filename, checksum_sha256, executed_by, environment) VALUES ('$MIGRATION_FILE', '$CHECKSUM', '$ACTOR', 'production')"
           echo "✅ Registrada en schema_migrations"
 
+      # FC197 F3 · Regla 23 (R-DB-PARITY) — huella del esquema de PROD con la MISMA consulta que usa
+      # scripts/dbParityCheck.ts en local (scripts/sql/schemaFingerprint.sql). Solo lee
+      # information_schema e imprime un MD5 y un conteo: 0 filas de datos. Corre también en 'skip',
+      # así que despachar una migración ya registrada sirve como verificación de paridad.
+      - name: Schema fingerprint (FC197 F3 · Regla 23 — solo el hash agregado)
+        id: fingerprint
+        if: always() && steps.registry.outcome == 'success' && steps.apply.outcome != 'failure'
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        run: |
+          set -euo pipefail
+          LINE=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -N -B "$DB_NAME" \
+            < scripts/sql/schemaFingerprint.sql | tail -n 1)
+          HASH=$(printf '%s' "$LINE" | cut -f1)
+          COUNT=$(printf '%s' "$LINE" | cut -f2)
+          case "$HASH" in *[!0-9a-f]* | "" ) echo "::error::Huella inesperada"; exit 1 ;; esac
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "elements=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "✅ Huella de esquema PROD: $HASH ($COUNT elementos)"
+
       - name: Summary (solo métricas agregadas — condición 2)
         if: always()
         env:
@@ -225,6 +259,7 @@ jobs:
             echo "| Backup cifrado (T1·B) | ${{ steps.backup.outcome }} — \`${BACKUP_FILE:-n/a}\` (${BACKUP_SIZE:-0} bytes) |"
             echo "| Aplicación | ${{ steps.apply.outcome }} |"
             echo "| Registrada en schema_migrations | ${{ steps.record.outcome }} |"
+            echo "| Huella de esquema PROD (Regla 23) | \`${{ steps.fingerprint.outputs.hash || 'n/a' }}\` (${{ steps.fingerprint.outputs.elements || '0' }} elementos) — comparar: \`bun scripts/dbParityCheck.ts --expect <huella>\` |"
             echo "| Actor | ${{ github.actor }} |"
             echo ""
             if [ -s migration_output.txt ]; then
