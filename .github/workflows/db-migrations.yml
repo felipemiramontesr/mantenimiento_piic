@@ -86,8 +86,53 @@ jobs:
           echo "path=packages/database/migrations/$MIGRATION_FILE" >> "$GITHUB_OUTPUT"
           echo "✅ Validación OK: $MIGRATION_FILE"
 
+      # FC197 F2 (T1·D) — registro schema_migrations. Checksum = SHA-256 del contenido SIN '\r'
+      # (idéntico a scripts/dbBaselineMigrations.ts::migrationChecksum): con core.autocrlf el mismo
+      # archivo tiene CRLF en Windows y LF en git/Linux. Decisión:
+      #   no registrado            → apply (respaldo + aplicación + registro)
+      #   registrado, mismo hash   → skip  (no-op seguro, exit 0: 0 respaldo, 0 DDL)
+      #   registrado, otro hash    → ERROR (el archivo cambió después de aplicarse)
+      #   sin tabla schema_migrations → solo se permite la 179, que la crea (bootstrap)
+      # MIGRATION_FILE ya pasó el allowlist [A-Za-z0-9._-] de arriba: va literal al SQL sin riesgo.
+      - name: Registry gate (T1·D — schema_migrations, anti re-aplicación y anti alteración)
+        id: registry
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          MIGRATION_PATH: ${{ steps.validate.outputs.path }}
+          BOOTSTRAP_FILE: 179_schema_migrations_and_orphan_backup_purge.sql
+        run: |
+          set -euo pipefail
+          CHECKSUM=$(tr -d '\r' < "$MIGRATION_PATH" | sha256sum | cut -d' ' -f1)
+          echo "checksum=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          q() { mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -N -B "$DB_NAME" -e "$1"; }
+          HAS_REGISTRY=$(q "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schema_migrations'")
+          if [ "$HAS_REGISTRY" = "0" ]; then
+            if [ "$MIGRATION_FILE" != "$BOOTSTRAP_FILE" ]; then
+              echo "::error::No existe schema_migrations en PROD: aplica primero $BOOTSTRAP_FILE"
+              exit 1
+            fi
+            echo "decision=apply" >> "$GITHUB_OUTPUT"
+            echo "✅ Bootstrap: $BOOTSTRAP_FILE crea el registro"
+            exit 0
+          fi
+          REGISTERED=$(q "SELECT checksum_sha256 FROM schema_migrations WHERE filename = '$MIGRATION_FILE'")
+          if [ -z "$REGISTERED" ]; then
+            echo "decision=apply" >> "$GITHUB_OUTPUT"
+            echo "✅ No registrada: se aplicará y se registrará"
+          elif [ "$REGISTERED" = "$CHECKSUM" ]; then
+            echo "decision=skip" >> "$GITHUB_OUTPUT"
+            echo "::notice::Migración ya aplicada previamente con idéntico checksum — no-op seguro"
+          else
+            echo "::error::Checksum mismatch: el archivo de migración fue alterado retroactivamente — abortando"
+            exit 1
+          fi
+
       - name: Backup PROD cifrado (T1·B — mysqldump → gzip → AES-256-CBC)
         id: backup
+        if: steps.registry.outputs.decision == 'apply'
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -118,6 +163,7 @@ jobs:
           echo "✅ Backup cifrado: $FILE (${SIZE} bytes)"
 
       - name: Upload backup artifact (retención 7 días — condición 3)
+        if: steps.registry.outputs.decision == 'apply'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ steps.backup.outputs.file }}
@@ -127,7 +173,7 @@ jobs:
 
       - name: Apply migration (T1 · ApplyAllowed = A∧B∧C)
         id: apply
-        if: steps.validate.outcome == 'success' && steps.backup.outcome == 'success'
+        if: steps.registry.outputs.decision == 'apply' && steps.backup.outcome == 'success'
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -141,6 +187,25 @@ jobs:
             < "$MIGRATION_PATH" > migration_output.txt 2>&1 \
             || { echo "::error::La migración falló — DB respaldada en el artifact"; cat migration_output.txt; exit 1; }
           echo "✅ Migración aplicada"
+
+      # FC197 F2 — registro de lo aplicado. REPLACE y no INSERT: el bootstrap de la 179 puede
+      # dejarla sin fila (la tabla nace en la misma ejecución) y un reintento no debe fallar.
+      - name: Record in schema_migrations (FC197 F2)
+        id: record
+        if: steps.apply.outcome == 'success'
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          CHECKSUM: ${{ steps.registry.outputs.checksum }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          case "$ACTOR" in *[!A-Za-z0-9_-]* | "" ) echo "::error::actor inesperado"; exit 1 ;; esac
+          mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -N -B "$DB_NAME" -e \
+            "REPLACE INTO schema_migrations (filename, checksum_sha256, executed_by, environment) VALUES ('$MIGRATION_FILE', '$CHECKSUM', '$ACTOR', 'production')"
+          echo "✅ Registrada en schema_migrations"
 
       - name: Summary (solo métricas agregadas — condición 2)
         if: always()
@@ -156,8 +221,10 @@ jobs:
             echo "| :--- | :--- |"
             echo "| Migración | \`$MIGRATION_FILE\` |"
             echo "| Validación (T1·A) | ${{ steps.validate.outcome }} |"
+            echo "| Registro (T1·D) | ${{ steps.registry.outcome }} — decisión \`${{ steps.registry.outputs.decision || 'n/a' }}\` |"
             echo "| Backup cifrado (T1·B) | ${{ steps.backup.outcome }} — \`${BACKUP_FILE:-n/a}\` (${BACKUP_SIZE:-0} bytes) |"
             echo "| Aplicación | ${{ steps.apply.outcome }} |"
+            echo "| Registrada en schema_migrations | ${{ steps.record.outcome }} |"
             echo "| Actor | ${{ github.actor }} |"
             echo ""
             if [ -s migration_output.txt ]; then
