@@ -55,6 +55,7 @@ import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
+import netProbeRoutes from './routes/netProbe';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
@@ -281,6 +282,7 @@ function registerCosmologyRoutes(fastify: FastifyInstance): void {
  *  universePrefix — signup precedes any tenant relationship, so it can't be tenant-scoped). */
 function registerPublicRoutes(fastify: FastifyInstance): void {
   fastify.register(publicSignupRoutes, { prefix: '/v1/public' });
+  fastify.register(netProbeRoutes, { prefix: '/v1/public' });
 }
 
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
