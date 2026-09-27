@@ -56,6 +56,8 @@ import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
 import botChallengeRoutes from './routes/botChallenge';
+import registerHousekeepingTrigger from './plugins/housekeepingTrigger';
+import { runAuthHousekeeping } from './services/authHousekeeping.service';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
@@ -370,6 +372,9 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 // Auto-start for production execution
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildApp();
+  // FC199 F4 — higiene de autenticación disparada por tráfico (máx. 1/h): en Hostinger el proceso
+  // se duerme sin tráfico y un cron dentro de él no dispara (medido en prod).
+  registerHousekeepingTrigger(server, { run: runAuthHousekeeping });
   const start = async (): Promise<void> => {
     try {
       const port = Number(process.env.PORT) || 3001;
@@ -393,16 +398,6 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         processPendingAlerts().catch((err: unknown) => {
           server.log.error({ err }, 'Outbox pending alerts sweep failed');
         });
-      });
-      // FC199 F4 — higiene de autenticación cada hora (min 15, fuera de los barridos del min 0):
-      // cuentas públicas sin 2FA > 48 h, retos PoW vencidos y contadores inactivos > 24 h.
-      const { runAuthHousekeeping } = await import('./services/authHousekeeping.service');
-      cron.schedule('15 * * * *', () => {
-        runAuthHousekeeping()
-          .then((report) => server.log.info({ report }, 'Auth housekeeping sweep'))
-          .catch((err: unknown) => {
-            server.log.error({ err }, 'Auth housekeeping sweep failed');
-          });
       });
     } catch (err) {
       server.log.error(err);
