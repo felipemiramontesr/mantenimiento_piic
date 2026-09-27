@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pool } from 'mysql2/promise';
-import { insertBillingProfile } from './publicSignup.repository';
+import { insertBillingProfile, markPublicSignup } from './publicSignup.repository';
 
 /** FC177 F2 — same direct-executor pattern as `cosmology.repository.test.ts` (FC162 F1-T5). */
 
@@ -48,5 +48,16 @@ describe('insertBillingProfile', () => {
     );
     const [, params] = vi.mocked(mockExecutor.execute).mock.calls[0];
     expect(params[6]).toBeNull();
+  });
+});
+
+describe('markPublicSignup (FC199 F3)', () => {
+  it('marca el origen public por id, parametrizado', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ affectedRows: 1 }, []]);
+    await markPublicSignup(501, mockExecutor);
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      "UPDATE users SET signup_source = 'public' WHERE id = ?",
+      [501]
+    );
   });
 });

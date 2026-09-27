@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import * as ThrottleRepository from './authThrottle.repository';
+import { botChallengeVerifier } from './botChallenge.service';
 import {
   LOGIN_WINDOW_SECONDS,
   checkLoginThrottle,
+  evaluateLoginChallenge,
+  isLoginChallengeRequired,
+  loginAccountRef,
   consumeMailQuota,
   loginDelaySeconds,
   recordLoginOutcome,
@@ -14,6 +18,7 @@ import {
  * repositorio mockeado en el límite del módulo (el SQL se prueba en authThrottle.repository.test.ts).
  */
 
+vi.mock('./botChallenge.service', () => ({ botChallengeVerifier: { verify: vi.fn() } }));
 vi.mock('./authThrottle.repository', () => ({
   hitCounter: vi.fn(),
   readCounter: vi.fn(),
@@ -105,24 +110,102 @@ describe('checkLoginThrottle', () => {
   });
 });
 
-describe('recordLoginOutcome', () => {
-  it('fallo de credenciales: suma al par en la ventana de login', async () => {
-    await recordLoginOutcome('GrayMan ', '203.0.113.1', true);
+const ATTEMPT = { username: 'GrayMan ', ip: '203.0.113.1', accountRef: 'id:1' };
 
-    expect(ThrottleRepository.hitCounter).toHaveBeenCalledWith(
+describe('recordLoginOutcome', () => {
+  it('fallo: suma al par, a la CUENTA y a la IP', async () => {
+    await recordLoginOutcome(ATTEMPT, 'failed');
+
+    const keys = (ThrottleRepository.hitCounter as Mock).mock.calls.map((c) => c[0]);
+    expect(keys).toEqual([
       throttleKey('login-pair', 'grayman|203.0.113.1'),
-      LOGIN_WINDOW_SECONDS
-    );
+      throttleKey('login-account', 'id:1'),
+      throttleKey('login-ip', '203.0.113.1'),
+    ]);
     expect(ThrottleRepository.clearCounter).not.toHaveBeenCalled();
   });
 
-  it('acierto: limpia el par (mayúsculas y espacios del usuario no crean otra llave)', async () => {
-    await recordLoginOutcome('grayman', '203.0.113.1', false);
+  it('acierto: limpia el par y la cuenta, pero NO la IP (un barrido no se borra con una cuenta válida)', async () => {
+    await recordLoginOutcome(ATTEMPT, 'passed');
 
-    expect(ThrottleRepository.clearCounter).toHaveBeenCalledWith(
-      throttleKey('login-pair', 'grayman|203.0.113.1')
-    );
+    const keys = (ThrottleRepository.clearCounter as Mock).mock.calls.map((c) => c[0]);
+    expect(keys).toEqual([
+      throttleKey('login-pair', 'grayman|203.0.113.1'),
+      throttleKey('login-account', 'id:1'),
+    ]);
     expect(ThrottleRepository.hitCounter).not.toHaveBeenCalled();
+  });
+
+  it('sin evaluar (lo cortó el reto): no suma ni limpia nada', async () => {
+    await recordLoginOutcome(ATTEMPT, 'untested');
+
+    expect(ThrottleRepository.hitCounter).not.toHaveBeenCalled();
+    expect(ThrottleRepository.clearCounter).not.toHaveBeenCalled();
+  });
+});
+
+describe('loginAccountRef — una sola llave por cuenta (424_AN)', () => {
+  it('cuenta existente: su id, sin importar si entró con usuario o correo', () => {
+    expect(loginAccountRef(1, 'grayman')).toBe('id:1');
+    expect(loginAccountRef(1, 'omega@piic.com.mx')).toBe('id:1');
+  });
+
+  it('cuenta inexistente: el identificador normalizado', () => {
+    expect(loginAccountRef(null, ' Fantasma ')).toBe('name:fantasma');
+  });
+});
+
+describe('isLoginChallengeRequired / evaluateLoginChallenge (FAIL_GE3)', () => {
+  /** Contadores por llave: cuenta `id:1` e IP `203.0.113.1`. */
+  function givenFailures(account: number, byIp: number): void {
+    (ThrottleRepository.readCounter as Mock).mockImplementation(async (key: string) => {
+      if (key === throttleKey('login-account', 'id:1'))
+        return { counter: account, secondsSinceLast: 0 };
+      if (key === throttleKey('login-ip', '203.0.113.1'))
+        return { counter: byIp, secondsSinceLast: 0 };
+      return null;
+    });
+  }
+
+  it.each([
+    [0, 0, false],
+    [2, 2, false],
+    [3, 0, true],
+    [0, 3, true],
+  ])('cuenta %i fallos, IP %i fallos → reto exigido: %s', async (account, byIp, required) => {
+    givenFailures(account, byIp);
+
+    expect(await isLoginChallengeRequired('id:1', '203.0.113.1')).toBe(required);
+  });
+
+  it('sin sospecha: no pide reto aunque no haya payload', async () => {
+    givenFailures(2, 0);
+
+    expect(await evaluateLoginChallenge('id:1', '203.0.113.1', undefined)).toBeNull();
+    expect(botChallengeVerifier.verify).not.toHaveBeenCalled();
+  });
+
+  it('con sospecha y sin payload: BOT_CHALLENGE_REQUIRED', async () => {
+    givenFailures(3, 0);
+
+    expect(await evaluateLoginChallenge('id:1', '203.0.113.1', undefined)).toBe(
+      'BOT_CHALLENGE_REQUIRED'
+    );
+  });
+
+  it('con sospecha y payload inválido o repetido: BOT_CHALLENGE_FAILED (fail-closed)', async () => {
+    givenFailures(3, 0);
+    (botChallengeVerifier.verify as Mock).mockResolvedValue(false);
+
+    expect(await evaluateLoginChallenge('id:1', '203.0.113.1', 'x')).toBe('BOT_CHALLENGE_FAILED');
+  });
+
+  it('con sospecha y reto resuelto: sigue a la contraseña', async () => {
+    givenFailures(3, 0);
+    (botChallengeVerifier.verify as Mock).mockResolvedValue(true);
+
+    expect(await evaluateLoginChallenge('id:1', '203.0.113.1', 'ok')).toBeNull();
+    expect(botChallengeVerifier.verify).toHaveBeenCalledWith('ok');
   });
 });
 

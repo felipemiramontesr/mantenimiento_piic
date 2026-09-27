@@ -20,7 +20,10 @@ vi.mock('./cosmology.repository', () => ({
   findArcCosmonautRoleId: vi.fn(),
   insertCosmonautRoleAssignment: vi.fn(),
 }));
-vi.mock('./publicSignup.repository', () => ({ insertBillingProfile: vi.fn() }));
+vi.mock('./publicSignup.repository', () => ({
+  insertBillingProfile: vi.fn(),
+  markPublicSignup: vi.fn(),
+}));
 vi.mock('./authSession.service', () => ({ findUserByEmail: vi.fn() }));
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn() }));
 vi.mock('./encryption', () => ({ default: { encrypt: vi.fn((v: string) => `enc_${v}`) } }));
@@ -79,6 +82,8 @@ describe('FC177 F2 — publicSignup()', () => {
       true, // FC182 — nace activo, rol Arc global (Arcsial), 0 tenant
       conn
     );
+    // FC199 F3 — origen `public` en la misma TX (la purga de F4 solo mira estas cuentas).
+    expect(PublicSignupRepository.markPublicSignup).toHaveBeenCalledWith(501, conn);
     expect(PublicSignupRepository.insertBillingProfile).toHaveBeenCalledWith(
       501,
       {

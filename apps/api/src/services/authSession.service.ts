@@ -93,6 +93,7 @@ export async function findUserByEmail(username: string): Promise<RowDataPacket |
  *  pide enrolar un método (`MFA_SETUP_REQUIRED`). La sesión la emite `/mfa/verify`. */
 export type LoginResult =
   | { ok: false; status: 401; errorCode: 'L3' | 'L4' }
+  | { ok: false; status: 400; errorCode: BotChallengeVerdict }
   | { ok: false; status: 403; errorCode: 'ACCOUNT_PENDING_ACTIVATION' }
   | { ok: false; status: 200; errorCode: 'MFA_REQUIRED'; userId: number; channel: MfaMethod }
   | {
@@ -137,13 +138,29 @@ async function hasSufficientMfa(mapped: MappedUser): Promise<boolean> {
   return status.loginChannel !== null;
 }
 
+/** FC199 F3 — veredicto del reto anti-bot del login adaptativo (Cond.R-199 P3). */
+export type BotChallengeVerdict = 'BOT_CHALLENGE_REQUIRED' | 'BOT_CHALLENGE_FAILED';
+
+/** FC199 F3 — corre tras localizar la cuenta y ANTES de argon2 (Inv-1). Recibe el id de la cuenta
+ *  (`null` si no existe) para que usuario y correo cuenten como UNA sola cuenta; responde `null`
+ *  para seguir o el veredicto que corta el login. */
+export type BeforePasswordCheck = (accountId: number | null) => Promise<BotChallengeVerdict | null>;
+
 /** POST /login — preserves the L3 (user not found) vs L4 (bad password) distinction exactly.
  *  FC177 F1 — the `is_active` gate runs AFTER password verification (Cond.R-177 R2, Bravo):
  *  checking it earlier would leak "this account exists and is pending" to a caller who never
  *  proved they know the password, the same anti-enumeration posture as L3/L4 already have. */
-export async function login(username: string, password: string): Promise<LoginResult> {
+export async function login(
+  username: string,
+  password: string,
+  beforePasswordCheck?: BeforePasswordCheck
+): Promise<LoginResult> {
   let user = await SessionRepository.findUserWithRoleAndDepartmentByUsername(username);
   user ??= await findUserByEmail(username);
+  const verdict = await beforePasswordCheck?.(user ? Number(user.id) : null);
+  if (verdict) {
+    return { ok: false, status: 400, errorCode: verdict };
+  }
   if (!user) {
     return { ok: false, status: 401, errorCode: 'L3' };
   }

@@ -308,3 +308,48 @@ describe('FC195 R10 — refresh() y switchTenant() no renuevan sesión sin un 2F
     expect(result.ok).toBe(true);
   });
 });
+
+describe('FC199 F3 — gancho beforePasswordCheck de login() (reto adaptativo)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (SessionRepository.findAllActiveUsers as Mock).mockResolvedValue([]);
+    mockAuthContext(null);
+    givenMuAnywhere(false);
+    givenCredentials(TOTP_OK);
+  });
+
+  it('recibe el id de la cuenta localizada y, si no corta, el login sigue igual', async () => {
+    (SessionRepository.findUserWithRoleAndDepartmentByUsername as Mock).mockResolvedValue(
+      OMEGA_ROW
+    );
+    const hook = vi.fn().mockResolvedValue(null);
+
+    const result = await login('grayman', 'pw', hook);
+
+    expect(hook).toHaveBeenCalledWith(1);
+    expect(result).toMatchObject({ errorCode: 'MFA_REQUIRED', userId: 1 });
+  });
+
+  it('cuenta inexistente: el gancho recibe null (se cuenta por nombre) y responde L3', async () => {
+    (SessionRepository.findUserWithRoleAndDepartmentByUsername as Mock).mockResolvedValue(null);
+    const hook = vi.fn().mockResolvedValue(null);
+
+    const result = await login('fantasma', 'pw', hook);
+
+    expect(hook).toHaveBeenCalledWith(null);
+    expect(result).toEqual({ ok: false, status: 401, errorCode: 'L3' });
+  });
+
+  it.each([['BOT_CHALLENGE_REQUIRED'], ['BOT_CHALLENGE_FAILED']])(
+    'veredicto %s: 400 ANTES de argon2 (Inv-1), incluso si la cuenta no existe',
+    async (verdict) => {
+      (SessionRepository.findUserWithRoleAndDepartmentByUsername as Mock).mockResolvedValue(null);
+
+      const result = await login('fantasma', 'pw', async () => verdict as 'BOT_CHALLENGE_REQUIRED');
+
+      expect(result).toEqual({ ok: false, status: 400, errorCode: verdict });
+      expect(argon2Verify).not.toHaveBeenCalled();
+    }
+  );
+});

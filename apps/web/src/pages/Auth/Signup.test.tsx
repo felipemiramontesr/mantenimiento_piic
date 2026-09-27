@@ -9,6 +9,11 @@ import api from '../../api/client';
  *  (Scenario 1: the account is born in quarantine, submitting shows a confirmation, not a
  *  redirect to /dashboard). */
 
+// FC199 F3 — el reto anti-bot se resuelve en segundo plano; aquí devuelve un payload fijo.
+vi.mock('../../api/botChallenge', () => ({
+  obtainBotChallengePayload: async (): Promise<string> => 'payload-resuelto',
+}));
+
 vi.mock('../../api/client', () => ({
   default: {
     post: vi.fn(),
@@ -83,6 +88,7 @@ describe('SignupPage Component (FC177 F2)', () => {
     fillRequiredFields();
     fireEvent.click(screen.getByTestId('signup-submit'));
 
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
     expect(api.post).toHaveBeenCalledWith('/public/signup', {
       fullName: VALID_FIELDS.fullName,
       email: VALID_FIELDS.email,
@@ -91,6 +97,8 @@ describe('SignupPage Component (FC177 F2)', () => {
       codigoPostalFiscal: VALID_FIELDS.codigoPostalFiscal,
       razonSocial: VALID_FIELDS.razonSocial,
       regimenFiscal: VALID_FIELDS.regimenFiscal,
+      altcha_payload: 'payload-resuelto',
+      website_url: '',
     });
 
     await waitFor(() => {
@@ -110,9 +118,11 @@ describe('SignupPage Component (FC177 F2)', () => {
     });
     fireEvent.click(screen.getByTestId('signup-submit'));
 
-    expect(api.post).toHaveBeenCalledWith(
-      '/public/signup',
-      expect.objectContaining({ telefono: '5551234567' })
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/public/signup',
+        expect.objectContaining({ telefono: '5551234567' })
+      )
     );
   });
 
@@ -287,9 +297,63 @@ describe('SignupPage Component (FC177 F2)', () => {
       fillRequiredFields();
       fireEvent.click(screen.getByTestId('signup-submit'));
 
+      await waitFor(() => expect(api.post).toHaveBeenCalled());
       const [, payload] = (api.post as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(payload).not.toHaveProperty('confirmPassword');
       await waitFor(() => expect(screen.getByTestId('signup-success')).toBeInTheDocument());
     });
+  });
+});
+
+describe('SignupPage — defensa anti-bots (FC199 F3)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('el campo trampa existe, fuera de la vista, sin foco por teclado y oculto a lectores', () => {
+    render(
+      <BrowserRouter>
+        <SignupPage />
+      </BrowserRouter>
+    );
+
+    const honeypot = screen.getByTestId('signup-honeypot');
+    expect(honeypot).toHaveAttribute('name', 'website_url');
+    expect(honeypot).toHaveAttribute('tabindex', '-1');
+    expect(honeypot.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('si un bot llena la trampa, el valor viaja tal cual (el backend decide y responde genérico)', async () => {
+    (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { success: true } });
+    render(
+      <BrowserRouter>
+        <SignupPage />
+      </BrowserRouter>
+    );
+    fillRequiredFields();
+    fireEvent.change(screen.getByTestId('signup-honeypot'), { target: { value: 'http://spam' } });
+    fireEvent.click(screen.getByTestId('signup-submit'));
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/public/signup',
+        expect.objectContaining({ website_url: 'http://spam', altcha_payload: 'payload-resuelto' })
+      )
+    );
+  });
+
+  it('reto rechazado: mensaje propio, no el de formato inválido', async () => {
+    (api.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce({
+      response: { status: 400, data: { code: 'BOT_CHALLENGE_FAILED' } },
+    });
+    render(
+      <BrowserRouter>
+        <SignupPage />
+      </BrowserRouter>
+    );
+    fillRequiredFields();
+    fireEvent.click(screen.getByTestId('signup-submit'));
+
+    expect(await screen.findByText(/No pudimos verificar el envío/i)).toBeInTheDocument();
   });
 });

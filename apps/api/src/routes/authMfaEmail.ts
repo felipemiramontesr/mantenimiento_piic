@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import * as EmailMfaService from '../services/emailMfa.service';
 import type { MfaCodePurpose } from '../services/mailTemplates';
+import { botChallengeVerifier } from '../services/botChallenge.service';
 
 /**
  * FC195 F2 — rutas del 2FA por correo bajo `/v1/auth` (las registra `authRoutes`). Solo parsean,
@@ -108,7 +109,7 @@ async function handleEmailVerifySetup(
   return reply.send({ success: true, data: { backupCodes: result.backupCodes } });
 }
 
-const resendSchema = z.object({ token: z.string().min(1) });
+const resendSchema = z.object({ token: z.string().min(1), altcha_payload: z.string().optional() });
 
 /** POST /mfa/email/resend — código nuevo para un reto de login (`mfaToken`) o de enrolamiento
  *  (`emailSetupToken`); el anterior deja de servir. Sin sesión: el propio token prueba el reto. */
@@ -127,6 +128,14 @@ async function handleEmailResend(
     EMAIL_SETUP_SCOPE,
   ]);
   if (!payload) return tokenRejected(reply);
+  // FC199 F3 — reto PoW obligatorio y fail-closed ANTES de tocar el SMTP (anti mail-bombing).
+  if (!(await botChallengeVerifier.verify(parsed.data.altcha_payload))) {
+    return reply.code(400).send({
+      success: false,
+      code: 'BOT_CHALLENGE_FAILED',
+      message: 'No se pudo verificar que la solicitud sea humana — intenta de nuevo',
+    });
+  }
   const purpose: MfaCodePurpose = payload.scope === EMAIL_SETUP_SCOPE ? 'setup' : 'login';
   const result = await EmailMfaService.resendEmailCode(
     payload.id,

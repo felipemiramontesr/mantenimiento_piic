@@ -51,6 +51,8 @@ vi.mock('@node-rs/argon2', () => ({ hash: vi.fn(), verify: vi.fn() }));
 vi.mock('../services/authThrottle.service', () => ({
   checkLoginThrottle: async (): Promise<{ allowed: true }> => ({ allowed: true }),
   recordLoginOutcome: async (): Promise<void> => undefined,
+  loginAccountRef: (): string => 'id:0',
+  evaluateLoginChallenge: async (): Promise<null> => null,
 }));
 vi.mock('../services/fleetService', () => ({
   default: { getUserOwnerIds: vi.fn().mockResolvedValue([]) },

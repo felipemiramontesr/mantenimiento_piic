@@ -26,6 +26,8 @@ vi.mock('../services/emailMfa.service', () => ({
 vi.mock('../services/authThrottle.service', () => ({
   checkLoginThrottle: async (): Promise<{ allowed: true }> => ({ allowed: true }),
   recordLoginOutcome: async (): Promise<void> => undefined,
+  loginAccountRef: (): string => 'id:0',
+  evaluateLoginChallenge: async (): Promise<null> => null,
 }));
 
 type DecodedToken = Record<string, unknown> & { iat: number; exp: number };

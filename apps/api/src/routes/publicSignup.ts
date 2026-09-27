@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import * as PublicSignupService from '../services/publicSignup.service';
+import { botChallengeVerifier } from '../services/botChallenge.service';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. The ONE unauthenticated write endpoint in the
@@ -25,10 +26,26 @@ const publicSignupBodySchema = z.object({
   telefono: z.string().max(20).optional(),
 });
 
+/** FC199 F3 — piso anti-envío instantáneo del formulario, contado desde la emisión del reto. */
+const SIGNUP_MIN_FILL_MS = 1500;
+
+/** Señales anti-bot del signup (Cond.R-199): campo trampa `website_url` vacío y reto PoW válido con
+ *  el piso de tiempo. Se revisan ANTES de validar el formulario, de argon2 y de la DB (Inv-1). */
+async function passesBotChecks(body: unknown): Promise<boolean> {
+  const fields = (body ?? {}) as { altcha_payload?: unknown; website_url?: unknown };
+  if (typeof fields.website_url === 'string' && fields.website_url.trim() !== '') return false;
+  const payload = typeof fields.altcha_payload === 'string' ? fields.altcha_payload : undefined;
+  return botChallengeVerifier.verify(payload, { minAgeMs: SIGNUP_MIN_FILL_MS });
+}
+
 async function handlePublicSignup(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<FastifyReply> {
+  // Misma respuesta para trampa, reto ausente, falso, repetido o demasiado rápido: no dice cuál falló.
+  if (!(await passesBotChecks(request.body))) {
+    return reply.code(400).send({ success: false, code: 'BOT_CHALLENGE_FAILED' });
+  }
   const parsed = publicSignupBodySchema.safeParse(request.body);
   if (!parsed.success) {
     return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });

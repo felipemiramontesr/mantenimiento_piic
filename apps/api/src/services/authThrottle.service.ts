@@ -1,5 +1,7 @@
 import { createHmac } from 'node:crypto';
 import * as ThrottleRepository from './authThrottle.repository';
+import { botChallengeVerifier } from './botChallenge.service';
+import type { BotChallengeVerdict } from './authSession.service';
 
 /**
  * FC199 F2 — freno progresivo del login y tope de correos por destinatario (Cond.R-199 P3).
@@ -7,7 +9,9 @@ import * as ThrottleRepository from './authThrottle.repository';
  * Login: la llave es el PAR usuario|IP. Así un atacante no puede frenar a Ω desde otra IP (Ω
  * conserva su propio par) y nunca hay bloqueo permanente: tras `LOGIN_FREE_FAILURES` fallos
  * seguidos, cada intento espera 1, 2, 4… s desde el anterior, con techo de 60 s (`Retry-After`),
- * sin `sleep` en el handler. El ataque distribuido contra UNA cuenta lo cubre el reto PoW de F3.
+ * sin `sleep` en el handler. El ataque distribuido contra UNA cuenta lo cubre el reto PoW de F3:
+ * desde el `LOGIN_CHALLENGE_AFTER`-ésimo fallo de la CUENTA (una sola llave por cuenta: usuario y
+ * correo son la misma, 424_AN) o de la IP, el siguiente intento exige el reto (fail-closed).
  *
  * Correo: máximo `MAIL_QUOTA_PER_DAY` códigos al mismo destinatario en 24 h (setup y reenvío),
  * para que nadie use nuestro SMTP contra un buzón ajeno.
@@ -15,6 +19,7 @@ import * as ThrottleRepository from './authThrottle.repository';
 
 export const LOGIN_WINDOW_SECONDS = 15 * 60;
 export const LOGIN_FREE_FAILURES = 5;
+export const LOGIN_CHALLENGE_AFTER = 3;
 export const LOGIN_MAX_DELAY_SECONDS = 60;
 export const MAIL_QUOTA_PER_DAY = 5;
 const MAIL_WINDOW_SECONDS = 24 * 60 * 60;
@@ -65,17 +70,75 @@ export async function checkLoginThrottle(
   return wait > 0 ? { allowed: false, retryAfterSeconds: wait } : { allowed: true };
 }
 
-/** Registra el resultado de las credenciales: un fallo suma al par; un acierto lo limpia. */
-export async function recordLoginOutcome(
-  username: string,
+/** Referencia de la cuenta para el contador del reto: el id si existe (usuario y correo son UNA
+ *  cuenta); si no, el identificador normalizado. La respuesta al cliente no cambia (anti-enumeración). */
+export function loginAccountRef(accountId: number | null, identifier: string): string {
+  return accountId === null ? `name:${normalizeIdentifier(identifier)}` : `id:${accountId}`;
+}
+
+function accountKey(accountRef: string): string {
+  return throttleKey('login-account', accountRef);
+}
+
+function ipKey(ip: string): string {
+  return throttleKey('login-ip', ip);
+}
+
+async function failuresIn(key: string): Promise<number> {
+  const current = await ThrottleRepository.readCounter(key, LOGIN_WINDOW_SECONDS);
+  return current?.counter ?? 0;
+}
+
+/** FAIL_GE3 del FC: la cuenta o la IP ya acumulan `LOGIN_CHALLENGE_AFTER` fallos en la ventana. */
+export async function isLoginChallengeRequired(accountRef: string, ip: string): Promise<boolean> {
+  const [account, byIp] = await Promise.all([
+    failuresIn(accountKey(accountRef)),
+    failuresIn(ipKey(ip)),
+  ]);
+  return account >= LOGIN_CHALLENGE_AFTER || byIp >= LOGIN_CHALLENGE_AFTER;
+}
+
+/** Veredicto del login adaptativo: sin sospecha no pide nada; con sospecha, reto ausente → REQUIRED
+ *  y reto inválido o repetido → FAILED (fail-closed, Inv-3). `null` = puede seguir a argon2. */
+export async function evaluateLoginChallenge(
+  accountRef: string,
   ip: string,
-  credentialsFailed: boolean
+  payload: string | undefined
+): Promise<BotChallengeVerdict | null> {
+  if (!(await isLoginChallengeRequired(accountRef, ip))) return null;
+  if (!payload) return 'BOT_CHALLENGE_REQUIRED';
+  return (await botChallengeVerifier.verify(payload)) ? null : 'BOT_CHALLENGE_FAILED';
+}
+
+/** Qué probó el intento: la contraseña falló, la contraseña fue correcta, o no se evaluó (p. ej.
+ *  lo cortó el reto). Solo `passed` limpia contadores: cortar en el reto no puede borrar sospechas. */
+export type CredentialOutcome = 'failed' | 'passed' | 'untested';
+
+export interface LoginAttempt {
+  username: string;
+  ip: string;
+  accountRef: string;
+}
+
+/** Registra el resultado: un fallo suma al par, a la cuenta y a la IP; un acierto limpia el par y
+ *  la cuenta (la IP no: una cuenta válida no borra el rastreo de un barrido desde esa IP). */
+export async function recordLoginOutcome(
+  attempt: LoginAttempt,
+  outcome: CredentialOutcome
 ): Promise<void> {
-  const key = loginPairKey(username, ip);
-  if (credentialsFailed) {
-    await ThrottleRepository.hitCounter(key, LOGIN_WINDOW_SECONDS);
-  } else {
-    await ThrottleRepository.clearCounter(key);
+  const pair = loginPairKey(attempt.username, attempt.ip);
+  const account = accountKey(attempt.accountRef);
+  if (outcome === 'failed') {
+    await Promise.all([
+      ThrottleRepository.hitCounter(pair, LOGIN_WINDOW_SECONDS),
+      ThrottleRepository.hitCounter(account, LOGIN_WINDOW_SECONDS),
+      ThrottleRepository.hitCounter(ipKey(attempt.ip), LOGIN_WINDOW_SECONDS),
+    ]);
+  } else if (outcome === 'passed') {
+    await Promise.all([
+      ThrottleRepository.clearCounter(pair),
+      ThrottleRepository.clearCounter(account),
+    ]);
   }
 }
 

@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import * as EmailMfaService from '../services/emailMfa.service';
+import { botChallengeVerifier } from '../services/botChallenge.service';
 
 /**
  * FC195 F2 — rutas del 2FA por correo (`authMfaEmail.ts`) sobre la app real: firma y alcance de los
  * tokens, traducción HTTP de los resultados del servicio (mockeado: su lógica tiene su propio test).
  */
 
+vi.mock('../services/botChallenge.service', () => ({ botChallengeVerifier: { verify: vi.fn() } }));
 vi.mock('../services/emailMfa.service', () => ({
   beginEmailSetup: vi.fn(),
   confirmEmailSetup: vi.fn(),
@@ -33,6 +35,7 @@ describe('POST /v1/auth/mfa/email/* (FC195 F2)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (botChallengeVerifier.verify as Mock).mockResolvedValue(true);
   });
 
   const bearer = (t: string): Record<string, string> => ({ Authorization: `Bearer ${t}` });
@@ -171,6 +174,22 @@ describe('POST /v1/auth/mfa/email/* (FC195 F2)', () => {
   });
 
   describe('/mfa/email/resend', () => {
+    it('FC199 F3 — reto PoW inválido o ausente: 400 BOT_CHALLENGE_FAILED sin tocar el SMTP', async () => {
+      (botChallengeVerifier.verify as Mock).mockResolvedValue(false);
+      const loginToken = jwt.sign({ id: 30, challengeId: 'ch-9', scope: 'mfa_challenge' });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/mfa/email/resend',
+        payload: { token: loginToken, altcha_payload: 'falso' },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toMatchObject({ success: false, code: 'BOT_CHALLENGE_FAILED' });
+      expect(botChallengeVerifier.verify).toHaveBeenCalledWith('falso');
+      expect(EmailMfaService.resendEmailCode).not.toHaveBeenCalled();
+    });
+
     it('reto de login: reenvía y responde un mfaToken NUEVO (mismo reto, 10 min)', async () => {
       (EmailMfaService.resendEmailCode as Mock).mockResolvedValue({
         ok: true,

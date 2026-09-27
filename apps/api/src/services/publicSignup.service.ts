@@ -70,6 +70,7 @@ async function runSignupTransaction(
       true,
       connection
     );
+    await PublicSignupRepository.markPublicSignup(userId, connection);
     await PublicSignupRepository.insertBillingProfile(
       userId,
       {

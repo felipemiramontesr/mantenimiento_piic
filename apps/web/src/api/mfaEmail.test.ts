@@ -4,6 +4,10 @@ import { beginEmailMfaSetup, confirmEmailMfaSetup, resendEmailMfaCode } from './
 
 /** FC195 F3 — cliente tipado de `/v1/auth/mfa/email/*`. */
 
+vi.mock('./botChallenge', () => ({
+  obtainBotChallengePayload: async (): Promise<string> => 'payload-resuelto',
+}));
+
 vi.mock('./client', () => ({
   default: { post: vi.fn() },
 }));
@@ -39,13 +43,16 @@ describe('api/mfa — 2FA por correo (FC195)', () => {
     expect(codes).toEqual(['AAAAA-11111']);
   });
 
-  it('resendEmailMfaCode manda el token del reto y regresa el token nuevo', async () => {
+  it('resendEmailMfaCode manda el token del reto y el reto anti-bot (FC199 F3), y regresa el token nuevo', async () => {
     const data = { token: 'new', maskedEmail: 'ar•••@piic.com.mx', codeSent: true, resendsLeft: 1 };
     (api.post as Mock).mockResolvedValue({ data: { data } });
 
     const result = await resendEmailMfaCode('old');
 
-    expect(api.post).toHaveBeenCalledWith('/auth/mfa/email/resend', { token: 'old' });
+    expect(api.post).toHaveBeenCalledWith('/auth/mfa/email/resend', {
+      token: 'old',
+      altcha_payload: 'payload-resuelto',
+    });
     expect(result).toEqual(data);
   });
 });

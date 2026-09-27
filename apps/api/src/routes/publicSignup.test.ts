@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
+import { hash as argon2Hash } from '@node-rs/argon2';
 import buildApp from '../index';
 import db from '../services/db';
+import { botChallengeVerifier } from '../services/botChallenge.service';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. HTTP-shape + validation coverage for
@@ -25,6 +27,8 @@ const mockConnection = {
   execute: vi.fn().mockResolvedValue([{ affectedRows: 1 }, undefined]),
 };
 
+// FC199 F3 — el motor PoW tiene sus propias pruebas; aquí se controla su veredicto.
+vi.mock('../services/botChallenge.service', () => ({ botChallengeVerifier: { verify: vi.fn() } }));
 vi.mock('../services/db', () => ({
   default: {
     execute: vi.fn().mockResolvedValue([[], undefined]),
@@ -51,13 +55,58 @@ describe('POST /v1/public/signup', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // FC199 F3 — los casos que cortan en el reto no consumen la fila encolada abajo:
+    // mockReset vacía la cola de mockResolvedValueOnce (clearAllMocks no la toca).
+    (db.execute as Mock).mockReset();
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     // FC182 — findArcCosmonautRoleId (Cosmology_repository) is the FIRST db.execute call in
     // publicSignup(), fail-closed before any duplicate check runs; queue its row so every test
     // below reaches the actual signup logic instead of short-circuiting on ARC_ROLE_NOT_CONFIGURED.
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 9 }], undefined]);
     mockConnection.execute.mockResolvedValue([{ affectedRows: 1, insertId: 501 }, undefined]);
+    (botChallengeVerifier.verify as Mock).mockResolvedValue(true);
   });
+
+  it('FC199 F3 — reto válido: se verifica con el piso de 1.5 s y el signup marca origen public', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/public/signup',
+      payload: { ...VALID_PAYLOAD, altcha_payload: 'resuelto', website_url: '' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(botChallengeVerifier.verify).toHaveBeenCalledWith('resuelto', { minAgeMs: 1500 });
+    expect(mockConnection.execute).toHaveBeenCalledWith(
+      "UPDATE users SET signup_source = 'public' WHERE id = ?",
+      [501]
+    );
+  });
+
+  it.each([
+    ['reto ausente/inválido', { altcha_payload: 'falso' }, false],
+    [
+      'campo trampa lleno',
+      { altcha_payload: 'resuelto', website_url: 'http://spam.example' },
+      true,
+    ],
+  ])(
+    'FC199 F3 — %s: 400 BOT_CHALLENGE_FAILED sin argon2, sin DB y sin decir el motivo',
+    async (_label, extra, verdict) => {
+      (botChallengeVerifier.verify as Mock).mockResolvedValue(verdict);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/public/signup',
+        payload: { ...VALID_PAYLOAD, ...extra },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toEqual({ success: false, code: 'BOT_CHALLENGE_FAILED' });
+      expect(argon2Hash).not.toHaveBeenCalled();
+      expect(db.execute).not.toHaveBeenCalled();
+      expect(db.getConnection).not.toHaveBeenCalled();
+    }
+  );
 
   it('SIGNUP-1 (Scenario 1): payload válido → 201, sin necesidad de JWT (endpoint público)', async () => {
     const res = await app.inject({

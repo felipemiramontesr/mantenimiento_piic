@@ -19,6 +19,15 @@ export interface BillingProfileInput {
   telefono?: string;
 }
 
+/** FC199 F3 — marca el origen de la cuenta (migración 180): la purga de F4 solo mira `public`. Va en
+ *  la MISMA transacción que el INSERT de `users`. */
+export async function markPublicSignup(userId: number, executor: Executor = db): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    "UPDATE users SET signup_source = 'public' WHERE id = ?",
+    [userId]
+  );
+}
+
 /** F2-I2 — one row per `user_id` (PK), inserted in the same TX as the `users` row it belongs to. */
 export async function insertBillingProfile(
   userId: number,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
 import api from '../../api/client';
+import { isBotChallengeError, obtainBotChallengePayload } from '../../api/botChallenge';
 import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
 import useMfaChallenge, { MfaChallengeState } from './useMfaChallenge';
@@ -29,10 +30,22 @@ interface LoginFormState {
 }
 
 function getLoginErrorMessage(err: unknown): string {
-  const axiosError = err as AxiosError<{ error: string }>;
-  return axiosError.response?.status === 401
-    ? 'Credenciales inválidas. Verifique su ID de Archon.'
-    : 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
+  const axiosError = err as AxiosError<{ error: string; retryAfterSeconds?: number }>;
+  if (axiosError.response?.status === 401) {
+    return 'Credenciales inválidas. Verifique su ID de Archon.';
+  }
+  // FC199 F2 — freno progresivo: espera acotada, nunca un bloqueo.
+  if (axiosError.response?.status === 429) {
+    const seconds = axiosError.response.data?.retryAfterSeconds;
+    return seconds
+      ? `Demasiados intentos. Espere ${seconds} s e intente de nuevo.`
+      : 'Demasiados intentos. Espere un momento e intente de nuevo.';
+  }
+  // FC199 F3 — el reto anti-bot no se pudo resolver o fue rechazado tras el reintento.
+  if (isBotChallengeError(err)) {
+    return 'No pudimos verificar el acceso. Intente de nuevo.';
+  }
+  return 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
 }
 
 /** Banner de consentimiento de cookies — extraído de `useLoginForm` para mantenerlo bajo Gate 2
@@ -142,6 +155,18 @@ interface PerformLoginState {
   readonly setMfaJustActivated: (v: boolean) => void;
 }
 
+/** FC199 F3 — `POST /auth/login` con el reto adaptativo: si la API lo exige (tras varios fallos de
+ *  la cuenta o de la IP), se resuelve en segundo plano y se reintenta UNA vez con el payload. */
+async function postLogin(username: string, password: string): Promise<LoginApiResponse> {
+  try {
+    return await api.post('/auth/login', { username, password });
+  } catch (err) {
+    if (!isBotChallengeError(err)) throw err;
+    const altchaPayload = await obtainBotChallengePayload();
+    return api.post('/auth/login', { username, password, altcha_payload: altchaPayload });
+  }
+}
+
 /** El submit completo: banderas de estado + `POST /auth/login` + traducción de la respuesta —
  *  extraído de `useLoginForm` para mantenerlo bajo Gate 2, mismo comportamiento verbatim. */
 function performLogin(
@@ -154,8 +179,7 @@ function performLogin(
   state.setError(null);
   state.setMfaJustActivated(false);
 
-  api
-    .post('/auth/login', { username, password })
+  postLogin(username, password)
     .then((response) => handleLoginResponse(response, responseHandlers))
     .catch((err: unknown) => state.setError(getLoginErrorMessage(err)))
     .finally(() => state.setLoading(false));

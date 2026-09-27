@@ -172,9 +172,47 @@ function issueMfaSetupResponse(
   });
 }
 
-/** L3 (usuario desconocido) y L4 (contraseña errónea) cuentan como fallo de credenciales. */
-function isCredentialFailure(result: SessionService.LoginResult): boolean {
-  return result.errorCode === 'L3' || result.errorCode === 'L4';
+interface LoginBody {
+  username?: string;
+  password?: string;
+  altcha_payload?: string;
+}
+
+/** Qué probó el intento (FC199 F3): L3/L4 fallan; reto/enrolamiento/cuenta pendiente implican
+ *  contraseña correcta; un corte del reto anti-bot no evaluó la contraseña. */
+function credentialOutcome(result: SessionService.LoginResult): AuthThrottle.CredentialOutcome {
+  if (result.errorCode === 'L3' || result.errorCode === 'L4') return 'failed';
+  if (
+    result.errorCode === 'BOT_CHALLENGE_REQUIRED' ||
+    result.errorCode === 'BOT_CHALLENGE_FAILED'
+  ) {
+    return 'untested';
+  }
+  return 'passed';
+}
+
+/** FC199 F3 — login con el reto adaptativo: el gancho corre tras localizar la cuenta y antes de
+ *  argon2; registra la referencia de cuenta (id si existe) para contar fallos por cuenta. */
+async function loginWithBotGate(
+  request: FastifyRequest<{ Body: LoginBody }>,
+  username: string,
+  password: string
+): Promise<SessionService.LoginResult> {
+  const attempt: AuthThrottle.LoginAttempt = {
+    username,
+    ip: request.ip,
+    accountRef: AuthThrottle.loginAccountRef(null, username),
+  };
+  const result = await SessionService.login(username, password, async (accountId) => {
+    attempt.accountRef = AuthThrottle.loginAccountRef(accountId, username);
+    return AuthThrottle.evaluateLoginChallenge(
+      attempt.accountRef,
+      attempt.ip,
+      request.body.altcha_payload
+    );
+  });
+  await AuthThrottle.recordLoginOutcome(attempt, credentialOutcome(result));
+  return result;
 }
 
 /** FC199 F2 — 429 con `Retry-After` (≤ 60 s): el par usuario|IP espera; nunca es un bloqueo. */
@@ -186,7 +224,7 @@ function sendLoginThrottled(reply: FastifyReply, retryAfterSeconds: number): Fas
 }
 
 async function handleLogin(
-  request: FastifyRequest<{ Body: { username?: string; password?: string } }>,
+  request: FastifyRequest<{ Body: LoginBody }>,
   reply: FastifyReply
 ): Promise<FastifyReply> {
   const { username, password } = request.body;
@@ -201,8 +239,7 @@ async function handleLogin(
     const throttle = await AuthThrottle.checkLoginThrottle(username, request.ip);
     if (!throttle.allowed) return sendLoginThrottled(reply, throttle.retryAfterSeconds);
     // FC195 D-Ω1 — /login nunca emite sesión completa: la emite /mfa/verify.
-    const result = await SessionService.login(username, password);
-    await AuthThrottle.recordLoginOutcome(username, request.ip, isCredentialFailure(result));
+    const result = await loginWithBotGate(request, username, password);
     // FC185 F2 — MFA_REQUIRED/MFA_SETUP_REQUIRED llevan cuerpo propio (mfaToken/setupToken), no
     // el {error: code} genérico del resto de fallos de login.
     if (result.errorCode === 'MFA_REQUIRED') {
@@ -212,6 +249,7 @@ async function handleLogin(
       return issueMfaSetupResponse(request, reply, result);
     }
     // FC177 F1 — status is no longer hardcoded: L3/L4 stay 401, ACCOUNT_PENDING_ACTIVATION is 403.
+    // FC199 F3 — BOT_CHALLENGE_REQUIRED/FAILED salen 400: la web resuelve el reto y reintenta.
     return reply.code(result.status).send({ error: result.errorCode });
   } catch (e) {
     if (e instanceof MultiMembershipHaltError) {
@@ -706,7 +744,7 @@ async function handleMfaVerify(
 
 /** Registers the 18 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post<{ Body: { username?: string; password?: string } }>(
+  fastify.post<{ Body: LoginBody }>(
     '/login',
     {
       config: {

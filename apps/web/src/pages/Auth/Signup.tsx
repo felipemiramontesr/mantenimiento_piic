@@ -9,6 +9,7 @@ import { SignupFormData, SignupFieldsProps } from './signupTypes';
 import { FIELD_LABEL_CLASS, FIELD_INPUT_CLASS } from './signupFieldStyles';
 import SignupRfcAndCpFields from './SignupRfcAndCpFields';
 import SignupPasswordFields from './SignupPasswordFields';
+import useBotChallenge from './useBotChallenge';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. The public, unauthenticated counterpart to
@@ -18,6 +19,9 @@ import SignupPasswordFields from './SignupPasswordFields';
  * the account is born in quarantine (`is_active: false`); only Ω linking it to a Universo
  * (FC177 F3/F4) activates it.
  */
+
+/** FC199 F3 — nombre del campo trampa (el backend rechaza el envío si trae algo). */
+const HONEYPOT_FIELD = 'website_url';
 
 const EMPTY_FORM: SignupFormData = {
   fullName: '',
@@ -33,6 +37,10 @@ const EMPTY_FORM: SignupFormData = {
 
 function getSignupErrorMessage(err: unknown): string {
   const axiosError = err as AxiosError<{ code?: string }>;
+  // FC199 F3 — reto anti-bot rechazado (vencido, repetido o enviado demasiado rápido).
+  if (axiosError.response?.data?.code === 'BOT_CHALLENGE_FAILED') {
+    return 'No pudimos verificar el envío. Espera unos segundos e inténtalo de nuevo.';
+  }
   if (axiosError.response?.status === 409) {
     return 'Ya existe una cuenta registrada con estos datos.';
   }
@@ -49,7 +57,25 @@ interface SignupFormState {
   readonly error: string | null;
   readonly success: boolean;
   readonly isFormValid: boolean;
-  readonly handleSubmit: (e: React.FormEvent) => void;
+  readonly handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}
+
+/** Campo trampa invisible: fuera de pantalla, sin foco por teclado y oculto a lectores de pantalla. */
+function SignupHoneypotField(): React.JSX.Element {
+  return (
+    <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
+      <label htmlFor="signup-website">Sitio web</label>
+      <input
+        id="signup-website"
+        name={HONEYPOT_FIELD}
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        defaultValue=""
+        data-testid="signup-honeypot"
+      />
+    </div>
+  );
 }
 
 /** Estado + submit del formulario de autoregistro (FC177 F2). FC184 F2 — `isFormValid` bloquea el
@@ -61,6 +87,7 @@ function useSignupForm(): SignupFormState {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const botChallenge = useBotChallenge();
   const isFormValid =
     isValidRfc(data.rfc) &&
     isValidPostalCode(data.codigoPostalFiscal) &&
@@ -71,13 +98,23 @@ function useSignupForm(): SignupFormState {
     setData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent): void => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     const { telefono, confirmPassword: _confirmPassword, ...required } = data;
-    api
-      .post('/public/signup', { ...required, ...(telefono ? { telefono } : {}) })
+    // FC199 F3 — campo trampa: una persona no lo ve ni lo llena; un bot que llena todo, sí.
+    const honeypot = new FormData(e.currentTarget).get(HONEYPOT_FIELD);
+    botChallenge
+      .take()
+      .then((altchaPayload) =>
+        api.post('/public/signup', {
+          ...required,
+          ...(telefono ? { telefono } : {}),
+          altcha_payload: altchaPayload,
+          [HONEYPOT_FIELD]: typeof honeypot === 'string' ? honeypot : '',
+        })
+      )
       .then(() => setSuccess(true))
       .catch((err: unknown) => setError(getSignupErrorMessage(err)))
       .finally(() => setLoading(false));
@@ -214,7 +251,7 @@ function SignupFiscalFields(props: SignupFieldsProps): React.JSX.Element {
 interface SignupFormProps extends SignupFieldsProps {
   readonly error: string | null;
   readonly isFormValid: boolean;
-  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
 /** Encabezado + banner de error + campos + submit del formulario de autoregistro. FC184 F2 — el
@@ -244,9 +281,10 @@ function SignupForm({
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="flex flex-col" data-testid="signup-form">
+      <form onSubmit={onSubmit} className="relative flex flex-col" data-testid="signup-form">
         <SignupIdentityFields data={data} onChange={onChange} loading={loading} />
         <SignupFiscalFields data={data} onChange={onChange} loading={loading} />
+        <SignupHoneypotField />
         <button
           type="submit"
           disabled={loading || !isFormValid}

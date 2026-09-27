@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import api from './client';
 import { UserIndustrial } from '../types/user';
+import { obtainBotChallengePayload } from './botChallenge';
 
 /**
  * FC185 F3/F4 — Sovereign_MFA_TOTP_Two_Step_Authentication. Cliente tipado para
@@ -88,6 +89,11 @@ export interface EmailMfaResendData {
 /** FC195 F3 — POST /mfa/email/resend: código nuevo (el anterior deja de servir) para un reto de
  *  login o de enrolamiento; responde un token NUEVO del mismo reto, que reemplaza al anterior. */
 export async function resendEmailMfaCode(challengeToken: string): Promise<EmailMfaResendData> {
-  const res = await api.post('/auth/mfa/email/resend', { token: challengeToken });
+  // FC199 F3 — el reenvío exige SIEMPRE el reto anti-bot (anti mail-bombing).
+  const altchaPayload = await obtainBotChallengePayload();
+  const res = await api.post('/auth/mfa/email/resend', {
+    token: challengeToken,
+    altcha_payload: altchaPayload,
+  });
   return res.data.data as EmailMfaResendData;
 }
