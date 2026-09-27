@@ -103,7 +103,7 @@ function useSignupForm(): SignupFormState {
     setLoading(true);
     setError(null);
     const { telefono, confirmPassword: _confirmPassword, ...required } = data;
-    // FC199 F3 — campo trampa: una persona no lo ve ni lo llena; un bot que llena todo, sí.
+    // FC199 F3 — campo trampa: una persona no lo ve ni lo llena; un bot que rellena cada campo, sí.
     const honeypot = new FormData(e.currentTarget).get(HONEYPOT_FIELD);
     botChallenge
       .take()
