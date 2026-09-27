@@ -394,6 +394,16 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           server.log.error({ err }, 'Outbox pending alerts sweep failed');
         });
       });
+      // FC199 F4 — higiene de autenticación cada hora (min 15, fuera de los barridos del min 0):
+      // cuentas públicas sin 2FA > 48 h, retos PoW vencidos y contadores inactivos > 24 h.
+      const { runAuthHousekeeping } = await import('./services/authHousekeeping.service');
+      cron.schedule('15 * * * *', () => {
+        runAuthHousekeeping()
+          .then((report) => server.log.info({ report }, 'Auth housekeeping sweep'))
+          .catch((err: unknown) => {
+            server.log.error({ err }, 'Auth housekeeping sweep failed');
+          });
+      });
     } catch (err) {
       server.log.error(err);
       process.exit(1);

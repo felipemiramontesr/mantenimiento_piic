@@ -17,7 +17,8 @@ export interface AuditLogEntry {
   snapshot_before?: Record<string, unknown>;
   snapshot_after?: Record<string, unknown>;
   reason: string;
-  user_id: number;
+  /** `null` = acción del sistema, sin usuario (p. ej. el barrido de FC199 F4). */
+  user_id: number | null;
   owner_id?: number;
 }
 
