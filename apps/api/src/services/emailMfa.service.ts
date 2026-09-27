@@ -14,6 +14,7 @@ import { isTotpRequired } from './mfaPolicy.service';
 import { recordFailedAttempt } from './mfa.service';
 import { buildMfaCodeEmail, MfaCodePurpose } from './mailTemplates';
 import { recordAuditLog } from './auditService';
+import { consumeMailQuota } from './authThrottle.service';
 import type { MailTransport } from './mailTransport';
 
 /**
@@ -51,6 +52,12 @@ const CHALLENGE_CLOSED = failure(
   'El código expiró o el reto fue revocado — solicita uno nuevo'
 );
 const INVALID_CODE = failure(401, 'MFA_INVALID_CODE', 'El código ingresado no es válido');
+/** FC199 F2 — tope de correos por destinatario en 24 h (anti mail-bombing, Cond.R-199). */
+const MAIL_QUOTA_EXCEEDED = failure(
+  429,
+  'MAIL_QUOTA_EXCEEDED',
+  'Se alcanzó el máximo de correos por hoy — intenta mañana o usa un código de respaldo'
+);
 
 /** `felipe@gmail.com` → `fe•••@gmail.com` (mismo formato que la tarjeta de Diagnóstico). */
 export function maskEmail(email: string): string {
@@ -132,6 +139,7 @@ export async function beginEmailSetup(
   if (!user.email) {
     return failure(400, 'EMAIL_NOT_CONFIGURED', 'Tu cuenta no tiene un correo registrado');
   }
+  if (!(await consumeMailQuota(user.email))) return MAIL_QUOTA_EXCEEDED;
   const { code, codeHash } = await newCode();
   if (!(await sendCode(transport, user.email, code, 'setup'))) {
     return failure(503, 'MAIL_DELIVERY_FAILED', 'No se pudo enviar el correo — intenta más tarde');
@@ -260,11 +268,13 @@ export async function resendEmailCode(
     return failure(429, 'RESEND_LIMIT_EXCEEDED', 'Ya no quedan reenvíos — inicia de nuevo');
   }
   if (!challenge.cooldown_over) return RESEND_COOLDOWN;
+  // FC199 F2 — la cuota se revisa ANTES de rotar: si se rechaza, el código anterior sigue valiendo.
+  const user = await loadActiveUser(userId);
+  if (user?.email && !(await consumeMailQuota(user.email))) return MAIL_QUOTA_EXCEEDED;
   const { code, codeHash } = await newCode();
   if (!(await MfaRepository.rotateEmailChallengeCode(challenge.id, codeHash))) {
     return RESEND_COOLDOWN;
   }
-  const user = await loadActiveUser(userId);
   const resendsLeft = MfaRepository.MAX_EMAIL_RESENDS - (challenge.resend_count + 1);
   if (!user?.email) return { ok: true, maskedEmail: null, codeSent: false, resendsLeft };
   const codeSent = await sendCode(transport, user.email, code, purpose);

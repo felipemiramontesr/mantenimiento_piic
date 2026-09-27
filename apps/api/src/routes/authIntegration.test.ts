@@ -46,6 +46,12 @@ vi.mock('../services/db', () => ({
   },
 }));
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn(), verify: vi.fn() }));
+// FC199 F2 — el freno del login tiene sus propias pruebas (authThrottle.*.test.ts, authLoginThrottle
+// .test.ts); aquí siempre permite, con funciones planas que `vi.resetAllMocks()` no vacía.
+vi.mock('../services/authThrottle.service', () => ({
+  checkLoginThrottle: async (): Promise<{ allowed: true }> => ({ allowed: true }),
+  recordLoginOutcome: async (): Promise<void> => undefined,
+}));
 vi.mock('../services/fleetService', () => ({
   default: { getUserOwnerIds: vi.fn().mockResolvedValue([]) },
 }));

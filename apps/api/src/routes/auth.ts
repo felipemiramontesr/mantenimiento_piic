@@ -8,6 +8,7 @@ import * as SessionService from '../services/authSession.service';
 import * as UserManagementService from '../services/authUserManagement.service';
 import * as MfaService from '../services/mfa.service';
 import * as EmailMfaService from '../services/emailMfa.service';
+import * as AuthThrottle from '../services/authThrottle.service';
 import type { MfaMethod } from '../services/mfaPolicy.service';
 import registerEmailMfaRoutes from './authMfaEmail';
 import { notifyPreviousAddress, EmailChange } from '../services/emailChange.service';
@@ -171,6 +172,19 @@ function issueMfaSetupResponse(
   });
 }
 
+/** L3 (usuario desconocido) y L4 (contraseña errónea) cuentan como fallo de credenciales. */
+function isCredentialFailure(result: SessionService.LoginResult): boolean {
+  return result.errorCode === 'L3' || result.errorCode === 'L4';
+}
+
+/** FC199 F2 — 429 con `Retry-After` (≤ 60 s): el par usuario|IP espera; nunca es un bloqueo. */
+function sendLoginThrottled(reply: FastifyReply, retryAfterSeconds: number): FastifyReply {
+  return reply
+    .code(429)
+    .header('Retry-After', String(retryAfterSeconds))
+    .send({ error: 'LOGIN_THROTTLED', retryAfterSeconds });
+}
+
 async function handleLogin(
   request: FastifyRequest<{ Body: { username?: string; password?: string } }>,
   reply: FastifyReply
@@ -183,8 +197,12 @@ async function handleLogin(
     return reply.code(400).send({ error: 'L2' });
   }
   try {
+    // FC199 F2 — freno progresivo por par usuario|IP, ANTES de argon2 (Inv-1).
+    const throttle = await AuthThrottle.checkLoginThrottle(username, request.ip);
+    if (!throttle.allowed) return sendLoginThrottled(reply, throttle.retryAfterSeconds);
     // FC195 D-Ω1 — /login nunca emite sesión completa: la emite /mfa/verify.
     const result = await SessionService.login(username, password);
+    await AuthThrottle.recordLoginOutcome(username, request.ip, isCredentialFailure(result));
     // FC185 F2 — MFA_REQUIRED/MFA_SETUP_REQUIRED llevan cuerpo propio (mfaToken/setupToken), no
     // el {error: code} genérico del resto de fallos de login.
     if (result.errorCode === 'MFA_REQUIRED') {

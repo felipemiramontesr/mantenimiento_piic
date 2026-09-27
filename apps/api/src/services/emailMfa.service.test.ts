@@ -6,6 +6,7 @@ import * as TotpService from './totp.service';
 import { isTotpRequired } from './mfaPolicy.service';
 import { recordFailedAttempt } from './mfa.service';
 import { recordAuditLog } from './auditService';
+import { consumeMailQuota } from './authThrottle.service';
 import { MemoryMailTransport, MailTransport } from './mailTransport';
 import {
   maskEmail,
@@ -33,6 +34,7 @@ vi.mock('./mfa.repository', () => ({
   insertBackupCodes: vi.fn(),
   markEmailVerified: vi.fn(),
 }));
+vi.mock('./authThrottle.service', () => ({ consumeMailQuota: vi.fn() }));
 vi.mock('./authSession.repository', () => ({
   findActiveUserWithRoleAndDepartmentById: vi.fn(),
 }));
@@ -82,6 +84,7 @@ const failingTransport: MailTransport = {
 beforeEach(() => {
   vi.clearAllMocks();
   transport = new MemoryMailTransport();
+  (consumeMailQuota as Mock).mockResolvedValue(true);
   (TotpService.generateEmailCode as Mock).mockReturnValue('ABCDEFGH');
   (argon2Hash as Mock).mockImplementation(async (v: string) => `argon2-of-${v}`);
   (isTotpRequired as Mock).mockResolvedValue(false);
@@ -149,6 +152,17 @@ describe('beginEmailSetup', () => {
     );
     expect(transport.outbox[0].html).toContain('Activa tu verificación por correo');
     expect(isTotpRequired).toHaveBeenCalledWith(30, 3);
+  });
+
+  it('FC199 F2 — cuota diaria del destinatario agotada: 429, sin enviar ni guardar reto', async () => {
+    (consumeMailQuota as Mock).mockResolvedValue(false);
+
+    const result = await beginEmailSetup(30, transport);
+
+    expect(result).toMatchObject({ ok: false, status: 429, code: 'MAIL_QUOTA_EXCEEDED' });
+    expect(consumeMailQuota).toHaveBeenCalledWith('arc.user@piic.com.mx');
+    expect(transport.outbox).toHaveLength(0);
+    expect(MfaRepository.insertEmailChallenge).not.toHaveBeenCalled();
   });
 
   it('Scenario 2 — Ω o MU en cualquier universo: 403 MFA_METHOD_NOT_ALLOWED, sin enviar', async () => {
@@ -324,6 +338,17 @@ describe('resendEmailCode', () => {
     });
     expect(transport.outbox[0].text).toContain('NEWCODE2');
     expect(transport.outbox[0].html).toContain('Tu código para iniciar sesión');
+  });
+
+  it('FC199 F2 — cuota diaria del destinatario agotada: 429 sin rotar el código ni enviar', async () => {
+    (consumeMailQuota as Mock).mockResolvedValue(false);
+
+    const result = await resendEmailCode(30, 'uuid-7', 'login', transport);
+
+    expect(result).toMatchObject({ ok: false, status: 429, code: 'MAIL_QUOTA_EXCEEDED' });
+    expect(consumeMailQuota).toHaveBeenCalledWith('arc.user@piic.com.mx');
+    expect(MfaRepository.rotateEmailChallengeCode).not.toHaveBeenCalled();
+    expect(transport.outbox).toHaveLength(0);
   });
 
   it('para el enrolamiento usa la plantilla de activación', async () => {

@@ -22,6 +22,11 @@ vi.mock('../services/mfa.service', () => ({
 vi.mock('../services/emailMfa.service', () => ({
   startLoginChallenge: vi.fn(),
 }));
+// FC199 F2 — el freno del login se prueba en authLoginThrottle.test.ts; aquí siempre permite.
+vi.mock('../services/authThrottle.service', () => ({
+  checkLoginThrottle: async (): Promise<{ allowed: true }> => ({ allowed: true }),
+  recordLoginOutcome: async (): Promise<void> => undefined,
+}));
 
 type DecodedToken = Record<string, unknown> & { iat: number; exp: number };
 
