@@ -55,7 +55,6 @@ import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
-import netProbeRoutes from './routes/netProbe';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
@@ -282,7 +281,6 @@ function registerCosmologyRoutes(fastify: FastifyInstance): void {
  *  universePrefix — signup precedes any tenant relationship, so it can't be tenant-scoped). */
 function registerPublicRoutes(fastify: FastifyInstance): void {
   fastify.register(publicSignupRoutes, { prefix: '/v1/public' });
-  fastify.register(netProbeRoutes, { prefix: '/v1/public' });
 }
 
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
@@ -336,6 +334,11 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   const fastify = Fastify({
     logger: true,
     bodyLimit: 10 * 1024 * 1024, // 10MB — allows up to 4 base64 JPEG images in fleet payload
+    // FC199 F1 (Cond.R-199 P1) — medido en prod: el socket siempre es 127.0.0.1 (proxy local de
+    // Hostinger tras la CDN hcdn), que añade la IP real al final de X-Forwarded-For y descarta la
+    // falsificada. Confiar solo en loopback ⇒ request.ip = último salto no confiable = el cliente.
+    // Prohibido `true` genérico: un X-Forwarded-For inyectado por el cliente elegiría su propia IP.
+    trustProxy: 'loopback',
     ...opts,
   });
 

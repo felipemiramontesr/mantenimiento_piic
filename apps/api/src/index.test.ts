@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { InjectOptions } from 'fastify';
 import buildApp from './index';
 import db from './services/db';
 import { MemoryMailTransport } from './services/mailTransport';
@@ -107,6 +108,57 @@ describe('rate-limit ceiling by environment', () => {
     process.env.NODE_ENV = 'development';
     const { default: buildDevApp } = await import('./index');
     expect(() => buildDevApp()).not.toThrow();
+  });
+});
+
+describe('trustProxy loopback (FC199 F1 · Cond.R-199 P1)', () => {
+  // Forma medida en prod: socket 127.0.0.1 y X-Forwarded-For con la IP real al final
+  // (lo que inyecta el cliente queda a la izquierda).
+  const viaProxy = (forwardedFor: string): InjectOptions => ({
+    method: 'GET',
+    url: '/v1/auth/roles',
+    remoteAddress: '127.0.0.1',
+    headers: { 'x-forwarded-for': forwardedFor },
+  });
+  const remaining = (res: { headers: Record<string, unknown> }): number => {
+    const value = Number(res.headers['x-ratelimit-remaining']);
+    expect(Number.isFinite(value)).toBe(true);
+    return value;
+  };
+
+  it('el límite cuenta a cada cliente por separado, no a la IP del proxy', async () => {
+    const app = buildApp();
+    const a1 = await app.inject(viaProxy('203.0.113.1, 203.0.113.1'));
+    const a2 = await app.inject(viaProxy('203.0.113.1, 203.0.113.1'));
+    const b1 = await app.inject(viaProxy('198.51.100.7, 198.51.100.7'));
+
+    expect(remaining(a2)).toBe(remaining(a1) - 1);
+    expect(remaining(b1)).toBe(remaining(a1));
+  });
+
+  it('un X-Forwarded-For falsificado no cambia de cubeta: manda el último salto', async () => {
+    const app = buildApp();
+    const real = await app.inject(viaProxy('203.0.113.9'));
+    const spoofed = await app.inject(viaProxy('1.2.3.4, 203.0.113.9, 1.2.3.4, 203.0.113.9'));
+
+    expect(remaining(spoofed)).toBe(remaining(real) - 1);
+  });
+
+  it('una conexión directa que no es loopback no puede elegir su IP con cabeceras', async () => {
+    let seen = '';
+    const app = buildApp();
+    app.get('/__ip', async (request) => {
+      seen = request.ip;
+      return { ok: true };
+    });
+    await app.inject({
+      method: 'GET',
+      url: '/__ip',
+      remoteAddress: '198.51.100.20',
+      headers: { 'x-forwarded-for': '1.2.3.4' },
+    });
+
+    expect(seen).toBe('198.51.100.20');
   });
 });
 
