@@ -98,21 +98,10 @@ export function collectScannableFiles(rootDir: string): string[] {
 
 export const ALLOWLIST: AllowlistEntry[] = [
   {
-    file: 'apps/api/src/routes/admin.ts',
-    snippetIncludes: 'UPDATE roles SET',
-    reason:
-      'fields[] son fragmentos fijos `col = ?` empujados condicionalmente; valores reales parametrizados en values[].',
-  },
-  {
     file: 'apps/api/src/services/authUserManagement.repository.ts',
     snippetIncludes: 'UPDATE users SET',
     reason:
       'FC130 F1 — reubicado desde routes/auth.ts (mismo query literal). setClause construido en authUserManagement.service.ts::buildUserUpdateFields (fragmentos fijos `col = ?`, un push condicional por campo conocido), valores reales parametrizados en values[].',
-  },
-  {
-    file: 'apps/api/src/routes/crmContracts.ts',
-    snippetIncludes: 'UPDATE crm_contracts SET',
-    reason: 'Mismo patrón SET dinámico seguro — setClauses[] son fragmentos fijos `col = ?`.',
   },
   {
     file: 'apps/api/src/services/fleetMaintenanceWrites.repository.ts',

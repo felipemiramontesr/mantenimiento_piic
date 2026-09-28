@@ -7,10 +7,13 @@
  * contenido de archivo) que intencionalmente contienen `${...}` literal —
  * no es interpolación real de este archivo de test.
  */
+import { readFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
   ALLOWLIST,
+  collectScannableFiles,
   findRawSqlViolations,
   filterNewViolations,
   isAllowlisted,
@@ -62,9 +65,9 @@ describe('findRawSqlViolations — detección textual dominio finito', () => {
 describe('isAllowlisted / filterNewViolations — Scenario 6', () => {
   it('call-site conocido y listado (patrón SET dinámico seguro) no bloquea', () => {
     const violation: RawSqlViolation = {
-      file: 'apps/api/src/routes/admin.ts',
+      file: 'apps/api/src/services/authUserManagement.repository.ts',
       line: 174,
-      snippet: "await db.execute(`UPDATE roles SET ${fields.join(', ')} WHERE id = ?`, values);",
+      snippet: 'await executor.execute(`UPDATE users SET ${setClause} WHERE id = ?`, values);',
     };
     expect(isAllowlisted(violation, ALLOWLIST)).toBe(true);
     expect(filterNewViolations([violation], ALLOWLIST)).toHaveLength(0);
@@ -72,12 +75,12 @@ describe('isAllowlisted / filterNewViolations — Scenario 6', () => {
 
   it('Scenario 6 — call-site NUEVO (no listado) SÍ bloquea, aunque el archivo ya tenga entradas listadas', () => {
     const knownGood: RawSqlViolation = {
-      file: 'apps/api/src/routes/admin.ts',
+      file: 'apps/api/src/services/authUserManagement.repository.ts',
       line: 174,
-      snippet: "await db.execute(`UPDATE roles SET ${fields.join(', ')} WHERE id = ?`, values);",
+      snippet: 'await executor.execute(`UPDATE users SET ${setClause} WHERE id = ?`, values);',
     };
     const newBad: RawSqlViolation = {
-      file: 'apps/api/src/routes/admin.ts',
+      file: 'apps/api/src/services/authUserManagement.repository.ts',
       line: 999,
       snippet: "await db.execute(`SELECT * FROM users WHERE name = '${req.body.name}'`);",
     };
@@ -99,6 +102,27 @@ describe('isAllowlisted / filterNewViolations — Scenario 6', () => {
     // Fija el terreno verificado manualmente — si crece, se agrega al
     // ALLOWLIST vía FC firmado, nunca silenciosamente. FC 082 F0c retiró las
     // 4 entradas de seedSupercumulosPiic.ts (script muerto con la banda VIM).
+    // FC200 F1 retiró admin.ts y crmContracts.ts: ya no cubrían código vivo.
     expect(ALLOWLIST).toHaveLength(6);
+  });
+});
+
+describe('ALLOWLIST ≡ terreno vivo (FC200 F1 · Inv-1)', () => {
+  const repoRoot = join(__dirname, '..');
+  const files: Record<string, string> = {};
+  collectScannableFiles(join(repoRoot, 'apps/api/src')).forEach((file) => {
+    files[relative(repoRoot, file).split(sep).join('/')] = readFileSync(file, 'utf8');
+  });
+  const live = findRawSqlViolations(files);
+
+  it.each(ALLOWLIST.map((entry) => [`${entry.file} · ${entry.snippetIncludes}`, entry]))(
+    'la excepción %s cubre al menos una violación viva (0 excepciones huérfanas)',
+    (_label, entry) => {
+      expect(live.some((violation) => isAllowlisted(violation, [entry]))).toBe(true);
+    }
+  );
+
+  it('toda violación viva está cubierta: 0 violaciones nuevas', () => {
+    expect(filterNewViolations(live, ALLOWLIST)).toEqual([]);
   });
 });
