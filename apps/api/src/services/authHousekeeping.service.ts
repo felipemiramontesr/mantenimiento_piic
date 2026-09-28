@@ -3,7 +3,7 @@ import { recordAuditLog } from './auditService';
 
 /**
  * FC199 F4 — barrido periódico de higiene de autenticación (lo dispara el tráfico, máx. 1/h, vía
- * `plugins/housekeepingTrigger.ts`; en Hostinger el proceso se duerme y un cron no corre):
+ * `plugins/trafficTaskScheduler.ts`; en Hostinger el proceso se duerme y un cron no corre):
  * purga cuentas públicas sin 2FA con más de 48 h (una por una y auditada), retos PoW vencidos y
  * contadores de throttling inactivos. Nunca toca cuentas creadas por Ω (`signup_source = 'admin'`).
  */

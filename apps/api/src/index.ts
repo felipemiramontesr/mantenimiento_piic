@@ -56,8 +56,10 @@ import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 import cosmologyRoutes from './routes/cosmology';
 import publicSignupRoutes from './routes/publicSignup';
 import botChallengeRoutes from './routes/botChallenge';
-import registerHousekeepingTrigger from './plugins/housekeepingTrigger';
+import registerTrafficTaskScheduler from './plugins/trafficTaskScheduler';
 import { runAuthHousekeeping } from './services/authHousekeeping.service';
+import { checkAndTimeoutStage5Orders } from './services/workOrderService';
+import { processPendingAlerts } from './services/notificationsOutboxService';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
@@ -372,9 +374,17 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 // Auto-start for production execution
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildApp();
-  // FC199 F4 — higiene de autenticación disparada por tráfico (máx. 1/h): en Hostinger el proceso
-  // se duerme sin tráfico y un cron dentro de él no dispara (medido en prod).
-  registerHousekeepingTrigger(server, { run: runAuthHousekeeping });
+  // FC200 F2 — tareas periódicas disparadas por tráfico (máx. 1/h cada una): en Hostinger el
+  // proceso se duerme sin tráfico y un cron dentro de él no dispara (medido en prod, FC199 F4).
+  const HOURLY_MS = 60 * 60 * 1000;
+  registerTrafficTaskScheduler(server, [
+    // FC199 F4 — cuentas públicas sin 2FA > 48 h, retos PoW vencidos, contadores inactivos.
+    { name: 'authHousekeeping', intervalMs: HOURLY_MS, run: runAuthHousekeeping },
+    // UPA Stage-5: cierra órdenes en AWAITING_AUTH con ≥ 24 h hábiles.
+    { name: 'upaStage5Timeout', intervalMs: HOURLY_MS, run: checkAndTimeoutStage5Orders },
+    // Alertas de estados lentos y de cumplimiento (deduplicadas en notifications_outbox).
+    { name: 'pendingAlerts', intervalMs: HOURLY_MS, run: processPendingAlerts },
+  ]);
   const start = async (): Promise<void> => {
     try {
       const port = Number(process.env.PORT) || 3001;
@@ -383,22 +393,6 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       console.log(`✅ [Archon API] System Online at port ${port}`);
       // FC187 F1 — estado del correo SOLO en el log de arranque (Runtime logs de Hostinger).
       logMailStatus(server.log, loadMailConfig(process.env));
-
-      // UPA Stage-5 timeout sweep — every hour on the hour
-      const cron = await import('node-cron');
-      const { checkAndTimeoutStage5Orders } = await import('./services/workOrderService');
-      const { processPendingAlerts } = await import('./services/notificationsOutboxService');
-      cron.schedule('0 * * * *', () => {
-        checkAndTimeoutStage5Orders().catch((err: unknown) => {
-          server.log.error({ err }, 'UPA stage5 timeout sweep failed');
-        });
-      });
-      // Slow-state push alerts: OPEN orders > 2h, ACTIVE orders > 48h
-      cron.schedule('0 * * * *', () => {
-        processPendingAlerts().catch((err: unknown) => {
-          server.log.error({ err }, 'Outbox pending alerts sweep failed');
-        });
-      });
     } catch (err) {
       server.log.error(err);
       process.exit(1);
