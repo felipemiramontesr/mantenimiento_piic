@@ -251,7 +251,7 @@ export default function useSilkHydration<T>({
   // 3. Auto-Hydration on Mount (Stale-While-Revalidate)
   useEffect(() => {
     const hasCache = !!archonCache.get(key);
-    sync(hasCache); // If we have cache, sync silently in background
+    void sync(hasCache); // If we have cache, sync silently in background
   }, [sync, key]);
 
   return {

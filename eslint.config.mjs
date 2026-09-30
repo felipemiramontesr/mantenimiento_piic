@@ -223,6 +223,9 @@ export default [
       'import/extensions': 'off',
       'import/no-unresolved': 'off',
       'no-console': 'error',
+      // FC202 F1 (B1) — `void promesa()` solo como sentencia: desacopla a propósito una promesa cuyo
+      // error ya se captura dentro (Sonar S9383). Como expresión sigue prohibido.
+      'no-void': ['error', { allowAsStatement: true }],
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
       'no-param-reassign': [

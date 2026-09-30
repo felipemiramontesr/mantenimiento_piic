@@ -54,7 +54,7 @@ export function useAuditLogData(): AuditLogDataState {
   );
 
   useEffect((): void => {
-    fetchData(page, applied);
+    void fetchData(page, applied);
   }, [fetchData, page, applied]);
 
   const handleApply = (): void => {

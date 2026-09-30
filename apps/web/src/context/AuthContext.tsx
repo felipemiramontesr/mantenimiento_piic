@@ -243,7 +243,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const epochAtStart = sessionEpochRef.current;
-    restoreSession(sessionEpochRef, epochAtStart, setCurrentUser, setIsAuthenticated, setIsLoading);
+    void restoreSession(
+      sessionEpochRef,
+      epochAtStart,
+      setCurrentUser,
+      setIsAuthenticated,
+      setIsLoading
+    );
   }, [sessionEpochRef]);
 
   const contextValue = useAuthContextValue({

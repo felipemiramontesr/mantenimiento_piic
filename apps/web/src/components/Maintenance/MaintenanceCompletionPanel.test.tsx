@@ -305,6 +305,14 @@ describe('MaintenanceCompletionPanel — branch coverage (FC165 F2 Slice 2.1B)',
     });
   });
 
+  it('FC202 F1 (S9383) — si GET /maintenance/template falla, muestra la lista vacía en vez de romper', async () => {
+    server.use(http.get('*/maintenance/template/*', () => new HttpResponse(null, { status: 500 })));
+    render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => {
+      expect(screen.getByText('No se encontraron tareas para este servicio.')).toBeInTheDocument();
+    });
+  });
+
   it('technicianOptions falls back to [] when users is null', async () => {
     render(
       <UserContext.Provider value={{ users: null } as any}>

@@ -159,7 +159,7 @@ function useNhtsaSearchResults({
 
   useEffect(() => {
     if (isOpen) {
-      search(make, model, year);
+      void search(make, model, year);
     }
   }, [isOpen, search, make, model, year]);
 

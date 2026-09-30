@@ -188,7 +188,7 @@ const NavItem: React.FC<NavItemProps> = ({
   const itemRef = useRef<HTMLButtonElement>(null);
   const opacity = useScrollFade(itemRef, active);
   const activate = (): void => {
-    navigate(path);
+    void navigate(path);
     setIsMobileMenuOpen(false); // Cierra menú al navegar en móvil
   };
 
@@ -779,7 +779,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
   const navigateAndCloseMobile = (path: string): void => {
-    navigate(path);
+    void navigate(path);
     setIsMobileMenuOpen(false);
   };
 

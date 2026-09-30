@@ -39,7 +39,7 @@ export default function useAlertsCount(_options?: UseAlertsCountOptions): UseAle
   }, [getSessionEpoch]);
 
   useEffect(() => {
-    fetchCount();
+    void fetchCount();
     const timer = setInterval(fetchCount, POLL_INTERVAL_MS);
     return (): void => clearInterval(timer);
   }, [fetchCount]);

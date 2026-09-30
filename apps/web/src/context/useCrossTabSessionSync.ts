@@ -26,7 +26,7 @@ function applyRemoteLogin(
   setIsAuthenticated: (value: boolean) => void
 ): void {
   const epochAtStart = sessionEpochRef.current;
-  restoreSession(sessionEpochRef, epochAtStart, setCurrentUser, setIsAuthenticated, () => {});
+  void restoreSession(sessionEpochRef, epochAtStart, setCurrentUser, setIsAuthenticated, () => {});
 }
 
 /** FC184 F1 — Cross_Tab_Session_Sync_BroadcastChannel. Envuelve `useSessionBroadcast` con la

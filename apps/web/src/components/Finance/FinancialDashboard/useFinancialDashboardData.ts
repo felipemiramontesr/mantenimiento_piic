@@ -30,7 +30,7 @@ export function useFinancialDashboardData(dateRange: DateRange): UseFinancialDas
   }, []);
 
   useEffect((): void => {
-    fetchDashboard(dateRange);
+    void fetchDashboard(dateRange);
   }, [dateRange, fetchDashboard]);
 
   return { data, loading, error };

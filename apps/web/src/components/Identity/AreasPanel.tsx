@@ -202,7 +202,7 @@ function AreaCreateForm({
         value={newAreaName}
         onChange={(e): void => setNewAreaName(e.target.value)}
         onKeyDown={(e): void => {
-          if (e.key === 'Enter') createArea();
+          if (e.key === 'Enter') void createArea();
         }}
         data-testid="new-area-input"
       />

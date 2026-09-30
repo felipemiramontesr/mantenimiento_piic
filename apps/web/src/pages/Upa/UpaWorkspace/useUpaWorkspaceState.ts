@@ -32,7 +32,7 @@ const INITIAL_OPEN_STAGES: Record<UpaTaskStage, boolean> = {
 function useAutoLoadOrder(upa: Upa, workOrderId: number | undefined): void {
   useEffect(() => {
     if (workOrderId !== undefined && upa.workOrder === null && !upa.loading) {
-      upa.loadOrder(workOrderId);
+      void upa.loadOrder(workOrderId);
     }
   }, [workOrderId, upa.workOrder, upa.loading, upa.loadOrder]);
 }
@@ -64,7 +64,7 @@ function useEvidenceState(upa: Upa): {
     (task: UpaTaskDetail): void => {
       const urls = (evidenceUrls[task.taskId] ?? []).filter((u) => u.trim().length > 0);
       const notes = evidenceNotes[task.taskId] ?? '';
-      upa.completeTask(task.taskId, urls.length > 0 ? urls : undefined, notes || undefined);
+      void upa.completeTask(task.taskId, urls.length > 0 ? urls : undefined, notes || undefined);
     },
     [upa, evidenceUrls, evidenceNotes]
   );
@@ -85,7 +85,7 @@ function useDeferState(upa: Upa): {
 
   const handleDeferConfirm = useCallback((): void => {
     if (!deferTaskId) return;
-    upa.deferTask(deferTaskId, deferType).then(() => {
+    void upa.deferTask(deferTaskId, deferType).then(() => {
       setDeferTaskId(null);
     });
   }, [deferTaskId, deferType, upa]);

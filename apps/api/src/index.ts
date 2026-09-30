@@ -410,7 +410,7 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       process.exit(1);
     }
   };
-  start();
+  void start();
 }
 // v8 ignore stop
 

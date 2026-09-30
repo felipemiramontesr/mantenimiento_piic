@@ -43,9 +43,22 @@ const db = mysql.createPool({
   keepAliveInitialDelay: 10_000,
 });
 
+// FC202 F1 (S9383) — una conexión sin la zona horaria o el charset de la app corrompería fechas y
+// textos en silencio: si la inicialización falla, se destruye (el pool abre otra) y queda en el log.
 db.on('connection', (connection) => {
-  connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`);
-  connection.query(`SET NAMES utf8mb4`);
+  Promise.all([
+    connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`),
+    connection.query(`SET NAMES utf8mb4`),
+  ]).catch((err: unknown) => {
+    connection.destroy();
+    // eslint-disable-next-line no-console -- mismo canal que la traza `db-pool-boot` de este módulo
+    console.error(
+      JSON.stringify({
+        msg: 'db-session-init-failed',
+        error: err instanceof Error ? err.message : String(err),
+      })
+    );
+  });
 });
 
 // Incidente DB-1045 (Cond.6 Bravo) — traza de arranque de la config de conexión

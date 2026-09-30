@@ -81,7 +81,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
 
   const handleReportSuccess = (): void => {
     setReportingRoute(null);
-    refresh();
+    void refresh();
   };
 
   if (reportingRoute) {

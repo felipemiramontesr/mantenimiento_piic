@@ -164,7 +164,7 @@ const MaintenanceCalendarPanel: React.FC<{
         setLoading(false);
       }
     };
-    fetchLogs();
+    void fetchLogs();
   }, [refreshTrigger]);
 
   if (loading) {

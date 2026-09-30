@@ -51,7 +51,7 @@ export default function usePushNotifications(isAuthenticated: boolean): UsePushN
         savedToken = `web_push_${crypto.randomUUID()}`;
         localStorage.setItem('archon_push_token', savedToken);
       }
-      registerToken(savedToken);
+      void registerToken(savedToken);
     }
   }, [permission, isAuthenticated, registerToken]);
 

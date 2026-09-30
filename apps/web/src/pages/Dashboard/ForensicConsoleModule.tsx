@@ -20,7 +20,7 @@ const ForensicConsoleModule: React.FC = (): React.ReactElement => {
   }
 
   const goBack = (): void => {
-    navigate('/dashboard/system-settings');
+    void navigate('/dashboard/system-settings');
   };
 
   return (

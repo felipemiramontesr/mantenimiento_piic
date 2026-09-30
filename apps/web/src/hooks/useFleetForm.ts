@@ -266,7 +266,7 @@ function useFleetFormHydrationLifecycle(
   // Lifecycle & Initialization
   useEffect(() => {
     if (shouldHydrate && isMountedRef.current && !hasHydratedRef.current && !isLoading) {
-      hydrate();
+      void hydrate();
     }
   }, [hydrate, shouldHydrate]);
 }

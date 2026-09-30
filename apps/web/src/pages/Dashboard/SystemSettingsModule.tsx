@@ -171,13 +171,13 @@ function SovereignConsoleSection(): React.ReactElement {
       </div>
       <SovereignConsoleTiles
         onOpenForensics={(): void => {
-          navigate('/dashboard/system-settings/forensics');
+          void navigate('/dashboard/system-settings/forensics');
         }}
         onOpenCosmology={(): void => {
-          navigate('/dashboard/cosmology');
+          void navigate('/dashboard/cosmology');
         }}
         onOpenMailDiagnostic={(): void => {
-          navigate('/dashboard/system-settings/mail-diagnostic');
+          void navigate('/dashboard/system-settings/mail-diagnostic');
         }}
       />
     </div>

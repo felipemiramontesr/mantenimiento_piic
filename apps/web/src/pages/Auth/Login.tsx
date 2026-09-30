@@ -216,7 +216,7 @@ function useLoginForm(): LoginFormState {
   const setupFlow = useMfaSetupFlow(setPassword);
   const mfaChallenge = useMfaChallenge((token, user) => {
     login(token, user);
-    navigate('/dashboard');
+    void navigate('/dashboard');
   });
 
   const handleLogin = makeHandleLogin(

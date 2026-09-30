@@ -38,7 +38,7 @@ export function useProfileLoad(): UseProfileLoadResult {
         if (!cancelled) setIsLoading(false);
       }
     };
-    loadProfile();
+    void loadProfile();
     return (): void => {
       cancelled = true;
     };

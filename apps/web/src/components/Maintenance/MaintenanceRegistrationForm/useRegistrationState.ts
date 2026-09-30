@@ -16,11 +16,15 @@ function useUnitsCatalog(): FleetUnit[] {
   const [units, setUnits] = useState<FleetUnit[]>([]);
 
   useEffect(() => {
-    api.get('/fleet').then((res) => {
-      if (res.data.success) {
-        setUnits(res.data.data.filter((u: FleetUnit) => u.status !== 'Descontinuada'));
-      }
-    });
+    api
+      .get('/fleet')
+      .then((res) => {
+        if (res.data.success) {
+          setUnits(res.data.data.filter((u: FleetUnit) => u.status !== 'Descontinuada'));
+        }
+      })
+      // FC202 F1 (S9383) — si la flota no carga, el selector queda vacío en vez de romper la página.
+      .catch(() => setUnits([]));
   }, []);
 
   return units;

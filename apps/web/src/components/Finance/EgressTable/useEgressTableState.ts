@@ -114,7 +114,7 @@ function useEgressFetch(buildUrl: (cursor?: string) => string): UseEgressFetchRe
   }, [buildUrl]);
 
   useEffect((): void => {
-    fetchRows();
+    void fetchRows();
   }, [fetchRows]);
 
   const loadMore = async (): Promise<void> => {
@@ -232,7 +232,7 @@ export function useEgressTableState(
 
   const handleTransactionCreated = (): void => {
     setShowModal(false);
-    fetchState.fetchRows();
+    void fetchState.fetchRows();
   };
 
   return {

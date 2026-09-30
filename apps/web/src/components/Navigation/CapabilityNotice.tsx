@@ -32,7 +32,7 @@ const CapabilityNotice: React.FC = () => {
           CAPABILITY_LABELS[code as SuperclusterCode]
         } no está activo en tu universo.`}
         onClear={(): void => {
-          navigate(location.pathname, { replace: true, state: null });
+          void navigate(location.pathname, { replace: true, state: null });
         }}
       />
     </div>

@@ -64,8 +64,8 @@ export function useRouteCatalogData(routeToEdit: RouteLog | null | undefined): {
       }
     };
 
-    fetchOrigins();
-    fetchActiveRoutes();
+    void fetchOrigins();
+    void fetchActiveRoutes();
   }, [fetchActiveRoutes, routeToEdit]); // Re-fetch availability when context changes
 
   return { origins, activeRoutes };

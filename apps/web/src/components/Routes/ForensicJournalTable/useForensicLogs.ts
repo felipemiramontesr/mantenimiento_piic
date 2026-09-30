@@ -87,7 +87,7 @@ export default function useForensicLogs(
         setLoading(false);
       }
     };
-    run();
+    void run();
   }, [unitId, routeUuid]);
 
   const sessionEvidence = useMemo(() => buildSessionEvidence(logs), [logs]);

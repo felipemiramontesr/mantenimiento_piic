@@ -191,7 +191,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
 
   const handleViewDetails = (categoryKey: string): void => {
-    navigate(`/dashboard/fleet?categoria=${categoryKey}`);
+    void navigate(`/dashboard/fleet?categoria=${categoryKey}`);
   };
 
   // FC165 F3 Slice3.1 — purga: `CenterModuleCard` solo se instancia desde
@@ -200,7 +200,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   // undefined aquí — se estrecha el tipo en vez de dejar un fallback muerto
   // (censo vivo: 0 hits en la rama `!path` tras la suite completa).
   const handleNavigate = (path: string): void => {
-    navigate(path);
+    void navigate(path);
   };
 
   const categoryModules = buildCategoryModules(stats);

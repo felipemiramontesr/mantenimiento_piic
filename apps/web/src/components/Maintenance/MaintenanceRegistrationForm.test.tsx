@@ -53,6 +53,17 @@ describe('MaintenanceRegistrationForm', () => {
     );
   });
 
+  it('FC202 F1 (S9383) — si /fleet falla, el formulario se muestra con el selector vacío', async () => {
+    server.use(http.get('*/fleet', () => new HttpResponse(null, { status: 500 })));
+
+    renderForm();
+    fireEvent.click(await screen.findByText('Buscar unidad...'));
+
+    await waitFor(() =>
+      expect(screen.queryByText(/ASM-021 - Toyota Hilux/)).not.toBeInTheDocument()
+    );
+  });
+
   it('Should render interactive panel titled REVISIÓN DE TAREAS UPA after selecting a unit', async () => {
     server.use(withUpaPreviewTasks(UPA_PREVIEW_TASKS));
 

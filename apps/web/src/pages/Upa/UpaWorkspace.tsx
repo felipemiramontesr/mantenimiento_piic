@@ -66,7 +66,7 @@ function LoadedWorkspace({ wo, upa, state, onReturn }: LoadedWorkspaceProps): Re
         closing={upa.closingOrder}
         loading={upa.loading}
         onClose={(): void => {
-          upa.closeCurrentOrder();
+          void upa.closeCurrentOrder();
         }}
         onReturn={onReturn}
         onResetOrder={upa.resetOrder}

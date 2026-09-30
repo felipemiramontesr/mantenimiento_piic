@@ -66,7 +66,7 @@ export function useAccessControlState(isOpen: boolean): UseAccessControlStateRes
   };
 
   useEffect((): void => {
-    if (isOpen) loadUsers();
+    if (isOpen) void loadUsers();
   }, [isOpen]);
 
   const handleRegister = async (e: FormEvent): Promise<void> => {

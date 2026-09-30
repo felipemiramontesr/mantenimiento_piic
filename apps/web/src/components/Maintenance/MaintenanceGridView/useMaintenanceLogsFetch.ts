@@ -29,7 +29,7 @@ export function useMaintenanceLogsFetch(refreshTrigger: number): {
         setLoading(false);
       }
     };
-    fetchLogs();
+    void fetchLogs();
   }, [refreshTrigger]);
 
   return { logs, loading, error };

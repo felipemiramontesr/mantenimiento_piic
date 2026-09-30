@@ -96,6 +96,11 @@ function useCompletionTemplate(log: MaintenanceLog): CompletionTemplateState {
           );
         }
       })
+      // FC202 F1 (S9383) — sin plantilla el formulario sigue usable: se muestra vacío.
+      .catch(() => {
+        setTemplate([]);
+        setDetails([]);
+      })
       .finally(() => setLoadingTemplate(false));
   }, [log.unit_id, log.odometer_at_service]);
 
