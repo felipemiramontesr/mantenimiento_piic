@@ -303,7 +303,7 @@ function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   // Diagnostic Root V2 (Secure)
   fastify.get(
     '/',
-    async (): Promise<Record<string, string | number>> => ({
+    (): Record<string, string | number> => ({
       service: 'Archon API (Fleet Core)',
       version: '2.0.1-PROD',
       status: 'online',
@@ -312,13 +312,10 @@ function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   );
 
   // Health Check
-  fastify.get(
-    '/health',
-    async (): Promise<{ status: string; timestamp: string }> => ({
-      status: 'operational',
-      timestamp: new Date().toISOString(),
-    })
-  );
+  fastify.get('/health', (): { status: string; timestamp: string } => ({
+    status: 'operational',
+    timestamp: new Date().toISOString(),
+  }));
 
   // Incidente DB-1045 P4 (Alfa/Bravo) — /health no prueba la DB (era ciego a
   // caídas de conexión). Sonda separada para no cambiar la latencia/semántica

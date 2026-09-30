@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
@@ -49,7 +49,12 @@ export function buildTcoResponse(row: TcoRow): Record<string, unknown> {
   };
 }
 
-export default async function fleetTcoRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de costo total de propiedad (TCO) de la flota. */
+export default function fleetTcoRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -88,4 +93,5 @@ export default async function fleetTcoRoutes(fastify: FastifyInstance): Promise<
       }
     }
   );
+  done();
 }

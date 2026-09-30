@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import requirePermission from '../middleware/requirePermission';
 import {
@@ -195,7 +195,11 @@ export async function handleCloseWorkOrder(
 }
 
 /** Route registration — declarative wiring only (FC163 F2B3, split Alfa 227_AN). */
-export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
+export function workOrderRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', requireSession);
 
   fastify.get(
@@ -227,6 +231,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
     { preHandler: [requirePermission('workorder:close')] },
     handleCloseWorkOrder
   );
+  done();
 }
 
 export default workOrderRoutes;

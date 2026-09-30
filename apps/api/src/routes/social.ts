@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
 
@@ -608,7 +608,11 @@ async function handleListDirectory(
 
 /** Fastify plugin — registra las rutas del módulo social (posts, reacciones,
  * comentarios, reseñas y directorio de talleres). */
-export default async function socialRoutes(fastify: FastifyInstance): Promise<void> {
+export default function socialRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get<{ Querystring: PostQuery }>('/social/posts', handleListPosts);
   fastify.post<{ Body: PostBody }>('/social/posts', handleCreatePost);
   fastify.delete<{ Params: { id: string } }>('/social/posts/:id', handleDeletePost);
@@ -632,4 +636,5 @@ export default async function socialRoutes(fastify: FastifyInstance): Promise<vo
   fastify.get<{ Querystring: ReviewQuery }>('/social/reviews', handleListReviews);
 
   fastify.get<{ Querystring: DirectoryQuery }>('/social/directory', handleListDirectory);
+  done();
 }

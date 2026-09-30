@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 import EconomicLifeService from '../services/economicLifeService';
 import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
@@ -17,7 +17,12 @@ const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> =>
   return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
-export default async function economicLifeRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de vida económica de las unidades. */
+export default function economicLifeRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -59,4 +64,5 @@ export default async function economicLifeRoutes(fastify: FastifyInstance): Prom
       }
     }
   );
+  done();
 }

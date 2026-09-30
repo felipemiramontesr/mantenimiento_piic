@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from '../services/db';
@@ -209,10 +209,15 @@ export async function handlePanicAlert(
 }
 
 /** Route registration — declarative wiring only (FC163 F2B3, split Alfa 227_AN). */
-export default async function securityRoutes(fastify: FastifyInstance): Promise<void> {
+export default function securityRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get('/security/audit-log', jwtGuard('security:audit:view'), handleGetAuditLog);
   fastify.post<{ Body: { latitude?: number; longitude?: number; unitId?: string } }>(
     '/security/panic',
     handlePanicAlert
   );
+  done();
 }

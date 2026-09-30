@@ -117,10 +117,10 @@ function LinkedUserPicker({ userId, onUserId }: LinkedUserPickerProps): React.JS
   const { users, total, loading, error } = usePendingUsers();
 
   const onSearch = useCallback(
-    async (query: string): Promise<PendingUser[]> => {
+    (query: string): Promise<PendingUser[]> => {
       const term = query.toLowerCase().trim();
-      if (!term) return users;
-      return users.filter((u) => pendingUserMatchesQuery(u, term));
+      if (!term) return Promise.resolve(users);
+      return Promise.resolve(users.filter((u) => pendingUserMatchesQuery(u, term)));
     },
     [users]
   );

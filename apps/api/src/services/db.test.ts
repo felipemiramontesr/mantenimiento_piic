@@ -54,25 +54,62 @@ describe('Database Service (ARCHON CORE)', () => {
     expect(poolOnMock).toHaveBeenCalledWith('connection', expect.any(Function));
   });
 
-  it('anchors every new connection to Mexico timezone (-06:00, sin DST desde 2022)', () => {
-    expect(MEXICO_TZ_OFFSET).toBe('-06:00');
+  // Incidente P0 V.78.103.262 — el evento `connection` entrega la conexión CALLBACK de mysql2: su
+  // `query()` devuelve un `Query` que lanza si alguien le invoca `.then`. El doble reproduce eso, así
+  // que tratar el resultado como promesa (lo que tumbó producción) hace fallar estas pruebas.
+  type QueryCallback = (err: { message: string } | null) => void;
+  interface CoreConnectionDouble {
+    query: Mock;
+    destroy: Mock;
+  }
 
+  function coreConnectionDouble(failingSql?: string): CoreConnectionDouble {
+    const mysqlQuery = {
+      then(): never {
+        throw new Error(
+          'You have tried to call .then() on the result of query that is not a promise'
+        );
+      },
+    };
+    return {
+      query: vi.fn((sql: string, cb?: QueryCallback) => {
+        cb?.(sql === failingSql ? { message: 'ER_UNKNOWN_TIME_ZONE' } : null);
+        return mysqlQuery;
+      }),
+      destroy: vi.fn(),
+    };
+  }
+
+  function runConnectionHook(conn: CoreConnectionDouble): void {
     const connectionCall = (poolOnMock as Mock).mock.calls.find((call) => call[0] === 'connection');
     expect(connectionCall).toBeDefined();
+    (connectionCall![1] as (c: CoreConnectionDouble) => void)(conn);
+  }
 
-    const handler = connectionCall![1] as (conn: { query: Mock }) => void;
-    const fakeConnection = { query: vi.fn() };
-    handler(fakeConnection);
+  it('anchors every new connection to Mexico timezone (-06:00, sin DST desde 2022)', () => {
+    expect(MEXICO_TZ_OFFSET).toBe('-06:00');
+    const conn = coreConnectionDouble();
+    runConnectionHook(conn);
 
-    expect(fakeConnection.query).toHaveBeenCalledWith("SET time_zone = '-06:00'");
+    expect(conn.query).toHaveBeenCalledWith("SET time_zone = '-06:00'", expect.any(Function));
+    expect(conn.destroy).not.toHaveBeenCalled();
   });
 
   it('sets utf8mb4 charset on every new connection — Invariant §9.7', () => {
-    const connectionCall = (poolOnMock as Mock).mock.calls.find((call) => call[0] === 'connection');
-    const handler = connectionCall![1] as (conn: { query: Mock }) => void;
-    const fakeConnection = { query: vi.fn() };
-    handler(fakeConnection);
+    const conn = coreConnectionDouble();
+    runConnectionHook(conn);
 
-    expect(fakeConnection.query).toHaveBeenCalledWith('SET NAMES utf8mb4');
+    expect(conn.query).toHaveBeenCalledWith('SET NAMES utf8mb4', expect.any(Function));
+    expect(conn.destroy).not.toHaveBeenCalled();
+  });
+
+  it('destroys the connection once and logs when session init fails — FC202 F2', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const conn = coreConnectionDouble("SET time_zone = '-06:00'");
+    runConnectionHook(conn);
+
+    expect(conn.destroy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('db-session-init-failed'));
+    errorSpy.mockRestore();
   });
 });

@@ -1,23 +1,8 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
-
-/**
- * 🔱 ARCHON GEOLOCATION ROUTER (v.3.0.0)
- * Provides optimized endpoints for cascading State ➔ Municipality ➔ Neighborhood dropdowns.
- * Auth: any authenticated user (jwtVerify only — no fleet:view required).
- * Rationale: geographic reference data has no PII; needed by owner profile forms (Rol 1/3/4).
- */
-export default async function geolocationRoutes(fastify: FastifyInstance): Promise<void> {
-  // Security Hook — A01:2021 Broken Access Control (JWT required, no fleet:view restriction)
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
-    }
-  });
-
+/** GET /states — catálogo de estados. */
+function registerStatesRoute(fastify: FastifyInstance): void {
   // 1. Fetch States
   fastify.get('/states', async (_request, reply) => {
     try {
@@ -30,7 +15,10 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch states' });
     }
   });
+}
 
+/** GET /states/:stateId/municipalities — municipios de un estado, con búsqueda opcional. */
+function registerMunicipalitiesRoute(fastify: FastifyInstance): void {
   // 2. Fetch Municipalities by State with predictive query search
   fastify.get(
     '/states/:stateId/municipalities',
@@ -67,7 +55,10 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
       }
     }
   );
+}
 
+/** GET /municipalities/:municipalityId/neighborhoods — colonias de un municipio, con búsqueda opcional. */
+function registerNeighborhoodsRoute(fastify: FastifyInstance): void {
   // 3. Fetch Neighborhoods by Municipality with predictive query search (by name or postal code)
   fastify.get(
     '/municipalities/:municipalityId/neighborhoods',
@@ -105,7 +96,10 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
       }
     }
   );
+}
 
+/** GET /neighborhoods/:neighborhoodId — detalle de una colonia. */
+function registerNeighborhoodDetailRoute(fastify: FastifyInstance): void {
   // 4. Fetch Neighborhood Details by ID for hydration
   fastify.get(
     '/neighborhoods/:neighborhoodId',
@@ -138,4 +132,30 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
       }
     }
   );
+}
+
+/**
+ * 🔱 ARCHON GEOLOCATION ROUTER (v.3.0.0)
+ * Provides optimized endpoints for cascading State ➔ Municipality ➔ Neighborhood dropdowns.
+ * Auth: any authenticated user (jwtVerify only — no fleet:view required).
+ * Rationale: geographic reference data has no PII; needed by owner profile forms (Rol 1/3/4).
+ */
+export default function geolocationRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
+  // Security Hook — A01:2021 Broken Access Control (JWT required, no fleet:view restriction)
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
+    }
+  });
+  registerStatesRoute(fastify);
+  registerMunicipalitiesRoute(fastify);
+  registerNeighborhoodsRoute(fastify);
+  registerNeighborhoodDetailRoute(fastify);
+  done();
 }

@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../../services/db';
@@ -214,8 +214,13 @@ async function handleDeleteRole(
 
 /** Fastify plugin — registra las rutas de gestión de roles de cosmonauta
  * (list/create/delete). */
-export default async function cosmonautRolesRoutes(fastify: FastifyInstance): Promise<void> {
+export default function cosmonautRolesRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get('/cosmonauts/roles', handleListRoles);
   fastify.post('/cosmonauts/roles', handleCreateRole);
   fastify.delete('/cosmonauts/roles/:roleId', handleDeleteRole);
+  done();
 }

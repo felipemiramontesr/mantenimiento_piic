@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import type { PoolConnection as CorePoolConnection, QueryError } from 'mysql2';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '../../.env' });
@@ -43,9 +44,23 @@ const db = mysql.createPool({
   keepAliveInitialDelay: 10_000,
 });
 
-db.on('connection', (connection) => {
-  connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`);
-  connection.query(`SET NAMES utf8mb4`);
+// FC202 F2 (S9383) — `mysql2/promise` tipa este evento con el `PoolConnection` de promesas, pero el
+// pool reemite el evento del pool core (lib/promise/pool.js `inheritEvents`): en runtime llega la
+// conexión CALLBACK, cuyo `query()` devuelve un `Query` que lanza si se le invoca `.then` (incidente
+// P0 V.78.103.262). Se usa la API callback con su tipo real: una conexión sin la zona horaria o el
+// charset de la app corrompería fechas y textos en silencio, así que se destruye y queda en el log.
+db.on('connection', (promiseTypedConnection) => {
+  const connection = promiseTypedConnection as unknown as CorePoolConnection;
+  let failed = false;
+  const onSessionInit = (err: QueryError | null): void => {
+    if (!err || failed) return;
+    failed = true;
+    connection.destroy();
+    // eslint-disable-next-line no-console -- mismo canal que la traza `db-pool-boot` de este módulo
+    console.error(JSON.stringify({ msg: 'db-session-init-failed', error: err.message }));
+  };
+  connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`, onSessionInit);
+  connection.query(`SET NAMES utf8mb4`, onSessionInit);
 });
 
 // Incidente DB-1045 (Cond.6 Bravo) — traza de arranque de la config de conexión

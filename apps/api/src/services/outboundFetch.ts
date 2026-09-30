@@ -334,7 +334,8 @@ export async function outboundFetch(
     status: raw.status,
     ok: raw.status >= 200 && raw.status < 300,
     headers: raw.headers,
-    text: async () => raw.body.toString('utf8'),
-    json: async () => JSON.parse(raw.body.toString('utf8')) as unknown,
+    text: () => Promise.resolve(raw.body.toString('utf8')),
+    // `.then` conserva el contrato: un cuerpo no-JSON es rechazo, no excepción síncrona.
+    json: () => Promise.resolve().then(() => JSON.parse(raw.body.toString('utf8')) as unknown),
   };
 }

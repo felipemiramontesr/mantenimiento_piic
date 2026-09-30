@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
@@ -50,15 +50,8 @@ async function fetchNhtsa(url: string): Promise<NhtsaApiResponse> {
   return (await res.json()) as NhtsaApiResponse;
 }
 
-export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
-
+/** GET /recalls/nhtsa — consulta los recalls de NHTSA por marca, modelo y año. */
+function registerNhtsaSearchRoute(fastify: FastifyInstance): void {
   fastify.get(
     '/recalls/nhtsa',
     { preHandler: [requirePermission('intelligence:recall:view')] },
@@ -94,7 +87,10 @@ export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Prom
       }
     }
   );
+}
 
+/** POST /recalls/nhtsa/import — importa un recall de NHTSA al catálogo (idempotente por campaña). */
+function registerNhtsaImportRoute(fastify: FastifyInstance): void {
   fastify.post(
     '/recalls/nhtsa/import',
     { preHandler: [requirePermission('intelligence:recall:sync')] },
@@ -125,4 +121,22 @@ export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Prom
       return reply.code(201).send({ success: true, recall_id: result.insertId, imported: true });
     }
   );
+}
+
+/** Rutas de recalls NHTSA: búsqueda en la API pública e importación al catálogo interno. */
+export default function recallsNhtsaRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ error: 'Archon Protection: Session required' });
+    }
+  });
+  registerNhtsaSearchRoute(fastify);
+  registerNhtsaImportRoute(fastify);
+  done();
 }

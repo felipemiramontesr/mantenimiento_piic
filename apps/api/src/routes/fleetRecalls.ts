@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
@@ -66,16 +66,8 @@ export function buildRecallItem(row: RecallItem): Record<string, unknown> {
     work_order_id: row.work_order_id ?? null,
   };
 }
-
-export default async function fleetRecallsRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
-
+/** GET /fleet-units/:unitId/recalls — recalls vinculados a una unidad del alcance del usuario. */
+function registerListUnitRecallsRoute(fastify: FastifyInstance): void {
   fastify.get(
     '/fleet-units/:unitId/recalls',
     { preHandler: [requirePermission('intelligence:recall:view')] },
@@ -106,7 +98,10 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
       }
     }
   );
+}
 
+/** POST /fleet-units/:unitId/recalls — vincula un recall del catálogo a una unidad. */
+function registerLinkUnitRecallRoute(fastify: FastifyInstance): void {
   fastify.post(
     '/fleet-units/:unitId/recalls',
     { preHandler: [requirePermission('intelligence:recall:manage')] },
@@ -140,7 +135,10 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
       }
     }
   );
+}
 
+/** PATCH /fleet-units/:unitId/recalls/:recallId — actualiza el estado del recall de una unidad. */
+function registerUpdateUnitRecallRoute(fastify: FastifyInstance): void {
   fastify.patch(
     '/fleet-units/:unitId/recalls/:recallId',
     { preHandler: [requirePermission('intelligence:recall:manage')] },
@@ -172,4 +170,23 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
       }
     }
   );
+}
+
+/** Rutas de recalls vinculados a unidades de la flota. */
+export default function fleetRecallsRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ error: 'Archon Protection: Session required' });
+    }
+  });
+  registerListUnitRecallsRoute(fastify);
+  registerLinkUnitRecallRoute(fastify);
+  registerUpdateUnitRecallRoute(fastify);
+  done();
 }

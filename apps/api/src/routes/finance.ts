@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 import requirePermission from '../middleware/requirePermission';
@@ -290,7 +290,11 @@ async function handleExport(request: FastifyRequest, reply: FastifyReply): Promi
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /** Registers the 4 `/finance/*` endpoints — JWT + permission guards, zero SQL (I1). */
-export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
+export function financeRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -308,6 +312,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
     handleCreateTransaction
   );
   fastify.get('/finance/export', handleExport);
+  done();
 }
 
 export default financeRoutes;

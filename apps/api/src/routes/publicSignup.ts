@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import * as PublicSignupService from '../services/publicSignup.service';
 import { botChallengeVerifier } from '../services/botChallenge.service';
@@ -62,7 +62,11 @@ async function handlePublicSignup(
 /** `/v1/public/signup` — rate-limited stricter than `/login` (Cond.R-177 R3): argon2 hashing +
  *  a DB write make each request costlier than a login attempt, and it's the one surface a
  *  fully anonymous caller can hit at all. */
-export default async function publicSignupRoutes(fastify: FastifyInstance): Promise<void> {
+export default function publicSignupRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.post(
     '/signup',
     {
@@ -75,4 +79,5 @@ export default async function publicSignupRoutes(fastify: FastifyInstance): Prom
     },
     handlePublicSignup
   );
+  done();
 }

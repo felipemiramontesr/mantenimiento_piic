@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
 
@@ -223,9 +223,14 @@ export async function handleTelemetryUnits(
 }
 
 /** Route registration — declarative wiring only (FC163 F2B3, split Alfa 227_AN). */
-export default async function realtimeTelemetryRoutes(fastify: FastifyInstance): Promise<void> {
+export default function realtimeTelemetryRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get('/telemetry/heartbeat', handleHeartbeat);
   fastify.get('/telemetry/family-units', handleFamilyUnits);
   fastify.post<{ Body: TelemetryPingBody }>('/telemetry/ping', handleTelemetryPing);
   fastify.get('/telemetry/units', handleTelemetryUnits);
+  done();
 }

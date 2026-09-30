@@ -42,7 +42,7 @@ export default function registerTrafficTaskScheduler(
 ): void {
   const states = tasks.map((): TaskState => ({ lastStartedAt: -Infinity, busy: false }));
 
-  fastify.addHook('onResponse', async () => {
+  fastify.addHook('onResponse', (_request, _reply, hookDone) => {
     const startedAt = now();
     tasks.forEach((task, i) => {
       const state = states[i];
@@ -51,5 +51,6 @@ export default function registerTrafficTaskScheduler(
       state.lastStartedAt = startedAt;
       launch(fastify, task, state);
     });
+    hookDone();
   });
 }

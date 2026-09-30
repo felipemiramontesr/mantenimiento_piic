@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
 /**
  * UniverseContext — FC-18 FaseC-1
@@ -14,16 +14,22 @@ import { FastifyInstance } from 'fastify';
  *   isOmnipotent = true  → Archon (roleId=0 or permissions=['*']), unrestricted
  *   isOmnipotent = false → Regular user, scope enforced by FaseD-2 per route
  */
-
-export default async function universeContextPlugin(fastify: FastifyInstance): Promise<void> {
+export default function universeContextPlugin(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.decorateRequest('universeCtx', null);
 
-  fastify.addHook('preHandler', async (request) => {
+  fastify.addHook('preHandler', (request, _reply, hookDone) => {
     // Public routes (login, health) — jwtVerify() not yet called, user undefined
     const user = request.user as
       | { id?: number; roleId?: number; permissions?: string[] }
       | undefined;
-    if (!user?.id) return;
+    if (!user?.id) {
+      hookDone();
+      return;
+    }
 
     const { roleId = -1, permissions = [] } = user;
     const isOmnipotent = roleId === 0 || permissions.includes('*');
@@ -35,7 +41,9 @@ export default async function universeContextPlugin(fastify: FastifyInstance): P
       ownerId: null, // Resolved on-demand by FaseD-2 requireOwnership
       isOmnipotent,
     };
+    hookDone();
   });
+  done();
 }
 
 // Skip encapsulation — hooks and decorators apply to the root Fastify scope (global)

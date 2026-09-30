@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -376,7 +376,11 @@ async function handlePatchOwnerProfile(
 /** Registra las rutas de perfil de propietario (catálogos, self-service y
  * admin/scoped) — wiring puro, la lógica vive en los handlers nombrados de
  * arriba (Dual-Gate Isolation, FC166 Track A.2). */
-export default async function ownerProfileRoutes(fastify: FastifyInstance): Promise<void> {
+export default function ownerProfileRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   // GET /v1/catalogs/specialties — public catalog (jwtGuard only, no permission gate)
   fastify.get('/catalogs/specialties', handleGetSpecialtiesCatalog);
 
@@ -394,4 +398,5 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
 
   // PATCH /v1/owners/:ownerId/profile
   fastify.patch('/owners/:ownerId/profile', handlePatchOwnerProfile);
+  done();
 }

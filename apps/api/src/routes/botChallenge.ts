@@ -1,11 +1,15 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { botChallengeVerifier, BotChallenge } from '../services/botChallenge.service';
 
 /**
  * FC199 F3 — `GET /v1/public/bot-challenge`: emite un reto PoW (anónimo, sin estado, sin DB). El
  * límite por IP evita que alguien lo use para gastar CPU del servidor firmando retos.
  */
-export default async function botChallengeRoutes(fastify: FastifyInstance): Promise<void> {
+export default function botChallengeRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get(
     '/bot-challenge',
     {
@@ -21,4 +25,5 @@ export default async function botChallengeRoutes(fastify: FastifyInstance): Prom
       return botChallengeVerifier.issue();
     }
   );
+  done();
 }

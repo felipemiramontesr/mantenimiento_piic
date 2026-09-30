@@ -69,10 +69,10 @@ function useGeoSearchCallbacks(
   selectedMunicipality: number | undefined
 ): GeoSearchCallbacks {
   const searchStates = useCallback(
-    async (search: string): Promise<StateOption[]> => {
+    (search: string): Promise<StateOption[]> => {
       const term = search.toLowerCase().trim();
-      if (!term) return states;
-      return states.filter((s) => s.name.toLowerCase().includes(term));
+      if (!term) return Promise.resolve(states);
+      return Promise.resolve(states.filter((s) => s.name.toLowerCase().includes(term)));
     },
     [states]
   );

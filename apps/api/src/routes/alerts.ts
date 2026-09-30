@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { getAlerts, getAlertsCount, type UserAlertContext } from '../services/alerts.service';
 
 /**
@@ -12,7 +12,12 @@ interface UserAlertJwt {
   permissions: string[];
   tenant_id?: number | null;
 }
-export default async function alertsRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de alertas del usuario, acotadas a su rol y tenant. */
+export default function alertsRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -50,4 +55,5 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al obtener alertas' });
     }
   });
+  done();
 }

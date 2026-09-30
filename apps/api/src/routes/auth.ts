@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import '@fastify/cookie';
 import { z } from 'zod';
 import { userUpdateSchema } from '@mantenimiento/contracts';
@@ -743,7 +743,11 @@ async function handleMfaVerify(
 }
 
 /** Registers the 18 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
-export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
+export default function authRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.post<{ Body: LoginBody }>(
     '/login',
     {
@@ -779,4 +783,5 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.post<{ Body: { mfaToken?: string; code?: string } }>('/mfa/verify', handleMfaVerify);
   // FC195 F2 — 2FA por correo: enrolamiento (setup/verify-setup) y reenvío de código.
   registerEmailMfaRoutes(fastify);
+  done();
 }

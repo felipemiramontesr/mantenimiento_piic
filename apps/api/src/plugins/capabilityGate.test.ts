@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, Mock } from 'vitest';
-import Fastify, { FastifyInstance, LightMyRequestResponse } from 'fastify';
+import Fastify, { FastifyInstance, FastifyPluginCallback, LightMyRequestResponse } from 'fastify';
 import withCapability from './capabilityGate';
 import { getUniverseCapabilities } from '../services/universeCapabilities.service';
 
@@ -14,11 +14,12 @@ vi.mock('../services/universeCapabilities.service', () => ({ getUniverseCapabili
 const capabilities = getUniverseCapabilities as Mock;
 const order: string[] = [];
 
-const crmPlugin = async (scope: FastifyInstance): Promise<void> => {
+const crmPlugin: FastifyPluginCallback = (scope, _opts, done) => {
   scope.addHook('preHandler', async () => {
     order.push('preHandler-del-plugin');
   });
   scope.get('/crm/contacts', async () => ({ ok: true }));
+  done();
 };
 
 const TENANT = JSON.stringify({ id: 20, roleId: 3, permissions: [], tenant_id: 5 });

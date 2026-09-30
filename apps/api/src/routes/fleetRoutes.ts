@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { routeUpdateSchema } from '@mantenimiento/contracts';
 import RouteService from '../services/routeService';
@@ -470,7 +470,11 @@ const withPerm = (permission: string): { preHandler: ReturnType<typeof requirePe
 });
 
 /** Registers the fleet-routes plugin: auth/permission hooks + the 15 route/incident/checkpoint endpoints. */
-async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
+function fleetRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   // Security Hook — A01:2021 Broken Access Control
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -500,6 +504,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.delete('/routes/:uuid', withPerm('route:record:delete:any'), handleDeleteRoute);
   fastify.get('/routes/:uuid/node', handleGetRouteNode);
   fastify.get('/incidents/:uuid/node', handleGetIncidentNode);
+  done();
 }
 
 export default fleetRoutes;

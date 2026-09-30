@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
@@ -415,7 +415,11 @@ async function handleGetFleetUnitNode(
 }
 
 /** Registra las rutas de flota (FC165 F3 Slice3.3 Lote B — wiring puro, handlers extraídos arriba). */
-export default async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
+export default function fleetRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   // Security Hook
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -440,4 +444,5 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     handleDeleteFleetUnit
   );
   fastify.get('/fleet/:id/node', handleGetFleetUnitNode);
+  done();
 }

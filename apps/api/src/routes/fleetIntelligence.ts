@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 import FleetIntelligenceKpiService from '../services/fleetIntelligenceService';
 import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
@@ -17,7 +17,12 @@ const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> =>
   return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
-export default async function fleetIntelligenceRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de inteligencia de flota. */
+export default function fleetIntelligenceRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -60,4 +65,5 @@ export default async function fleetIntelligenceRoutes(fastify: FastifyInstance):
       }
     }
   );
+  done();
 }

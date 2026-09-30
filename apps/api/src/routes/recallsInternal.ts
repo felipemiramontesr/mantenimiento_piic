@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
@@ -55,7 +55,11 @@ function mapPatternRow(p: RowDataPacket, nhtsaCovered: boolean): Record<string, 
  * era multi-universo, ya purgada en FC082 F0c). Cero cambio de
  * comportamiento — mismo query, mismo permiso, mismo shape de respuesta.
  */
-export default async function recallsInternalRoutes(fastify: FastifyInstance): Promise<void> {
+export default function recallsInternalRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -98,4 +102,5 @@ export default async function recallsInternalRoutes(fastify: FastifyInstance): P
       return reply.send({ success: true, count: data.length, data });
     }
   );
+  done();
 }

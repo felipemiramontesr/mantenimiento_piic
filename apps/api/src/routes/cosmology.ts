@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { requireOmega } from '../middleware/cosmonautMiddleware';
 import * as CosmologyService from '../services/cosmology.service';
@@ -250,7 +250,11 @@ async function handleResetUserMfa(
 }
 
 /** Registers the 13 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1 + 1 FC192), all Ω-exclusive. */
-export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
+export default function cosmologyRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
     '/universes/:tenantId/superclusters/:superclusterCode',
@@ -268,4 +272,5 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.post('/users/:id/mfa/reset', omegaGuard, handleResetUserMfa);
   fastify.post('/mail/test', buildMailTestRoute(omegaGuard.onRequest), handleMailTest);
   fastify.patch('/universes/:tenantId/label', omegaGuard, handleRenameUniverse);
+  done();
 }

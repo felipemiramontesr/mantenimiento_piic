@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import requirePermission from '../middleware/requirePermission';
 import * as FleetMaintenanceService from '../services/fleetMaintenance.service';
@@ -294,7 +294,11 @@ async function handleRejectMaintenance(
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /** Registers the 9 `/maintenance/*` endpoints — JWT + permission guards, zero SQL (I1). */
-export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<void> {
+export function fleetMaintenanceRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   // Security Hook — A01:2021 Broken Access Control
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -331,6 +335,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     { preHandler: [requirePermission('fleet:unit:edit:any')] },
     handleRejectMaintenance
   );
+  done();
 }
 
 export default fleetMaintenanceRoutes;

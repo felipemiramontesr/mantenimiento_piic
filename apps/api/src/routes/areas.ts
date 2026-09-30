@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -25,13 +25,16 @@ async function getCallerOwnerIds(userId: number): Promise<number[]> {
 function hasAdminAccess(permissions: string[]): boolean {
   return permissions.includes('*') || permissions.includes('user:admin');
 }
-
-export default async function areasRoutes(fastify: FastifyInstance): Promise<void> {
+/** GET /areas/templates — plantillas de áreas predefinidas. */
+function registerAreaTemplatesRoute(fastify: FastifyInstance): void {
   // GET /v1/areas/templates — static, no auth required
   fastify.get('/areas/templates', async (_request, reply) =>
     reply.send({ success: true, data: AREA_TEMPLATES })
   );
+}
 
+/** GET /owners/:id/areas — áreas de un owner. */
+function registerListOwnerAreasRoute(fastify: FastifyInstance): void {
   // GET /v1/owners/:id/areas
   fastify.get('/owners/:id/areas', async (request, reply) => {
     try {
@@ -56,7 +59,10 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(500).send({ error: 'AREAS_FETCH_FAIL' });
     }
   });
+}
 
+/** POST /owners/:id/areas — crea un área para un owner. */
+function registerCreateOwnerAreaRoute(fastify: FastifyInstance): void {
   // POST /v1/owners/:id/areas — Archon Master only (Scenario 6/7)
   fastify.post('/owners/:id/areas', async (request, reply) => {
     try {
@@ -100,7 +106,10 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(500).send({ error: 'AREA_CREATE_FAIL' });
     }
   });
+}
 
+/** PUT /owners/:id/areas/:areaId — actualiza un área de un owner. */
+function registerUpdateOwnerAreaRoute(fastify: FastifyInstance): void {
   // PUT /v1/owners/:id/areas/:areaId — Archon Master only
   fastify.put('/owners/:id/areas/:areaId', async (request, reply) => {
     try {
@@ -140,7 +149,10 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(500).send({ error: 'AREA_UPDATE_FAIL' });
     }
   });
+}
 
+/** DELETE /owners/:id/areas/:areaId — elimina un área de un owner. */
+function registerDeleteOwnerAreaRoute(fastify: FastifyInstance): void {
   // DELETE /v1/owners/:id/areas/:areaId (soft delete) — Archon Master only
   fastify.delete('/owners/:id/areas/:areaId', async (request, reply) => {
     try {
@@ -171,4 +183,18 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(500).send({ error: 'AREA_DELETE_FAIL' });
     }
   });
+}
+
+/** Rutas de áreas de un owner: plantillas y CRUD. */
+export default function areasRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
+  registerAreaTemplatesRoute(fastify);
+  registerListOwnerAreasRoute(fastify);
+  registerCreateOwnerAreaRoute(fastify);
+  registerUpdateOwnerAreaRoute(fastify);
+  registerDeleteOwnerAreaRoute(fastify);
+  done();
 }

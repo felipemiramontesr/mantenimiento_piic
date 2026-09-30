@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../../services/db';
@@ -247,10 +247,15 @@ async function handleRevokeRole(
  *  (mismo patrón que `auth.ts`/`fleetRoutes.ts`); `handleCreateArc`, `handleAssignRole` y
  *  `handleRevokeRole` se movieron sin cambiar una sola instrucción (extracción forzada por Gate 2:
  *  la función del plugin tenía 160 líneas efectivas y cualquier línea añadida la bloqueaba). */
-export default async function cosmonautAssignmentsRoutes(fastify: FastifyInstance): Promise<void> {
+export default function cosmonautAssignmentsRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.get('/cosmonauts/me/permissions', handleGetMyPermissions);
   fastify.get('/cosmonauts/arcs', handleListArcs);
   fastify.post('/cosmonauts/arcs', handleCreateArc);
   fastify.post('/cosmonauts/:userId/roles', handleAssignRole);
   fastify.delete('/cosmonauts/:userId/roles/:roleId', handleRevokeRole);
+  done();
 }

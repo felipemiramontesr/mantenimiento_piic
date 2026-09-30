@@ -1,6 +1,11 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
-export default async function telemetryRoutes(fastify: FastifyInstance): Promise<void> {
+/** Telemetría del sistema; solo Archon (Ω). */
+export default function telemetryRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   // Security middleware for telemetry (Archon only)
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -15,7 +20,7 @@ export default async function telemetryRoutes(fastify: FastifyInstance): Promise
     }
   });
 
-  fastify.get('/telemetry', async () => ({
+  fastify.get('/telemetry', () => ({
     system: {
       cpu: '24%',
       memory: '4.2GB / 8GB',
@@ -29,4 +34,5 @@ export default async function telemetryRoutes(fastify: FastifyInstance): Promise
     },
     timestamp: new Date().toISOString(),
   }));
+  done();
 }

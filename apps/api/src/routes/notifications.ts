@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -181,10 +181,15 @@ export async function handleUnregisterPushToken(
 }
 
 /** Route registration — declarative wiring only (FC163 F2B3, split Alfa 227_AN). */
-export default async function notificationsRoutes(fastify: FastifyInstance): Promise<void> {
+export default function notificationsRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', requireSession);
   fastify.get('/notifications', handleGetNotifications);
   fastify.patch('/notifications/:id/read', handleMarkNotificationRead);
   fastify.post('/notifications/push-token', handleRegisterPushToken);
   fastify.post('/notifications/push-token/unregister', handleUnregisterPushToken);
+  done();
 }

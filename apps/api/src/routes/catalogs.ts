@@ -1,24 +1,11 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
 import { getAssetTypes, getFieldVisibility } from '../services/assetTypeFieldsService';
 
-/**
- * 🔱 ARCHON SOVEREIGN CATALOGS (v.18.0.0)
- * Logic: Provides dynamic hierarchical metadata for the entire Fleet ecosystem.
- */
-export default async function catalogRoutes(fastify: FastifyInstance): Promise<void> {
-  // Security Hook — A01:2021 Broken Access Control
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
-    }
-  });
-  fastify.addHook('preHandler', requirePermission('fleet:catalog:view'));
-
+/** GET /asset-types — tipos de activo con su configuración de visibilidad de campos. */
+function registerAssetTypesRoute(fastify: FastifyInstance): void {
   // 1. Asset types with field visibility config — FC-AssetType_ConditionalFields FaseB
   fastify.get('/asset-types', async (_request, reply) => {
     try {
@@ -37,7 +24,10 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
         .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch asset types' });
     }
   });
+}
 
+/** GET /:category — opciones activas de una categoría, opcionalmente filtradas por padre. */
+function registerCategoryRoute(fastify: FastifyInstance): void {
   // 2. Fetch options by Category (e.g. ASSET_TYPE, FREQ_TIME)
   fastify.get(
     '/:category',
@@ -88,7 +78,10 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       }
     }
   );
+}
 
+/** GET /item/:code — un elemento activo del catálogo por su código. */
+function registerItemByCodeRoute(fastify: FastifyInstance): void {
   // 3. Fetch specific item by Code
   fastify.get(
     '/item/:code',
@@ -112,4 +105,29 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       }
     }
   );
+}
+
+/**
+ * 🔱 ARCHON SOVEREIGN CATALOGS (v.18.0.0)
+ * Logic: Provides dynamic hierarchical metadata for the entire Fleet ecosystem.
+ */
+export default function catalogRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
+  // Security Hook — A01:2021 Broken Access Control
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
+    }
+  });
+  fastify.addHook('preHandler', requirePermission('fleet:catalog:view'));
+
+  registerAssetTypesRoute(fastify);
+  registerCategoryRoute(fastify);
+  registerItemByCodeRoute(fastify);
+  done();
 }

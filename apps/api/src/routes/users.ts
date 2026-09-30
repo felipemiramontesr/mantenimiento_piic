@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
@@ -122,7 +122,12 @@ async function handleGetProfileImage(request: FastifyRequest, reply: FastifyRepl
  * Profile images stored as Base64 data URIs directly in MySQL.
  * Zero filesystem dependency. Immune to Hostinger volatile deploys.
  */
-export default async function userRoutes(fastify: FastifyInstance): Promise<void> {
+export default function userRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.post('/users/:id/upload-profile', { bodyLimit: 3 * 1024 * 1024 }, handleUploadProfile);
   fastify.get('/users/:id/profile-image', handleGetProfileImage);
+  done();
 }

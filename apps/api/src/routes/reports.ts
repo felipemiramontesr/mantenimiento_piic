@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 import * as ReportsService from '../services/reports.service';
 import type { ReportsUser } from '../services/reports.service';
@@ -24,7 +24,12 @@ function requestUser(request: FastifyRequest): ReportsUser {
   return request.user as ReportsUser;
 }
 
-export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de reportes de mantenimiento. */
+export function reportsRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -50,6 +55,7 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.code(500).send({ success: false, message: 'Error generating PDF report' });
     }
   });
+  done();
 }
 
 export default reportsRoutes;

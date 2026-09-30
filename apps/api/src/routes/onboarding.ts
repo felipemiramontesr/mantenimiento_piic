@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 
 /**
@@ -35,7 +35,12 @@ function sendRetired(reply: FastifyReply): FastifyReply {
   });
 }
 
-export default async function onboardingRoutes(fastify: FastifyInstance): Promise<void> {
+/** Rutas del onboarding de owners. */
+export default function onboardingRoutes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.post('/onboarding/universe', jwtGuard('*'), async (_request, reply) =>
     sendRetired(reply)
   );
@@ -55,4 +60,5 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
     jwtGuard('onboarding:member:create'),
     async (_request, reply) => sendRetired(reply)
   );
+  done();
 }

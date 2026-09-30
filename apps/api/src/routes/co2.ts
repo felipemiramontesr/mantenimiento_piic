@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 import Co2Service from '../services/co2Service';
 import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
@@ -17,7 +17,12 @@ const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> =>
   return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
-export default async function co2Routes(fastify: FastifyInstance): Promise<void> {
+/** Rutas de emisiones de CO2 de la flota. */
+export default function co2Routes(
+  fastify: FastifyInstance,
+  _opts: FastifyPluginOptions,
+  done: (err?: Error) => void
+): void {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -62,4 +67,5 @@ export default async function co2Routes(fastify: FastifyInstance): Promise<void>
       }
     }
   );
+  done();
 }

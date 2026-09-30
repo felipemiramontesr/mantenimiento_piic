@@ -31,10 +31,10 @@ function buildSessionEvidence(logs: ActivityLog[]): Map<string, { maxObserved: n
   return evidenceMap;
 }
 
-async function fetchCachedLogs(
+function readCachedLogs(
   routeUuid: string | undefined,
   unitId: string | undefined
-): Promise<ActivityLog[] | null> {
+): ActivityLog[] | null {
   const cached = archonCache.get<ActivityLog[]>('forensic_journal_logs');
   if (!cached) return null;
   return filterAndSortLogs(cached, routeUuid, unitId);
@@ -72,7 +72,7 @@ export default function useForensicLogs(
   useEffect(() => {
     const run = async (): Promise<void> => {
       // 🧠 Silk Hydration Phase 1: Cache-First
-      const cachedLogs = await fetchCachedLogs(routeUuid, unitId);
+      const cachedLogs = readCachedLogs(routeUuid, unitId);
       if (cachedLogs) {
         setLogs(cachedLogs);
         setLoading(false);
