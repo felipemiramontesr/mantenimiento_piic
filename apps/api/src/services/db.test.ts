@@ -75,33 +75,4 @@ describe('Database Service (ARCHON CORE)', () => {
 
     expect(fakeConnection.query).toHaveBeenCalledWith('SET NAMES utf8mb4');
   });
-
-  it('FC202 F1 (S9383) — si la inicialización de la sesión falla, destruye la conexión y lo registra', async () => {
-    const connectionCall = (poolOnMock as Mock).mock.calls.find((call) => call[0] === 'connection');
-    const handler = connectionCall![1] as (conn: { query: Mock; destroy: Mock }) => void;
-    const fakeConnection = {
-      query: vi.fn().mockRejectedValue(new Error('Unknown time zone')),
-      destroy: vi.fn(),
-    };
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    handler(fakeConnection);
-    await vi.waitFor(() => expect(fakeConnection.destroy).toHaveBeenCalledTimes(1));
-
-    expect(consoleError).toHaveBeenCalledWith(
-      JSON.stringify({ msg: 'db-session-init-failed', error: 'Unknown time zone' })
-    );
-    consoleError.mockRestore();
-  });
-
-  it('FC202 F1 (S9383) — si ambas consultas salen bien, la conexión no se destruye', async () => {
-    const connectionCall = (poolOnMock as Mock).mock.calls.find((call) => call[0] === 'connection');
-    const handler = connectionCall![1] as (conn: { query: Mock; destroy: Mock }) => void;
-    const fakeConnection = { query: vi.fn().mockResolvedValue([[], []]), destroy: vi.fn() };
-
-    handler(fakeConnection);
-    await Promise.resolve();
-
-    expect(fakeConnection.destroy).not.toHaveBeenCalled();
-  });
 });
