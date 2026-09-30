@@ -60,6 +60,7 @@ import registerTrafficTaskScheduler from './plugins/trafficTaskScheduler';
 import { runAuthHousekeeping } from './services/authHousekeeping.service';
 import { checkAndTimeoutStage5Orders } from './services/workOrderService';
 import { processPendingAlerts } from './services/notificationsOutboxService';
+import { runSecurityEventsLifecycle } from './services/securityEvents.service';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
@@ -289,6 +290,14 @@ function registerPublicRoutes(fastify: FastifyInstance): void {
   fastify.register(botChallengeRoutes, { prefix: '/v1/public' });
 }
 
+/** FC201 F1 (OWASP A05) — 404 plano: sin nombre de ruta ni del framework. Una carnada (F2) y una
+ *  ruta que de verdad no existe responden idéntico (Inv-1). */
+function registerNotFoundHandler(fastify: FastifyInstance): void {
+  fastify.setNotFoundHandler((_request, reply) => {
+    reply.code(404).send({ error: 'Not Found' });
+  });
+}
+
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
 function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   // Diagnostic Root V2 (Secure)
@@ -366,6 +375,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   registerCosmologyRoutes(fastify);
   registerPublicRoutes(fastify);
   registerDiagnosticRoutes(fastify);
+  registerNotFoundHandler(fastify);
 
   return fastify;
 };
@@ -384,6 +394,8 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
     { name: 'upaStage5Timeout', intervalMs: HOURLY_MS, run: checkAndTimeoutStage5Orders },
     // Alertas de estados lentos y de cumplimiento (deduplicadas en notifications_outbox).
     { name: 'pendingAlerts', intervalMs: HOURLY_MS, run: processPendingAlerts },
+    // FC201 F1 — IP en claro → NULL a 15 días, eventos fuera a 90, bloqueos viejos fuera (Inv-4).
+    { name: 'securityEventsLifecycle', intervalMs: HOURLY_MS, run: runSecurityEventsLifecycle },
   ]);
   const start = async (): Promise<void> => {
     try {
