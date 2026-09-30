@@ -64,6 +64,8 @@ import { runSecurityEventsLifecycle } from './services/securityEvents.service';
 import { loadMailConfig } from './services/mailConfig';
 import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
+import honeypotRoutes from './routes/honeypot';
+import sendGenericNotFound from './utils/genericNotFound';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -293,9 +295,7 @@ function registerPublicRoutes(fastify: FastifyInstance): void {
 /** FC201 F1 (OWASP A05) — 404 plano: sin nombre de ruta ni del framework. Una carnada (F2) y una
  *  ruta que de verdad no existe responden idéntico (Inv-1). */
 function registerNotFoundHandler(fastify: FastifyInstance): void {
-  fastify.setNotFoundHandler((_request, reply) => {
-    reply.code(404).send({ error: 'Not Found' });
-  });
+  fastify.setNotFoundHandler((_request, reply) => sendGenericNotFound(reply));
 }
 
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
@@ -372,6 +372,8 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   registerCosmologyRoutes(fastify);
   registerPublicRoutes(fastify);
   registerDiagnosticRoutes(fastify);
+  // FC201 F2 · HP1 — carnadas en la raíz; responden el mismo 404 que registerNotFoundHandler.
+  fastify.register(honeypotRoutes);
   registerNotFoundHandler(fastify);
 
   return fastify;

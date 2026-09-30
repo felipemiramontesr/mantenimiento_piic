@@ -6,6 +6,7 @@ import MfaChallengeStep from '../../components/Identity/MfaEnrollment/MfaChallen
 import { MfaChallengeState } from './useMfaChallenge';
 import { MfaMethod } from '../../api/mfa';
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
+import HoneypotField from '../../components/Security/HoneypotField';
 
 /**
  * FC163 F2B4 Sub-Batch 4B-2 (formulario original) + FC185 F3/F4 (asistente MFA obligatorio y
@@ -20,7 +21,7 @@ interface LoginFormProps {
   readonly onPasswordChange: (v: string) => void;
   readonly loading: boolean;
   readonly error: string | null;
-  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   readonly mfaJustActivated: boolean;
   readonly mfaChallengeExpired: boolean;
 }
@@ -232,6 +233,8 @@ function LoginForm({
           onPasswordChange={onPasswordChange}
           loading={loading}
         />
+        {/* FC201 F2 · HP3 — campo trampa en modo detección: la API registra, el login sigue igual. */}
+        <HoneypotField id="login-website" testId="login-honeypot" />
         <LoginSubmitButton loading={loading} />
       </form>
     </div>
@@ -245,7 +248,7 @@ interface LoginPanelProps {
   readonly onPasswordChange: (v: string) => void;
   readonly loading: boolean;
   readonly error: string | null;
-  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   readonly mfaJustActivated: boolean;
   readonly mfaSetupToken: string | null;
   readonly mfaAllowedMethods: readonly MfaMethod[];

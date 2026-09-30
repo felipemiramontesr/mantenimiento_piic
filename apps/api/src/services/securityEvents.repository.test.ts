@@ -4,6 +4,7 @@ import {
   clearExpiredClearIps,
   deleteOldSecurityEvents,
   deleteStaleDenylistEntries,
+  upsertSecurityEvent,
 } from './securityEvents.repository';
 
 /** FC201 F1 — SQL de `security_events` y `security_manual_denylist`: agregado, parametrizado, reloj de la DB. */
@@ -12,6 +13,35 @@ vi.mock('./db', () => ({ default: { execute: vi.fn() } }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('upsertSecurityEvent (FC201 F2)', () => {
+  it('Inv-2: upsert por la llave (tipo, ip_hash, hora de la DB, carnada); suma los toques coalescidos', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+
+    await upsertSecurityEvent({
+      eventType: 'BAIT_ROUTE',
+      ipHash: 'a'.repeat(64),
+      ipAddress: '203.0.113.9',
+      targetPattern: '/wp-admin/*',
+      samplePath: '/wp-admin/setup.php',
+      hits: 7,
+    });
+
+    const [sql, params] = (db.execute as Mock).mock.calls[0];
+    expect(sql).toContain("DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00')");
+    expect(sql).toContain('hit_count = hit_count + ?');
+    expect(sql).toContain('sample_path = VALUES(sample_path)');
+    expect(params).toEqual([
+      'BAIT_ROUTE',
+      'a'.repeat(64),
+      '203.0.113.9',
+      '/wp-admin/*',
+      '/wp-admin/setup.php',
+      7,
+      7,
+    ]);
+  });
 });
 
 describe('ciclo de vida (Inv-4)', () => {

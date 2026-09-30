@@ -10,6 +10,10 @@ import { FIELD_LABEL_CLASS, FIELD_INPUT_CLASS } from './signupFieldStyles';
 import SignupRfcAndCpFields from './SignupRfcAndCpFields';
 import SignupPasswordFields from './SignupPasswordFields';
 import useBotChallenge from './useBotChallenge';
+import HoneypotField, {
+  HONEYPOT_FIELD,
+  readHoneypot,
+} from '../../components/Security/HoneypotField';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form. The public, unauthenticated counterpart to
@@ -19,9 +23,6 @@ import useBotChallenge from './useBotChallenge';
  * the account is born in quarantine (`is_active: false`); only Ω linking it to a Universo
  * (FC177 F3/F4) activates it.
  */
-
-/** FC199 F3 — nombre del campo trampa (el backend rechaza el envío si trae algo). */
-const HONEYPOT_FIELD = 'website_url';
 
 const EMPTY_FORM: SignupFormData = {
   fullName: '',
@@ -60,24 +61,6 @@ interface SignupFormState {
   readonly handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-/** Campo trampa invisible: fuera de pantalla, sin foco por teclado y oculto a lectores de pantalla. */
-function SignupHoneypotField(): React.JSX.Element {
-  return (
-    <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
-      <label htmlFor="signup-website">Sitio web</label>
-      <input
-        id="signup-website"
-        name={HONEYPOT_FIELD}
-        type="text"
-        tabIndex={-1}
-        autoComplete="off"
-        defaultValue=""
-        data-testid="signup-honeypot"
-      />
-    </div>
-  );
-}
-
 /** Estado + submit del formulario de autoregistro (FC177 F2). FC184 F2 — `isFormValid` bloquea el
  *  submit mientras RFC/CP no cumplan el formato canónico (Scenario 2 del FC). FC184 F3 — también
  *  exige que `confirmPassword` coincida exactamente con `password` (Scenario 3); el backend sigue
@@ -103,8 +86,8 @@ function useSignupForm(): SignupFormState {
     setLoading(true);
     setError(null);
     const { telefono, confirmPassword: _confirmPassword, ...required } = data;
-    // FC199 F3 — campo trampa: una persona no lo ve ni lo llena; un bot que rellena cada campo, sí.
-    const honeypot = new FormData(e.currentTarget).get(HONEYPOT_FIELD);
+    // FC199 F3 — campo trampa: el backend rechaza el envío si trae algo.
+    const honeypot = readHoneypot(e.currentTarget);
     botChallenge
       .take()
       .then((altchaPayload) =>
@@ -112,7 +95,7 @@ function useSignupForm(): SignupFormState {
           ...required,
           ...(telefono ? { telefono } : {}),
           altcha_payload: altchaPayload,
-          [HONEYPOT_FIELD]: typeof honeypot === 'string' ? honeypot : '',
+          [HONEYPOT_FIELD]: honeypot,
         })
       )
       .then(() => setSuccess(true))
@@ -284,7 +267,7 @@ function SignupForm({
       <form onSubmit={onSubmit} className="relative flex flex-col" data-testid="signup-form">
         <SignupIdentityFields data={data} onChange={onChange} loading={loading} />
         <SignupFiscalFields data={data} onChange={onChange} loading={loading} />
-        <SignupHoneypotField />
+        <HoneypotField id="signup-website" testId="signup-honeypot" />
         <button
           type="submit"
           disabled={loading || !isFormValid}

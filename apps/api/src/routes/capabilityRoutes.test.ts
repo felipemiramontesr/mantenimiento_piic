@@ -3,6 +3,7 @@ import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import buildApp from '../index';
 import db from '../services/db';
 import { invalidateUniverseCapabilities } from '../services/universeCapabilities.service';
+import { BAIT_ROUTES } from './honeypot';
 
 /**
  * FC193 F2 — el gate de capacidad CABLEADO en la app real (`buildApp()`): se enumeran TODAS las rutas
@@ -66,6 +67,8 @@ const BUILTIN_PREFIXES = [
 const stripAlias = (url: string): string => url.replace(/^\/v1\/mantenimiento/, '/v1');
 
 const classify = (url: string): Class => {
+  // FC201 F2 — las carnadas son BUILTIN: responden siempre el 404 genérico, nunca dependen de un SC.
+  if (BAIT_ROUTES.includes(url)) return 'BUILTIN';
   const path = stripAlias(url);
   const sc = SC_RULES.find(([re]) => re.test(path));
   if (sc) return sc[1];

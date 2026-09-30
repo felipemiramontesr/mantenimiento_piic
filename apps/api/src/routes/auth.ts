@@ -11,6 +11,7 @@ import * as EmailMfaService from '../services/emailMfa.service';
 import * as AuthThrottle from '../services/authThrottle.service';
 import type { MfaMethod } from '../services/mfaPolicy.service';
 import registerEmailMfaRoutes from './authMfaEmail';
+import { reportTrapAccount, reportTrapField } from './loginTraps';
 import { notifyPreviousAddress, EmailChange } from '../services/emailChange.service';
 import {
   resolveSessionCapabilities,
@@ -176,6 +177,8 @@ interface LoginBody {
   username?: string;
   password?: string;
   altcha_payload?: string;
+  /** FC201 F2 · HP3 — campo trampa oculto; una persona lo deja vacío. */
+  website_url?: string;
 }
 
 /** Qué probó el intento (FC199 F3): L3/L4 fallan; reto/enrolamiento/cuenta pendiente implican
@@ -203,7 +206,10 @@ async function loginWithBotGate(
     ip: request.ip,
     accountRef: AuthThrottle.loginAccountRef(null, username),
   };
+  // FC201 F2 · HP2 — solo cuenta como trampa si el login confirmó que la cuenta NO existe.
+  let accountFound = true;
   const result = await SessionService.login(username, password, async (accountId) => {
+    accountFound = accountId !== null;
     attempt.accountRef = AuthThrottle.loginAccountRef(accountId, username);
     return AuthThrottle.evaluateLoginChallenge(
       attempt.accountRef,
@@ -212,6 +218,7 @@ async function loginWithBotGate(
     );
   });
   await AuthThrottle.recordLoginOutcome(attempt, credentialOutcome(result));
+  reportTrapAccount(request, username, accountFound);
   return result;
 }
 
@@ -234,6 +241,7 @@ async function handleLogin(
   if (!password) {
     return reply.code(400).send({ error: 'L2' });
   }
+  reportTrapField(request, request.body.website_url);
   try {
     // FC199 F2 — freno progresivo por par usuario|IP, ANTES de argon2 (Inv-1).
     const throttle = await AuthThrottle.checkLoginThrottle(username, request.ip);

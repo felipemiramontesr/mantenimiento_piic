@@ -99,12 +99,43 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(api.post).toHaveBeenCalledWith('/auth/login', {
       username: 'admin',
       password: 'password123',
+      website_url: '',
     });
     expect(screen.getByRole('button', { name: /autenticando archon/i })).toBeDisabled();
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
+  });
+
+  // FC201 F2 · HP3 (B2) — campo trampa en modo detección pasiva.
+  it('HP3: el campo trampa existe, fuera de la vista, sin foco por teclado y oculto a lectores', () => {
+    renderComponent();
+
+    const honeypot = screen.getByTestId('login-honeypot');
+    expect(honeypot).toHaveAttribute('name', 'website_url');
+    expect(honeypot).toHaveAttribute('tabindex', '-1');
+    expect(honeypot).toHaveAttribute('autocomplete', 'off');
+    expect(honeypot.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('HP3: si la trampa llega llena, el valor viaja y el login sigue igual (solo detección)', async () => {
+    (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: { token: 'mock-jwt-token', user: { id: 1, username: 'admin', roleName: 'Master' } },
+    });
+    renderComponent();
+    fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+      target: { value: 'admin' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByTestId('login-honeypot'), { target: { value: 'http://spam' } });
+    fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
+
+    expect(api.post).toHaveBeenCalledWith(
+      '/auth/login',
+      expect.objectContaining({ website_url: 'http://spam' })
+    );
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'));
   });
 
   it('shows a protocol error when the server response has no token', async () => {

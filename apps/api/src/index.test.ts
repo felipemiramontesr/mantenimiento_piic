@@ -164,16 +164,17 @@ describe('trustProxy loopback (FC199 F1 · Cond.R-199 P1)', () => {
 
 describe('404 plano (FC201 F1 · OWASP A05 · Inv-1)', () => {
   it('una ruta inexistente no revela el nombre de la ruta ni el framework', async () => {
-    const res = await buildApp().inject({ method: 'GET', url: '/wp-admin' });
+    // FC201 F2 — `/wp-admin` y `/phpmyadmin` ya son carnadas (honeypot.test.ts); aquí, rutas genuinas.
+    const res = await buildApp().inject({ method: 'GET', url: '/no-existe-en-archon' });
 
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({ error: 'Not Found' });
-    expect(res.body).not.toMatch(/Route|GET|wp-admin|fastify/i);
+    expect(res.body).not.toMatch(/Route|GET|no-existe|fastify/i);
   });
 
   it('cualquier método y ruta inexistente responde exactamente igual', async () => {
     const app = buildApp();
-    const a = await app.inject({ method: 'GET', url: '/phpmyadmin' });
+    const a = await app.inject({ method: 'GET', url: '/tampoco/existe' });
     const b = await app.inject({ method: 'POST', url: '/v1/no/existe' });
 
     expect(a.statusCode).toBe(b.statusCode);

@@ -10,6 +10,7 @@ import LoginPanel from './LoginPanel';
 import { UserIndustrial } from '../../types/user';
 import { MfaMethod } from '../../api/mfa';
 import { ChallengeInfo } from './useEmailChallenge';
+import { HONEYPOT_FIELD, readHoneypot } from '../../components/Security/HoneypotField';
 
 interface LoginFormState {
   username: string;
@@ -18,7 +19,7 @@ interface LoginFormState {
   setPassword: (v: string) => void;
   loading: boolean;
   error: string | null;
-  handleLogin: (e: React.FormEvent) => void;
+  handleLogin: (e: React.FormEvent<HTMLFormElement>) => void;
   showCookies: boolean;
   acceptCookies: () => void;
   dismissCookies: () => void;
@@ -157,13 +158,19 @@ interface PerformLoginState {
 
 /** FC199 F3 — `POST /auth/login` con el reto adaptativo: si la API lo exige (tras varios fallos de
  *  la cuenta o de la IP), se resuelve en segundo plano y se reintenta UNA vez con el payload. */
-async function postLogin(username: string, password: string): Promise<LoginApiResponse> {
+async function postLogin(
+  username: string,
+  password: string,
+  honeypot: string
+): Promise<LoginApiResponse> {
+  // FC201 F2 · HP3 — el campo trampa viaja siempre (vacío para una persona); la API solo registra.
+  const credentials = { username, password, [HONEYPOT_FIELD]: honeypot };
   try {
-    return await api.post('/auth/login', { username, password });
+    return await api.post('/auth/login', credentials);
   } catch (err) {
     if (!isBotChallengeError(err)) throw err;
     const altchaPayload = await obtainBotChallengePayload();
-    return api.post('/auth/login', { username, password, altcha_payload: altchaPayload });
+    return api.post('/auth/login', { ...credentials, altcha_payload: altchaPayload });
   }
 }
 
@@ -172,6 +179,7 @@ async function postLogin(username: string, password: string): Promise<LoginApiRe
 function performLogin(
   username: string,
   password: string,
+  honeypot: string,
   state: PerformLoginState,
   responseHandlers: LoginResponseHandlers
 ): void {
@@ -179,7 +187,7 @@ function performLogin(
   state.setError(null);
   state.setMfaJustActivated(false);
 
-  postLogin(username, password)
+  postLogin(username, password, honeypot)
     .then((response) => handleLoginResponse(response, responseHandlers))
     .catch((err: unknown) => state.setError(getLoginErrorMessage(err)))
     .finally(() => state.setLoading(false));
@@ -192,10 +200,10 @@ function makeHandleLogin(
   password: string,
   state: PerformLoginState,
   responseHandlers: LoginResponseHandlers
-): (e: React.FormEvent) => void {
-  return (e: React.FormEvent): void => {
+): (e: React.FormEvent<HTMLFormElement>) => void {
+  return (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    performLogin(username, password, state, responseHandlers);
+    performLogin(username, password, readHoneypot(e.currentTarget), state, responseHandlers);
   };
 }
 

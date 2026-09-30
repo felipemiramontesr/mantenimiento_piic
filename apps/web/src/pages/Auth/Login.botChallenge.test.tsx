@@ -65,6 +65,7 @@ describe('LoginPage — freno y reto anti-bot (FC199)', () => {
       expect(mockPost).toHaveBeenCalledWith('/auth/login', {
         username: 'grayman',
         password: 'pw',
+        website_url: '',
         altcha_payload: 'payload-resuelto',
       })
     );
