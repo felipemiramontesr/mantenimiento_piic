@@ -205,6 +205,30 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(screen.getByText('ASM-104')).toBeInTheDocument();
   });
 
+  it('FC201 F3: SECURITY_THREAT no tiene unidad y su acción lleva a Cosmología', () => {
+    grantAccess(true);
+    useAlertsMock.mockReturnValue({
+      alerts: [
+        {
+          id: 'SECURITY_THREAT_BAIT_ROUTE',
+          type: 'SECURITY_THREAT',
+          severity: 'HIGH',
+          title: 'Amenaza detectada: escaneo de rutas',
+          description: '3 IP(s) · 42 toque(s) en la última hora.',
+          unitId: '',
+          createdAt: '2026-09-30T20:00:00.000Z',
+        } satisfies Alert,
+      ],
+      isSyncing: false,
+      refresh: vi.fn(),
+    });
+    renderPanel();
+
+    expect(screen.getByText('Amenaza de seguridad')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByTitle('Ver en Cosmología')).toHaveAttribute('href', '/dashboard/cosmology');
+  });
+
   it('search config: getSuggestions filters by unitId/type/severity/description, onSuggestionSelect sets the search term', () => {
     grantAccess(true);
     renderPanel();

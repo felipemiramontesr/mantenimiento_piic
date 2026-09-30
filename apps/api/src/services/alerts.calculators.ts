@@ -12,7 +12,8 @@ export type AlertType =
   | 'COMPLIANCE_EXPIRY'
   | 'LEASE_PAYMENT_MISSING'
   | 'FINE_REGISTERED'
-  | 'EXPENSE_ANOMALY';
+  | 'EXPENSE_ANOMALY'
+  | 'SECURITY_THREAT';
 
 export interface Alert {
   id: string;
@@ -35,6 +36,8 @@ export const ALERT_TYPE_PERMISSION: Record<AlertType, string> = {
   LEASE_PAYMENT_MISSING: 'financial:view',
   FINE_REGISTERED: 'financial:view',
   EXPENSE_ANOMALY: 'financial:view',
+  // FC201 F3 — solo Ω: `'*'` no se asigna a ningún rol (resolveAlertScope ya da todo a quien lo trae).
+  SECURITY_THREAT: '*',
 };
 
 /** Fase 4 — ventana de monitoreo de vencimientos legales (días) */

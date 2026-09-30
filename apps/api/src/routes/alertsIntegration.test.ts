@@ -415,6 +415,13 @@ describe('Alerts Routes — Integration', () => {
       prevTotal: '48000.00',
       prevPeriods: 6,
     };
+    const securityThreatRow = {
+      event_type: 'BAIT_ROUTE',
+      ips: 3,
+      hits: '42',
+      top_pattern: '/wp-admin/*',
+      last_seen_at: new Date('2026-09-30T20:00:00Z'),
+    };
 
     it('Scenario 1: maint:view only receives only MAINTENANCE_OVERDUE and skips other queries', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
@@ -445,7 +452,7 @@ describe('Alerts Routes — Integration', () => {
       expect(db.execute).not.toHaveBeenCalled();
     });
 
-    it('Scenario 3: omnipotent * receives all seven types', async () => {
+    it('Scenario 3: omnipotent * receives all eight types (FC201 F3: + SECURITY_THREAT)', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRow], undefined])
         .mockResolvedValueOnce([[incidentRow], undefined])
@@ -455,7 +462,8 @@ describe('Alerts Routes — Integration', () => {
         .mockResolvedValueOnce([[leaseMissingRow], undefined])
         .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[fineRow], undefined])
-        .mockResolvedValueOnce([[anomalyRow], undefined]);
+        .mockResolvedValueOnce([[anomalyRow], undefined])
+        .mockResolvedValueOnce([[securityThreatRow], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -471,7 +479,19 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('LEASE_PAYMENT_MISSING');
       expect(types).toContain('FINE_REGISTERED');
       expect(types).toContain('EXPENSE_ANOMALY');
-      expect(db.execute).toHaveBeenCalledTimes(9);
+      expect(types).toContain('SECURITY_THREAT');
+      expect(db.execute).toHaveBeenCalledTimes(10);
+
+      // FC201 F3 — una alerta por tipo de evento, sin IP (P3): detalle y bloqueo en Cosmología.
+      const threat = res.json().data.find((a: { type: string }) => a.type === 'SECURITY_THREAT');
+      expect(threat).toMatchObject({
+        id: 'SECURITY_THREAT_BAIT_ROUTE',
+        severity: 'HIGH',
+        title: 'Amenaza detectada: escaneo de rutas',
+        unitId: '',
+      });
+      expect(threat.description).toContain('3 IP(s) · 42 toque(s)');
+      expect(JSON.stringify(threat)).not.toMatch(/\d+\.\d+\.\d+\.\d+/);
     });
 
     it('Scenario 4: maint:view + fleet:view receive their three types, never INCIDENT_OPEN', async () => {

@@ -99,6 +99,7 @@ describe('alert schemas', () => {
       'LEASE_PAYMENT_MISSING',
       'FINE_REGISTERED',
       'EXPENSE_ANOMALY',
+      'SECURITY_THREAT',
     ];
     values.forEach((v) => expect(alertTypeSchema.safeParse(v).success).toBe(true));
   });

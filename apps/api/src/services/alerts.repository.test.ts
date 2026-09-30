@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { countOverdueMaintenance } from './alerts.repository';
+import { countOverdueMaintenance, listRecentSecurityThreats } from './alerts.repository';
 import db from './db';
 
 vi.mock('./db', () => ({
@@ -25,5 +25,19 @@ describe('ownerFilter (via countOverdueMaintenance) — deny-by-default', () => 
     const [sql, params] = (db.execute as any).mock.calls[0];
     expect(sql).toContain('1 = 0');
     expect(params).toEqual([]);
+  });
+});
+
+describe('listRecentSecurityThreats (FC201 F3)', () => {
+  it('agrupa la última hora de security_events por tipo, contando IPs distintas y toques', async () => {
+    const rows = [{ event_type: 'BAIT_ROUTE', ips: 2, hits: '30' }];
+    db.execute.mockResolvedValueOnce([rows, undefined]);
+
+    expect(await listRecentSecurityThreats()).toBe(rows);
+    const [sql] = db.execute.mock.calls.at(-1);
+    expect(sql).toContain('FROM security_events');
+    expect(sql).toContain('last_seen_at >= NOW() - INTERVAL 1 HOUR');
+    expect(sql).toContain('COUNT(DISTINCT ip_hash)');
+    expect(sql).toContain('GROUP BY event_type');
   });
 });

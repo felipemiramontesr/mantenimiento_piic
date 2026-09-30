@@ -52,6 +52,7 @@ const TYPE_ICON: Record<AlertType, React.ReactNode> = {
   LEASE_PAYMENT_MISSING: <DollarSign size={12} />,
   FINE_REGISTERED: <Receipt size={12} />,
   EXPENSE_ANOMALY: <TrendingUp size={12} />,
+  SECURITY_THREAT: <ShieldAlert size={12} />,
 };
 
 const TYPE_LABEL: Record<AlertType, string> = {
@@ -62,7 +63,16 @@ const TYPE_LABEL: Record<AlertType, string> = {
   LEASE_PAYMENT_MISSING: 'Renta sin registrar',
   FINE_REGISTERED: 'Multa registrada',
   EXPENSE_ANOMALY: 'Gasto anómalo',
+  SECURITY_THREAT: 'Amenaza de seguridad',
 };
+
+/** FC201 F3 — la amenaza no pertenece a una unidad: su detalle y el bloqueo viven en Cosmología. */
+function alertTarget(alert: Readonly<Alert>): { to: string; label: string } {
+  if (alert.type === 'SECURITY_THREAT') {
+    return { to: '/dashboard/cosmology', label: 'Ver en Cosmología' };
+  }
+  return { to: `/dashboard/fleet/${alert.unitId}`, label: `Ver nodo · ${alert.unitId}` };
+}
 
 const SEVERITY_CONFIG: Array<{
   severity: AlertSeverity;
@@ -148,7 +158,7 @@ function AlertRow(alert: Readonly<Alert>): React.JSX.Element {
       </td>
 
       <td className="px-3 py-3 text-center">
-        <span className={AT.cellMono}>{alert.unitId}</span>
+        <span className={AT.cellMono}>{alert.unitId || '—'}</span>
       </td>
 
       <td className="px-3 py-3 text-center">
@@ -157,9 +167,9 @@ function AlertRow(alert: Readonly<Alert>): React.JSX.Element {
 
       <td className="px-3 py-3 text-center">
         <Link
-          to={`/dashboard/fleet/${alert.unitId}`}
+          to={alertTarget(alert).to}
           state={{ from: '/dashboard/alerts', fromLabel: 'Alertas' }}
-          title={`Ver nodo · ${alert.unitId}`}
+          title={alertTarget(alert).label}
           className="flex items-center justify-center w-10 h-10 mx-auto text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group"
         >
           <ExternalLink

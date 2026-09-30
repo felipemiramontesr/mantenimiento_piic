@@ -12,6 +12,11 @@ import api from '../../api/client';
  */
 
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
+// FC201 F3 — la tarjeta de eventos de seguridad tiene su propio test (SecurityEventsCard.test.tsx);
+// aquí se aísla para que las aserciones de `api.get` sigan hablando solo de los Universos.
+vi.mock('./CosmologyModule/SecurityEvents/SecurityEventsCard', () => ({
+  default: (): null => null,
+}));
 
 vi.mock('../../api/client', () => ({
   default: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },

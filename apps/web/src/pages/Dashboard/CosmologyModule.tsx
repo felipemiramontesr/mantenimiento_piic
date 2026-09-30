@@ -10,6 +10,7 @@ import {
   DestroyUniverseModal,
 } from './CosmologyModule/CosmologyForms';
 import RenameUniverseModal from './CosmologyModule/RenameUniverseModal';
+import SecurityEventsCard from './CosmologyModule/SecurityEvents/SecurityEventsCard';
 
 /**
  * FC161 F1 — Cosmology_Admin_Ui: Universes_List_Create_Destroy.
@@ -253,6 +254,7 @@ const CosmologyModule: React.FC = (): React.ReactElement => {
             onRename={setRenameTarget}
             onDestroy={setDestroyTarget}
           />
+          <SecurityEventsCard />
         </div>
       </section>
 

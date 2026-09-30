@@ -1,5 +1,5 @@
-import { ResultSetHeader } from 'mysql2';
-import db from './db';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import db, { MEXICO_TZ_OFFSET } from './db';
 
 /**
  * FC201 F1 — frontera SQL del ciclo de vida de `security_events` y `security_manual_denylist`
@@ -69,4 +69,91 @@ export async function deleteStaleDenylistEntries(): Promise<number> {
       WHERE COALESCE(revoked_at, expires_at) < NOW() - INTERVAL 30 DAY`
   );
   return result.affectedRows;
+}
+
+/** FC201 F3 — evento agregado de los últimos 15 días por (tipo, ip, carnada), con fechas en UTC. */
+export interface SecurityEventSummary extends RowDataPacket {
+  event_type: string;
+  ip_hash: string;
+  ip_address: string | null;
+  target_pattern: string;
+  hits: number | string;
+  first_seen_utc: string;
+  last_seen_utc: string;
+}
+
+/** Ventana visible para Ω (P3): la IP en claro solo existe esos 15 días. Las fechas pasan del huso
+ *  de la sesión de la DB a UTC para el reporte de abuso. */
+export async function listRecentSecurityEvents(): Promise<SecurityEventSummary[]> {
+  const [rows] = await db.execute<SecurityEventSummary[]>(
+    `SELECT event_type, ip_hash, MAX(ip_address) AS ip_address, target_pattern,
+            SUM(hit_count) AS hits,
+            DATE_FORMAT(CONVERT_TZ(MIN(first_seen_at), ?, '+00:00'), '%Y-%m-%dT%H:%i:%sZ') AS first_seen_utc,
+            DATE_FORMAT(CONVERT_TZ(MAX(last_seen_at), ?, '+00:00'), '%Y-%m-%dT%H:%i:%sZ') AS last_seen_utc
+       FROM security_events
+      WHERE created_at >= NOW() - INTERVAL 15 DAY
+      GROUP BY event_type, ip_hash, target_pattern
+      ORDER BY MAX(last_seen_at) DESC
+      LIMIT 200`,
+    [MEXICO_TZ_OFFSET, MEXICO_TZ_OFFSET]
+  );
+  return rows;
+}
+
+/** FC201 F3 — bloqueo manual vigente (no revocado ni vencido). */
+export interface DenylistEntry extends RowDataPacket {
+  ip_hash: string;
+  ip_address: string | null;
+  reason: string | null;
+  expires_utc: string;
+  ttl_seconds: number | string;
+}
+
+/** Bloqueos vigentes con sus segundos restantes medidos con el reloj de la DB. */
+export async function listActiveDenylist(): Promise<DenylistEntry[]> {
+  const [rows] = await db.execute<DenylistEntry[]>(
+    `SELECT ip_hash, ip_address, reason,
+            DATE_FORMAT(CONVERT_TZ(expires_at, ?, '+00:00'), '%Y-%m-%dT%H:%i:%sZ') AS expires_utc,
+            TIMESTAMPDIFF(SECOND, NOW(), expires_at) AS ttl_seconds
+       FROM security_manual_denylist
+      WHERE revoked_at IS NULL AND expires_at > NOW()
+      ORDER BY expires_at ASC`,
+    [MEXICO_TZ_OFFSET]
+  );
+  return rows;
+}
+
+export interface DenylistInsert {
+  ipHash: string;
+  ipAddress: string;
+  reason: string | null;
+  hours: number;
+  createdBy: number;
+}
+
+/** Bloquea (o re-bloquea) una IP por `hours` horas. Un re-bloqueo reinicia la ventana de 15 días de
+ *  la IP en claro y anula una revocación previa. */
+export async function upsertDenylistEntry(entry: DenylistInsert): Promise<void> {
+  await db.execute<ResultSetHeader>(
+    `INSERT INTO security_manual_denylist (ip_hash, ip_address, reason, expires_at, created_by)
+     VALUES (?, ?, ?, NOW() + INTERVAL ? HOUR, ?)
+     ON DUPLICATE KEY UPDATE
+       ip_address = VALUES(ip_address),
+       reason = VALUES(reason),
+       expires_at = VALUES(expires_at),
+       created_by = VALUES(created_by),
+       revoked_at = NULL,
+       created_at = CURRENT_TIMESTAMP`,
+    [entry.ipHash, entry.ipAddress, entry.reason, entry.hours, entry.createdBy]
+  );
+}
+
+/** Revoca un bloqueo vigente; `false` si no había uno activo con ese hash. */
+export async function revokeDenylistEntry(ipHash: string): Promise<boolean> {
+  const [result] = await db.execute<ResultSetHeader>(
+    `UPDATE security_manual_denylist SET revoked_at = NOW()
+      WHERE ip_hash = ? AND revoked_at IS NULL`,
+    [ipHash]
+  );
+  return result.affectedRows > 0;
 }

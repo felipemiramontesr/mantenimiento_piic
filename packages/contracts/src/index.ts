@@ -53,6 +53,8 @@ export const alertTypeSchema = z.enum([
   'LEASE_PAYMENT_MISSING',
   'FINE_REGISTERED',
   'EXPENSE_ANOMALY',
+  // FC201 F3 — amenaza detectada por la capa de carnadas (solo Ω).
+  'SECURITY_THREAT',
 ]);
 export type AlertType = z.infer<typeof alertTypeSchema>;
 

@@ -377,3 +377,27 @@ export async function listExpenseAnomalies(scope: TenantScope): Promise<AnomalyR
   );
   return rows;
 }
+
+/** FC201 F3 — actividad de la capa de carnadas en la última hora, una fila por tipo de evento. */
+export interface SecurityThreatRow extends RowDataPacket {
+  event_type: string;
+  ips: number | string;
+  hits: number | string;
+  top_pattern: string;
+  last_seen_at: Date | string;
+}
+
+/** Tipos de evento con toques en la última hora (el panel muestra a lo sumo uno por tipo). */
+export async function listRecentSecurityThreats(): Promise<SecurityThreatRow[]> {
+  const [rows] = await db.execute<SecurityThreatRow[]>(
+    `SELECT event_type,
+            COUNT(DISTINCT ip_hash) AS ips,
+            SUM(hit_count) AS hits,
+            MAX(target_pattern) AS top_pattern,
+            MAX(last_seen_at) AS last_seen_at
+       FROM security_events
+      WHERE last_seen_at >= NOW() - INTERVAL 1 HOUR
+      GROUP BY event_type`
+  );
+  return rows;
+}

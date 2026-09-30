@@ -249,8 +249,15 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
         'LEASE_PAYMENT_MISSING',
         'FINE_REGISTERED',
         'EXPENSE_ANOMALY',
+        'SECURITY_THREAT',
       ])
     );
+  });
+
+  it('FC201 F3 — SECURITY_THREAT es solo de Ω: ningún slug de vista lo concede', () => {
+    const everyViewSlug = ['maint:view', 'route:view', 'fleet:view', 'financial:view'];
+    expect(resolveAlertScope(everyViewSlug).has('SECURITY_THREAT')).toBe(false);
+    expect(resolveAlertScope(everyViewSlug).size).toBe(7);
   });
 
   it('empty permissions resolve to empty scope (deny-by-default)', () => {
@@ -268,7 +275,7 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
   });
 
   it('* mixed with specific slugs still grants every type (early return)', () => {
-    expect(resolveAlertScope(['maint:view', '*']).size).toBe(7);
+    expect(resolveAlertScope(['maint:view', '*']).size).toBe(8);
   });
 
   it('write slugs do NOT grant view scope (least privilege)', () => {
@@ -281,8 +288,8 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
     );
   });
 
-  it('omnipotent * grants all seven types', () => {
-    expect(resolveAlertScope(['*']).size).toBe(7);
+  it('omnipotent * grants all eight types (FC201 F3: + SECURITY_THREAT)', () => {
+    expect(resolveAlertScope(['*']).size).toBe(8);
   });
 });
 

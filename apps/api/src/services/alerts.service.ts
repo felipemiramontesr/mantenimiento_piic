@@ -106,6 +106,11 @@ async function countAnomalies(ctx: UserAlertContext): Promise<number> {
   return s === DENY ? 0 : AlertsRepository.countExpenseAnomalies(s);
 }
 
+/** FC201 F3 — solo Ω llega aquí (`SECURITY_THREAT` exige `'*'` en `resolveAlertScope`). */
+async function countSecurityThreats(): Promise<number> {
+  return (await AlertsRepository.listRecentSecurityThreats()).length;
+}
+
 const COUNTERS: Record<AlertType, (ctx: UserAlertContext) => Promise<number>> = {
   MAINTENANCE_OVERDUE: countMaintenanceOverdue,
   INCIDENT_OPEN: countIncidents,
@@ -114,6 +119,7 @@ const COUNTERS: Record<AlertType, (ctx: UserAlertContext) => Promise<number>> = 
   LEASE_PAYMENT_MISSING: countLease,
   FINE_REGISTERED: countFines,
   EXPENSE_ANOMALY: countAnomalies,
+  SECURITY_THREAT: countSecurityThreats,
 };
 
 /** Total alert count across every `AlertType` the caller's permissions/tenant scope grant. */
@@ -283,6 +289,34 @@ async function buildAnomalyAlerts(ctx: UserAlertContext): Promise<Alert[]> {
   return rows.map(anomalyAlertFromRow).filter((a): a is Alert => a !== null);
 }
 
+const SECURITY_THREAT_TITLES: Record<string, string> = {
+  BAIT_ROUTE: 'Amenaza detectada: escaneo de rutas',
+  TRAP_ACCOUNT: 'Amenaza detectada: cuenta señuelo',
+  TRAP_FIELD: 'Amenaza detectada: campo trampa del login',
+};
+
+/** FC201 F3 — una alerta por tipo de evento con actividad en la última hora (debounce 1 h/tipo por
+ *  construcción). Sin la IP: el detalle y el bloqueo viven en Cosmología (P3). */
+function securityThreatAlertFromRow(row: AlertsRepository.SecurityThreatRow): Alert {
+  const ips = Number(row.ips);
+  const hits = Number(row.hits);
+  return {
+    id: `SECURITY_THREAT_${row.event_type}`,
+    type: 'SECURITY_THREAT',
+    severity: 'HIGH',
+    title: SECURITY_THREAT_TITLES[row.event_type] ?? 'Amenaza detectada',
+    description: `${ips} IP(s) · ${hits} toque(s) en la última hora (p. ej. ${row.top_pattern}). Detalle y bloqueo en Cosmología.`,
+    unitId: '',
+    createdAt:
+      row.last_seen_at instanceof Date ? row.last_seen_at.toISOString() : String(row.last_seen_at),
+  };
+}
+
+async function buildSecurityThreatAlerts(): Promise<Alert[]> {
+  const rows = await AlertsRepository.listRecentSecurityThreats();
+  return rows.map(securityThreatAlertFromRow);
+}
+
 const BUILDERS: Record<AlertType, (ctx: UserAlertContext) => Promise<Alert[]>> = {
   MAINTENANCE_OVERDUE: buildMaintenanceAlerts,
   INCIDENT_OPEN: buildIncidentAlerts,
@@ -291,6 +325,7 @@ const BUILDERS: Record<AlertType, (ctx: UserAlertContext) => Promise<Alert[]>> =
   LEASE_PAYMENT_MISSING: buildLeaseAlerts,
   FINE_REGISTERED: buildFineAlerts,
   EXPENSE_ANOMALY: buildAnomalyAlerts,
+  SECURITY_THREAT: buildSecurityThreatAlerts,
 };
 
 /** Full, sorted alert list (CRITICAL→LOW, then newest-first) across every `AlertType` the caller can see. */

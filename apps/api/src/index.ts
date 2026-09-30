@@ -66,6 +66,8 @@ import { createMailTransport, logMailStatus } from './services/mailFactory';
 import registerTokenTypeGuard from './plugins/tokenTypeGuard';
 import honeypotRoutes from './routes/honeypot';
 import sendGenericNotFound from './utils/genericNotFound';
+import registerManualDenylistGuard from './plugins/manualDenylistGuard';
+import { refreshDenylistCache } from './services/securityDenylist.service';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -356,6 +358,8 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   registerCorePlugins(fastify);
   registerObservabilityHooks(fastify);
+  // FC201 F3 · T1.3 — bloqueo manual de Ω (lista en memoria; auth y reto PoW exentos).
+  registerManualDenylistGuard(fastify);
 
   // FC187 F1 — un solo transporte de correo por instancia (Memory en test, Smtp/Disabled según
   // SMTP_*); las rutas de F3/F5 lo leen de `fastify.mailTransport`.
@@ -395,6 +399,8 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
     { name: 'pendingAlerts', intervalMs: HOURLY_MS, run: processPendingAlerts },
     // FC201 F1 — IP en claro → NULL a 15 días, eventos fuera a 90, bloqueos viejos fuera (Inv-4).
     { name: 'securityEventsLifecycle', intervalMs: HOURLY_MS, run: runSecurityEventsLifecycle },
+    // FC201 F3 — recarga la lista de bloqueo manual de Ω que consulta el guard (sin DB por petición).
+    { name: 'manualDenylistRefresh', intervalMs: 60 * 1000, run: refreshDenylistCache },
   ]);
   const start = async (): Promise<void> => {
     try {

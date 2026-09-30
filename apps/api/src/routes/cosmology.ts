@@ -5,6 +5,7 @@ import * as CosmologyService from '../services/cosmology.service';
 import { resetUserMfa } from '../services/mfa.service';
 import { buildMailTestRoute, handleMailTest } from './cosmologyMailTest';
 import handleRenameUniverse from './cosmologyUniverseLabel';
+import registerSecurityEventRoutes from './cosmologySecurityEvents';
 import { labelFailureCode, universeLabelSchema } from '../services/universeLabel';
 import type {
   MutationResult,
@@ -249,7 +250,7 @@ async function handleResetUserMfa(
   return sendMutationResult(reply, result);
 }
 
-/** Registers the 13 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1 + 1 FC192), all Ω-exclusive. */
+/** Registers the 16 cosmology admin endpoints (6 Fase 1 + 3 Fase 2 + 1 Fase 3 + 1 FC185 F2 + 1 FC188 F1 + 1 FC192 + 3 FC201 F3), all Ω-exclusive. */
 export default function cosmologyRoutes(
   fastify: FastifyInstance,
   _opts: FastifyPluginOptions,
@@ -272,5 +273,6 @@ export default function cosmologyRoutes(
   fastify.post('/users/:id/mfa/reset', omegaGuard, handleResetUserMfa);
   fastify.post('/mail/test', buildMailTestRoute(omegaGuard.onRequest), handleMailTest);
   fastify.patch('/universes/:tenantId/label', omegaGuard, handleRenameUniverse);
+  registerSecurityEventRoutes(fastify, omegaGuard);
   done();
 }
