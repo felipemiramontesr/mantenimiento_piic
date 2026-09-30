@@ -44,6 +44,17 @@ describe('hashSecurityIp', () => {
     expect(hash).not.toContain('203');
     expect(hashSecurityIp('203.0.113.10')).not.toBe(hash);
   });
+
+  it('la clave sale de JWT_SECRET; sin ella (solo dev/test) usa el respaldo y cambia el hash', () => {
+    vi.stubEnv('JWT_SECRET', 'clave-a');
+    const withSecret = hashSecurityIp('203.0.113.9');
+    vi.stubEnv('JWT_SECRET', undefined);
+    const withFallback = hashSecurityIp('203.0.113.9');
+    vi.unstubAllEnvs();
+
+    expect(withFallback).toMatch(/^[0-9a-f]{64}$/);
+    expect(withFallback).not.toBe(withSecret);
+  });
 });
 
 describe('recordSecurityEvent', () => {
