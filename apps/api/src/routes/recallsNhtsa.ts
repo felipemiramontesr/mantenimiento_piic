@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
 import { outboundFetch } from '../services/outboundFetch';
 import requirePermission from '../middleware/requirePermission';
+import requireSession from '../middleware/requireSession';
 
 const NHTSA_BASE = 'https://api.nhtsa.gov/recalls/recallsByVehicle';
 const NHTSA_TIMEOUT_MS = 8_000;
@@ -129,13 +130,7 @@ export default function recallsNhtsaRoutes(
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ): void {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
+  fastify.addHook('onRequest', requireSession);
   registerNhtsaSearchRoute(fastify);
   registerNhtsaImportRoute(fastify);
   done();

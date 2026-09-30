@@ -1,3 +1,4 @@
+import { FastifyRequest } from 'fastify';
 import FleetService from './fleetService';
 
 /**
@@ -23,4 +24,10 @@ export async function resolveOwnerScope(user: ScopedUser): Promise<number[] | nu
   }
   if (tenantId == null) return [];
   return [tenantId];
+}
+
+/** Scope T2 del usuario autenticado de una request. FC202 F2: antes, copia local en ocho plugins. */
+export function resolveRequestOwnerScope(request: FastifyRequest): Promise<number[] | null> {
+  const { id, permissions, tenant_id: tenantId } = request.user as ScopedUser;
+  return resolveOwnerScope({ id, permissions, tenant_id: tenantId });
 }

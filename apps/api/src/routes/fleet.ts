@@ -4,7 +4,8 @@ import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
 import requirePermission from '../middleware/requirePermission';
 import db from '../services/db';
-import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
+import { resolveRequestOwnerScope as resolveOwnerScope } from '../services/ownerScopeResolver';
+import requireSession from '../middleware/requireSession';
 
 /**
  * 🔱 Archon Fleet Routes — Plan Omega
@@ -130,19 +131,6 @@ const updateFleetSchema = z.preprocess((raw) => {
  * FLEET_OWNER ids linked to the user for fleet:scoped carriers.
  * An empty array means deny-by-default: the user sees nothing.
  */
-// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
-const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
-  const {
-    id,
-    permissions,
-    tenant_id: tenantId,
-  } = request.user as {
-    id: number;
-    permissions?: string[];
-    tenant_id?: number | null;
-  };
-  return resolveScope({ id, permissions, tenant_id: tenantId });
-};
 
 /**
  * GET /api/v1/fleet
@@ -421,13 +409,7 @@ export default function fleetRoutes(
   done: (err?: Error) => void
 ): void {
   // Security Hook
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
+  fastify.addHook('onRequest', requireSession);
   fastify.addHook('preHandler', requirePermission('fleet:unit:view:any'));
 
   fastify.get('/fleet', handleGetFleet);

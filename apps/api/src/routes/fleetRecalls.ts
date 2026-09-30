@@ -1,24 +1,11 @@
-import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
 import { RECALL_STATUS_ENUM } from '../constants/recalls';
-import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
-
-// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
-const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
-  const {
-    id,
-    permissions,
-    tenant_id: tenantId,
-  } = request.user as {
-    id: number;
-    permissions?: string[];
-    tenant_id?: number | null;
-  };
-  return resolveScope({ id, permissions, tenant_id: tenantId });
-};
+import { resolveRequestOwnerScope as resolveOwnerScope } from '../services/ownerScopeResolver';
+import requireSession from '../middleware/requireSession';
 
 const verifyUnitAccess = async (unitId: string, ownerScope: number[] | null): Promise<boolean> => {
   if (ownerScope === null) return true;
@@ -178,13 +165,7 @@ export default function fleetRecallsRoutes(
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ): void {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
+  fastify.addHook('onRequest', requireSession);
   registerListUnitRecallsRoute(fastify);
   registerLinkUnitRecallRoute(fastify);
   registerUpdateUnitRecallRoute(fastify);

@@ -1,21 +1,8 @@
-import { FastifyInstance, FastifyRequest, FastifyPluginOptions } from 'fastify';
+import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import requirePermission from '../middleware/requirePermission';
 import OperatorScorecardService from '../services/operatorScorecardService';
-import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
-
-// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
-const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
-  const {
-    id,
-    permissions,
-    tenant_id: tenantId,
-  } = request.user as {
-    id: number;
-    permissions?: string[];
-    tenant_id?: number | null;
-  };
-  return resolveScope({ id, permissions, tenant_id: tenantId });
-};
+import { resolveRequestOwnerScope as resolveOwnerScope } from '../services/ownerScopeResolver';
+import requireSession from '../middleware/requireSession';
 
 /** Rutas del scorecard de operadores. */
 export default function operatorScorecardRoutes(
@@ -23,13 +10,7 @@ export default function operatorScorecardRoutes(
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ): void {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
+  fastify.addHook('onRequest', requireSession);
 
   fastify.get(
     '/fleet-units/:unitId/operator-score',

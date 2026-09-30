@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import type { FastifyRequest } from 'fastify';
 import FleetService from './fleetService';
-import { resolveOwnerScope } from './ownerScopeResolver';
+import { resolveOwnerScope, resolveRequestOwnerScope } from './ownerScopeResolver';
 
 vi.mock('./fleetService', () => ({
   default: {
@@ -62,5 +63,34 @@ describe('ownerScopeResolver — resolveOwnerScope (T2)', () => {
   it('undefined permissions array (falsy) with tenant_id → [tenant_id], never null', async () => {
     const scope = await resolveOwnerScope({ id: 12, tenant_id: 99 });
     expect(scope).toEqual([99]);
+  });
+});
+
+/** FC202 F2 — la variante por request reemplaza la copia local que tenían ocho plugins de rutas. */
+describe('ownerScopeResolver — resolveRequestOwnerScope', () => {
+  beforeEach((): void => {
+    vi.clearAllMocks();
+  });
+
+  const requestWith = (user: unknown): FastifyRequest => ({ user } as unknown as FastifyRequest);
+
+  it('takes id, permissions and tenant_id from request.user (tenant-only → [tenant_id])', async () => {
+    const scope = await resolveRequestOwnerScope(
+      requestWith({ id: 20, roleId: 3, permissions: [], tenant_id: 5 })
+    );
+    expect(scope).toEqual([5]);
+  });
+
+  it('Ω on the request → null', async () => {
+    expect(await resolveRequestOwnerScope(requestWith({ id: 1, permissions: ['*'] }))).toBeNull();
+  });
+
+  it('fleet:scoped on the request → owner ids of that user id', async () => {
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([7]);
+    const scope = await resolveRequestOwnerScope(
+      requestWith({ id: 30, permissions: ['fleet:scoped'], tenant_id: 9 })
+    );
+    expect(scope).toEqual([7]);
+    expect(FleetService.getUserOwnerIds).toHaveBeenCalledWith(30);
   });
 });

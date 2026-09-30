@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
+import requireSession from '../middleware/requireSession';
 
 const patternsQuerySchema = z.object({
   make: z.string().min(1, 'make es requerido'),
@@ -60,13 +61,7 @@ export default function recallsInternalRoutes(
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ): void {
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.code(401).send({ error: 'Archon Protection: Session required' });
-    }
-  });
+  fastify.addHook('onRequest', requireSession);
 
   fastify.get(
     '/recalls/internal-patterns',
