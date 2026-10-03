@@ -116,7 +116,9 @@ describe('startLoginChallenge (login de un Arc con 2FA por correo)', () => {
     expect(transport.outbox).toHaveLength(1);
     expect(transport.outbox[0].to).toBe('arc.user@piic.com.mx');
     expect(transport.outbox[0].text).toContain('ABCDEFGH');
-    expect(transport.outbox[0].subject).toContain('ABCDEFGH');
+    // FC203 F3 (Invariante 5) — el código viaja en el cuerpo, nunca en el asunto.
+    expect(transport.outbox[0].subject).toBe('Tu código de verificación — Archon');
+    expect(transport.outbox[0].subject).not.toContain('ABCDEFGH');
   });
 
   it('si el correo no sale, el reto existe igual (reenvío o respaldo) y lo dice', async () => {

@@ -133,11 +133,16 @@ export function buildEmailVerificationEmail(verifyUrl: string): EmailContent {
 /** FC195 — para qué se pide el código: activar el 2FA por correo o iniciar sesión. */
 export type MfaCodePurpose = 'setup' | 'login';
 
+/** FC203 F3 (Scenario 5) — asunto fijo y neutro del correo con código de 2FA. */
+export const MFA_CODE_SUBJECT = 'Tu código de verificación — Archon';
+
 /** FC195 F2 — código de 2FA por correo (8 caracteres, 10 min, un solo uso). */
 export function buildMfaCodeEmail(code: string, purpose: MfaCodePurpose): EmailContent {
   const isSetup = purpose === 'setup';
   return renderActionEmail({
-    subject: `${code} es tu código de verificación — ${BRAND}`,
+    // FC203 F3 (C5-OBS1 · Invariante 5) — el asunto NUNCA lleva el código: se ve en notificaciones
+    // con la pantalla bloqueada y en vistas previas del buzón. El código va solo en el cuerpo.
+    subject: MFA_CODE_SUBJECT,
     heading: isSetup ? 'Activa tu verificación por correo' : 'Tu código para iniciar sesión',
     intro: isSetup
       ? 'Escribe este código en Archon para activar la verificación en dos pasos por correo.'
