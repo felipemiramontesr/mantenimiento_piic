@@ -10,8 +10,12 @@ import api from '../../api/client';
  *  redirect to /dashboard). */
 
 // FC199 F3 — el reto anti-bot se resuelve en segundo plano; aquí devuelve un payload fijo.
-vi.mock('../../api/botChallenge', () => ({
-  obtainBotChallengePayload: async (): Promise<string> => 'payload-resuelto',
+// FC203 F2 — se simula el hook completo: su espera del piso de antigüedad (≥ 2.5 s) tiene su
+// propia batería en `useBotChallenge.test.ts` y aquí solo se prueba el formulario.
+vi.mock('./useBotChallenge', () => ({
+  default: (): { take: () => Promise<string> } => ({
+    take: async (): Promise<string> => 'payload-resuelto',
+  }),
 }));
 
 vi.mock('../../api/client', () => ({
