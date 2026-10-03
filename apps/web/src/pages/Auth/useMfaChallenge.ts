@@ -34,13 +34,18 @@ export interface MfaChallengeState {
 }
 
 /** El backend ya entrega `message` en español (F2) — se usa directo salvo fallback defensivo. */
-function getMfaChallengeErrorMessage(err: unknown): { message: string; expired: boolean } {
+function getMfaChallengeErrorMessage(err: unknown): {
+  message: string;
+  expired: boolean;
+  invalidCode: boolean;
+} {
   const axiosError = err as AxiosError<{ code?: string; message?: string }>;
   const expired = axiosError.response?.data?.code === 'TOKEN_EXPIRED_OR_REVOKED';
+  const invalidCode = axiosError.response?.data?.code === 'MFA_INVALID_CODE';
   const fallback = expired
     ? 'El reto de verificación expiró. Inicia sesión de nuevo.'
     : 'Error de conexión. Intenta de nuevo más tarde.';
-  return { message: axiosError.response?.data?.message ?? fallback, expired };
+  return { message: axiosError.response?.data?.message ?? fallback, expired, invalidCode };
 }
 
 /** Countdown puramente visual (UX) — el TTL real (5 min TOTP, 10 min correo) lo hace cumplir el
@@ -67,11 +72,31 @@ function useMfaChallengeCountdown(
   return { secondsRemaining, resetTimer: setSecondsRemaining };
 }
 
+/** FC203 F1 (T1, fila A) — los mismos 5 intentos que el backend (`MAX_MFA_ATTEMPTS`): al quinto
+ *  código erróneo el servidor revoca el reto, así que la pantalla vuelve al login. */
+export const MFA_MAX_ATTEMPTS = 5;
+
+/** Cuenta los códigos erróneos del reto vigente; un reto nuevo (otro `mfaToken`) empieza en cero. */
+function useAttemptLimit(mfaToken: string | null): { registerFailure: () => boolean } {
+  const failures = useRef(0);
+  useEffect(() => {
+    failures.current = 0;
+  }, [mfaToken]);
+  return {
+    registerFailure: (): boolean => {
+      failures.current += 1;
+      return failures.current >= MFA_MAX_ATTEMPTS;
+    },
+  };
+}
+
 interface SubmitMfaChallengeHandlers {
   readonly onSuccess: (token: string, user: UserIndustrial) => void;
   readonly setLoading: (v: boolean) => void;
   readonly setError: (v: string | null) => void;
   readonly expire: () => void;
+  /** Registra un código erróneo; `true` si ya se agotaron los intentos. */
+  readonly registerFailure: () => boolean;
 }
 
 /** El envío del código: canjea `mfaToken`+`code` por sesión completa — extraído de
@@ -86,8 +111,8 @@ function submitMfaChallenge(
   verifyMfaChallenge(mfaToken, code)
     .then((result) => handlers.onSuccess(result.token, result.user))
     .catch((err: unknown) => {
-      const { message, expired } = getMfaChallengeErrorMessage(err);
-      if (expired) {
+      const { message, expired, invalidCode } = getMfaChallengeErrorMessage(err);
+      if (expired || (invalidCode && handlers.registerFailure())) {
         handlers.expire();
       } else {
         handlers.setError(message);
@@ -161,6 +186,7 @@ export default function useMfaChallenge(
   const [loading, setLoading] = useState(false);
 
   const { secondsRemaining, resetTimer } = useMfaChallengeCountdown(mfaToken !== null, expire);
+  const { registerFailure } = useAttemptLimit(mfaToken);
   const email = useEmailChallenge({
     replaceToken: setMfaToken,
     restartTimer: resetTimer,
@@ -179,7 +205,8 @@ export default function useMfaChallenge(
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     if (!mfaTokenRef.current) return;
-    submitMfaChallenge(mfaTokenRef.current, code, { onSuccess, setLoading, setError, expire });
+    const handlers = { onSuccess, setLoading, setError, expire, registerFailure };
+    submitMfaChallenge(mfaTokenRef.current, code, handlers);
   };
 
   return {

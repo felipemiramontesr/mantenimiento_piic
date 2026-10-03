@@ -5,6 +5,7 @@ import api, {
   computeDefaultURL,
   logGatewayStartupIfNeeded,
   readProcessSignal,
+  isRetryableMfaCodeFailure,
 } from './client';
 import redirectUserToLogin from './navigation';
 
@@ -96,6 +97,61 @@ describe('Axios API Client (ARCHON CORE)', () => {
     const result = responseInterceptorSuccess(fakeResponse);
 
     expect(result).toBe(fakeResponse);
+  });
+
+  // FC203 F1 (C4a-DEF1 · T1, filas 1–5) — solo el código de 2FA erróneo NO expulsa al login.
+  describe('ExpulsarAlLogin ≡ U ∧ (¬M ∨ ¬C ∨ A) — interceptor 401', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rejected = (): any => (api.interceptors.response as any).handlers[0].rejected;
+    const respond = (status: number, url: string, code?: string): unknown => ({
+      response: { status, data: code ? { code } : {} },
+      config: { url },
+    });
+
+    it.each([
+      ['fila 1 · 401 en ruta de negocio', 401, '/fleet/units', undefined, true],
+      [
+        'fila 2 · 401 MFA_INVALID_CODE en /auth/mfa/verify',
+        401,
+        '/auth/mfa/verify',
+        'MFA_INVALID_CODE',
+        false,
+      ],
+      [
+        'fila 4 · 401 por reto vencido/revocado en /auth/mfa/verify',
+        401,
+        '/auth/mfa/verify',
+        'TOKEN_EXPIRED_OR_REVOKED',
+        true,
+      ],
+      ['fila 4 · 401 sin código en /auth/mfa/verify', 401, '/auth/mfa/verify', undefined, true],
+      [
+        'MFA_INVALID_CODE fuera de /auth/mfa/verify',
+        401,
+        '/auth/mfa/confirm',
+        'MFA_INVALID_CODE',
+        true,
+      ],
+      [
+        'fila 5 · respuesta no-401 en /auth/mfa/verify',
+        400,
+        '/auth/mfa/verify',
+        'MFA_INVALID_CODE',
+        false,
+      ],
+    ])('%s', async (_label, status, url, code, expels) => {
+      const error = respond(status, url, code);
+      await expect(rejected()(error)).rejects.toBe(error);
+      expect(redirectUserToLogin).toHaveBeenCalledTimes(expels ? 1 : 0);
+      expect(clearToken).toHaveBeenCalledTimes(expels ? 1 : 0);
+    });
+
+    it('fila 3 (intentos agotados) la resuelve la pantalla del reto: ver useMfaChallenge.test.ts', () => {
+      expect(
+        isRetryableMfaCodeFailure(respond(401, '/auth/mfa/verify', 'MFA_INVALID_CODE') as never)
+      ).toBe(true);
+      expect(isRetryableMfaCodeFailure({ response: { status: 401 } } as never)).toBe(false);
+    });
   });
 
   it('should not redirect on 401 from /auth/refresh', async () => {

@@ -25,6 +25,10 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
   // backdrop <div>: a div with click/key handlers but no native semantics
   // is itself a Sonar "non-native interactive element" finding, and there
   // is no role that honestly describes "click-catcher behind a dialog".
+  //
+  // FC203 F1 (B3-DEF1 · Invariante 1) — el listener de clic se engancha en la SIGUIENTE tarea, no
+  // aquí: en React 18 este efecto corre síncrono dentro del mismo clic que abre la ventana, y ese
+  // clic, al seguir subiendo hasta `document`, la cerraba en el acto (medido en Chromium real).
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -34,8 +38,11 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
       if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleOutsideClick);
+    const armOutsideClick = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
     return (): void => {
+      clearTimeout(armOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', handleOutsideClick);
     };

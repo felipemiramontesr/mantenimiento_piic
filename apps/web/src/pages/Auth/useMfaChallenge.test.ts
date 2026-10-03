@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
-import useMfaChallenge from './useMfaChallenge';
+import useMfaChallenge, { MFA_MAX_ATTEMPTS } from './useMfaChallenge';
 import { verifyMfaChallenge } from '../../api/mfa';
 
 /**
@@ -159,5 +159,76 @@ describe('useMfaChallenge', () => {
     const { result } = renderHook(() => useMfaChallenge(vi.fn()));
     act(() => result.current.handleSubmit({ preventDefault: vi.fn() } as never));
     expect(verifyMfaChallenge).not.toHaveBeenCalled();
+  });
+
+  // FC203 F1 (C4a-DEF1 · T1 filas 2–3) — un código erróneo deja reintentar; al quinto, vuelve al login.
+  describe('límite de intentos (FC203)', () => {
+    const invalidCode = {
+      response: { status: 401, data: { code: 'MFA_INVALID_CODE', message: 'Código incorrecto' } },
+    };
+    const submitOnce = async (result: {
+      current: ReturnType<typeof useMfaChallenge>;
+    }): Promise<void> => {
+      await act(async () => {
+        result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+      });
+    };
+
+    it('fila 2 · los primeros 4 códigos erróneos dejan reintentar en la misma pantalla', async () => {
+      (verifyMfaChallenge as Mock).mockRejectedValue(invalidCode);
+      const { result } = renderHook(() => useMfaChallenge(vi.fn()));
+      act(() => result.current.start('mfa-token-1'));
+
+      for (let i = 1; i < MFA_MAX_ATTEMPTS; i += 1) {
+        // eslint-disable-next-line no-await-in-loop -- intentos secuenciales, como los teclea la persona
+        await submitOnce(result);
+      }
+
+      expect(result.current.mfaToken).toBe('mfa-token-1');
+      expect(result.current.error).toBe('Código incorrecto');
+      expect(result.current.justExpired).toBe(false);
+    });
+
+    it('fila 3 · el quinto código erróneo agota el reto y regresa al login', async () => {
+      (verifyMfaChallenge as Mock).mockRejectedValue(invalidCode);
+      const { result } = renderHook(() => useMfaChallenge(vi.fn()));
+      act(() => result.current.start('mfa-token-1'));
+
+      for (let i = 0; i < MFA_MAX_ATTEMPTS; i += 1) {
+        // eslint-disable-next-line no-await-in-loop -- intentos secuenciales, como los teclea la persona
+        await submitOnce(result);
+      }
+
+      expect(result.current.mfaToken).toBeNull();
+      expect(result.current.justExpired).toBe(true);
+    });
+
+    it('un reto nuevo empieza con los 5 intentos completos', async () => {
+      (verifyMfaChallenge as Mock).mockRejectedValue(invalidCode);
+      const { result } = renderHook(() => useMfaChallenge(vi.fn()));
+      act(() => result.current.start('mfa-token-1'));
+      for (let i = 1; i < MFA_MAX_ATTEMPTS; i += 1) {
+        // eslint-disable-next-line no-await-in-loop -- intentos secuenciales
+        await submitOnce(result);
+      }
+      act(() => result.current.start('mfa-token-2'));
+      await submitOnce(result);
+
+      expect(result.current.mfaToken).toBe('mfa-token-2');
+      expect(result.current.justExpired).toBe(false);
+    });
+
+    it('un error de red no gasta intentos', async () => {
+      (verifyMfaChallenge as Mock).mockRejectedValue({ message: 'Network Error' });
+      const { result } = renderHook(() => useMfaChallenge(vi.fn()));
+      act(() => result.current.start('mfa-token-1'));
+      for (let i = 0; i < MFA_MAX_ATTEMPTS + 1; i += 1) {
+        // eslint-disable-next-line no-await-in-loop -- intentos secuenciales
+        await submitOnce(result);
+      }
+
+      expect(result.current.mfaToken).toBe('mfa-token-1');
+      expect(result.current.justExpired).toBe(false);
+    });
   });
 });

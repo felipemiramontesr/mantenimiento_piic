@@ -98,6 +98,21 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxios
 });
 
 // Response Interceptor for Auth Failures & Telemetry
+/**
+ * FC203 F1 (C4a-DEF1 · Invariante 2, T1) — el único 401 que NO expulsa al login: un código de 2FA
+ * mal escrito en `/auth/mfa/verify` (`MFA_INVALID_CODE`). La pantalla del reto lo muestra y deja
+ * reintentar; al quinto fallo la propia pantalla vuelve al login (`useMfaChallenge`). Un token del
+ * reto vencido o revocado, o cualquier 401 de una ruta de negocio, sigue expulsando.
+ */
+export function isRetryableMfaCodeFailure(error: AxiosError): boolean {
+  const code = (error.response?.data as { code?: unknown } | undefined)?.code;
+  return (
+    error.response?.status === 401 &&
+    !!error.config?.url?.includes('/auth/mfa/verify') &&
+    code === 'MFA_INVALID_CODE'
+  );
+}
+
 api.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     // Update Telemetry
@@ -140,7 +155,8 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !error.config?.url?.includes('/auth/login') &&
-      !error.config?.url?.includes('/auth/refresh')
+      !error.config?.url?.includes('/auth/refresh') &&
+      !isRetryableMfaCodeFailure(error)
     ) {
       if (!isTest) {
         // 🕵️ Forensic Log: Catch the culprit before redirect

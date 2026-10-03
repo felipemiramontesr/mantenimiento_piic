@@ -53,15 +53,38 @@ describe('ArchonModal — FC-2 UIUX FaseA', () => {
     expect(container?.classList.contains('max-w-xl')).toBe(true);
   });
 
-  it('AT-UI-6: clicking backdrop calls onClose', () => {
+  it('AT-UI-6: clicking backdrop calls onClose (una vez armado el listener)', () => {
+    vi.useFakeTimers();
+    const onBackdropClose = vi.fn();
     const { baseElement } = render(
-      <ArchonModal isOpen={true} onClose={onClose}>
+      <ArchonModal isOpen={true} onClose={onBackdropClose}>
         <div>Body</div>
       </ArchonModal>
     );
     const backdrop = baseElement.querySelector('.archon-modal-backdrop') as HTMLElement;
+    vi.runAllTimers();
     fireEvent.click(backdrop);
-    expect(onClose).toHaveBeenCalled();
+    expect(onBackdropClose).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  // FC203 F1 (B3-DEF1 · Invariante 1) — el clic que abre no puede cerrar: hasta la siguiente tarea
+  // no hay listener de clic. La prueba en navegador real vive en e2e/modals.spec.ts.
+  it('FC203: un clic en la misma tarea que la apertura NO cierra; al cerrar se desarma el temporizador', () => {
+    vi.useFakeTimers();
+    const onEarlyClose = vi.fn();
+    const { baseElement, unmount } = render(
+      <ArchonModal isOpen={true} onClose={onEarlyClose}>
+        <div>Body</div>
+      </ArchonModal>
+    );
+    fireEvent.click(baseElement.querySelector('.archon-modal-backdrop') as HTMLElement);
+    expect(onEarlyClose).not.toHaveBeenCalled();
+    unmount();
+    vi.runAllTimers();
+    fireEvent.click(document.body);
+    expect(onEarlyClose).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('AT-UI-8: Escape on the backdrop calls onClose (keyboard path, FC163 F1-REG Gate3)', () => {
