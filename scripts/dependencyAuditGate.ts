@@ -65,6 +65,17 @@ export const ACCEPTED_EXCEPTIONS: readonly AcceptedException[] = [
       'tooling, sin runtime de produccion.',
     reviewBy: '2026-10-26',
   },
+  {
+    // FC203 F1 (O 479_AN · R 480_AN · ratificada por Ω 2026-10-03).
+    packageName: 'braces',
+    advisoryId: 1240992,
+    reason:
+      'GHSA-vfj7-8cjw-p6xm (DoS por patrones anidados) en braces<=3.0.3, sin version ' +
+      'corregida publicada (3.0.3 es la ultima). Solo llega por lint-staged y tailwindcss ' +
+      '(micromatch/fast-glob/chokidar), devDependencies de tooling: no esta en el runtime ' +
+      'de la API ni en el bundle de la web. Retirar en cuanto exista parche (tarea en K).',
+    reviewBy: '2027-01-03',
+  },
 ];
 
 function isAcceptedAdvisory(packageName: string, advisoryId: unknown): boolean {

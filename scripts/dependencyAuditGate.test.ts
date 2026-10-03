@@ -73,11 +73,16 @@ describe('countBySeverity — parser del reporte `bun audit --json`', () => {
 });
 
 describe('FC083 H4 — ACCEPTED_EXCEPTIONS (excepción acotada, Cond.1-2 Bravo 2026-07-26)', () => {
-  it('la excepción activa es exacta: solo brace-expansion + advisory 1124334', () => {
-    expect(ACCEPTED_EXCEPTIONS).toHaveLength(1);
+  it('las excepciones activas son exactas: brace-expansion 1124334 y braces 1240992', () => {
+    expect(ACCEPTED_EXCEPTIONS).toHaveLength(2);
     expect(ACCEPTED_EXCEPTIONS[0]).toMatchObject({
       packageName: 'brace-expansion',
       advisoryId: 1124334,
+    });
+    expect(ACCEPTED_EXCEPTIONS[1]).toMatchObject({
+      packageName: 'braces',
+      advisoryId: 1240992,
+      reviewBy: '2027-01-03',
     });
   });
 
@@ -129,6 +134,42 @@ describe('FC083 H4 — ACCEPTED_EXCEPTIONS (excepción acotada, Cond.1-2 Bravo 2
     };
     const counts = countBySeverity(report);
     expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
+  });
+});
+
+// FC203 F1 (O 479_AN · R 480_AN) — excepción de braces: solo ese advisory; todo lo demás sigue frenando.
+describe('FC203 F1 — excepción acotada de braces (1240992)', () => {
+  it('high de braces CON el advisory exacto → se exceptúa, AuditPass ⊤', () => {
+    const counts = countBySeverity({
+      braces: [
+        {
+          id: 1240992,
+          severity: 'high',
+          title: 'braces vulnerable to stack-exhaustion denial of service',
+          url: 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm',
+        },
+      ],
+    });
+    expect(counts.high).toBe(0);
+    expect(evaluateAuditPass(counts)).toBe(true);
+  });
+
+  it('R 480_AN: otro advisory de braces SIGUE frenando el gate', () => {
+    const counts = countBySeverity({
+      braces: [{ id: 1240993, severity: 'high', title: 'otro', url: 'https://x' }],
+    });
+    expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
+  });
+
+  it('el id de braces no exceptúa a otro paquete ni tapa un high real', () => {
+    const counts = countBySeverity({
+      braces: [{ id: 1240992, severity: 'high', title: 'x', url: 'https://x' }],
+      '@fastify/busboy': [{ id: 1240981, severity: 'high', title: 'DoS', url: 'https://y' }],
+      'left-pad': [{ id: 1240992, severity: 'high', title: 'z', url: 'https://z' }],
+    });
+    expect(counts.high).toBe(2);
     expect(evaluateAuditPass(counts)).toBe(false);
   });
 });
