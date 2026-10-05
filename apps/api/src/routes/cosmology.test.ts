@@ -473,6 +473,25 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.execute).toHaveBeenCalledTimes(5); // FC192: 1 consulta de unicidad + mint + tenant + 2 seeds
   });
 
+  it('COSMOLOGY-CREATE-1c (FC204 F1 · Escenario 2): insertId 0 al acuñar → rollback, sin fila en tenants ni seeds', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
+      .mockResolvedValueOnce([{ insertId: 0, affectedRows: 1 }]); // mintUniverseTenantId sin AUTO_INCREMENT
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'Nuevo Universo', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBeGreaterThanOrEqual(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.execute).toHaveBeenCalledTimes(2); // unicidad + mint; nunca insertTenant
+  });
+
   // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — cosmology.service.ts unc line 217 ──
   it('COSMOLOGY-CREATE-1b: label sin caracteres alfanuméricos → slug vacío, code cae a UNIV_X_<hex>', async () => {
     (db.execute as Mock)

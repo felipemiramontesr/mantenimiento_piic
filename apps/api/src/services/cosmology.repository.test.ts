@@ -225,6 +225,17 @@ describe('Universe_Create_And_Destroy (Fase 2)', () => {
     expect(await mintUniverseTenantId('NEW_UNIVERSE', 'Nuevo Universo', mockExecutor)).toBe(42);
   });
 
+  // FC204 F1 · Escenario 2 / Invariante 1 — sin AUTO_INCREMENT el motor devolvía insertId 0 (B3-DEF2).
+  it.each([0, -1, Number.NaN, undefined])(
+    'mintUniverseTenantId throws fail-closed when insertId is %s',
+    async (insertId) => {
+      vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ insertId }, []]);
+      await expect(mintUniverseTenantId('U', 'U', mockExecutor)).rejects.toThrow(
+        'UNIVERSE_TENANT_MINT_FAILED'
+      );
+    }
+  );
+
   it('insertTenant issues the INSERT with the minted id and given fields', async () => {
     vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ affectedRows: 1 }, []]);
     await insertTenant(42, 'Nuevo Universo', 1, 1, mockExecutor);

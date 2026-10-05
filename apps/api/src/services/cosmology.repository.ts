@@ -1,6 +1,7 @@
 import { Pool, PoolConnection } from 'mysql2/promise';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from './db';
+import requirePositiveInsertId from '../utils/positiveInsertId';
 
 /**
  * FC160 F1 — SQL boundary for cosmology mutability (§24.5 `AUTORIDAD_Ω`):
@@ -267,7 +268,10 @@ export async function findOwnerTypeByCode(
 
 /** F2-I3(a) — mints a fresh `tenants.id` (no AUTO_INCREMENT there since migración 107) via the
  *  still-live `common_catalogs` pattern (migración 166 uses it for other categories); category
- *  `UNIVERSE_TENANT` is new, does not reopen the retired `FLEET_OWNER`. */
+ *  `UNIVERSE_TENANT` is new, does not reopen the retired `FLEET_OWNER`.
+ *  FC204 F1 (Invariante 1) — fail-closed: an insertId that is not a positive integer (the id 0 of
+ *  B3-DEF2, before migración 183 restored AUTO_INCREMENT) throws, so the caller's TX rolls back
+ *  before any `tenants` row exists. */
 export async function mintUniverseTenantId(
   code: string,
   label: string,
@@ -277,7 +281,7 @@ export async function mintUniverseTenantId(
     "INSERT INTO common_catalogs (category, code, label) VALUES ('UNIVERSE_TENANT', ?, ?)",
     [code, label]
   );
-  return result.insertId;
+  return requirePositiveInsertId(result.insertId, 'UNIVERSE_TENANT_MINT_FAILED');
 }
 
 /** F2-I3(b) — `tenants.id` set explicitly to the minted id (not auto-generated here). */
