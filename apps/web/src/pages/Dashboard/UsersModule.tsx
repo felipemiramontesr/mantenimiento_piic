@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { UserPlus, ShieldAlert, PlusCircle, Building2, Hash, Mail } from 'lucide-react';
+import { ShieldAlert, Building2, Hash, Mail } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { UserIndustrial } from '../../types/user';
@@ -69,9 +69,43 @@ const UsersCardPanel: React.FC = (): React.ReactElement => {
     />
   );
 };
-const UsersModule: React.FC = (): React.JSX.Element => {
+/** FC204 F2 (C3-OBS2) — encabezado de Personal. El alta murió en FC082 F0c: el directorio no lleva
+ *  acción "Alta de Personal"; el panel SIGNUP sigue siendo el de edición (tarjeta/fila → editingUser)
+ *  y conserva "Cancelar". */
+function useUsersHeader(): void {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
   const { setSectionData } = useSovereignLayout();
+
+  useEffect(() => {
+    const isEditing = activePanel === 'SIGNUP';
+
+    setSectionData(
+      'Administrar Personal',
+      'Gestión de Identidades, Roles Industriales & Auditoría de Acceso',
+      null,
+      isEditing
+        ? {
+            variant: 'navy',
+            headerTitle: 'Cancelar',
+            HeaderIcon: ShieldAlert,
+            PayloadIcon: ShieldAlert,
+            actionTitle: 'Retorno',
+            description: 'Cancelar Edición',
+            buttonText: 'Cerrar Formulario',
+            isActive: true,
+            onClick: (): void => {
+              setEditingUser(null);
+              setActivePanel('DIRECTORY');
+            },
+          }
+        : undefined
+    );
+  }, [activePanel, setSectionData, setActivePanel, setEditingUser]);
+}
+
+/** Personal (`/dashboard/users`): directorio adaptativo (tabla/tarjetas) y panel de edición. */
+const UsersModule: React.FC = (): React.JSX.Element => {
+  const { activePanel, setActivePanel, setEditingUser } = useUsers();
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🔱 IDENTITY ANCHOR
@@ -89,34 +123,7 @@ const UsersModule: React.FC = (): React.JSX.Element => {
     }
   }, [activePanel]);
 
-  useEffect(() => {
-    const isRegistering = activePanel === 'SIGNUP';
-
-    setSectionData(
-      'Administrar Personal',
-      'Gestión de Identidades, Roles Industriales & Auditoría de Acceso',
-      null,
-      {
-        variant: isRegistering ? 'navy' : 'emerald',
-        headerTitle: isRegistering ? 'Cancelar' : 'Alta de Personal',
-        HeaderIcon: isRegistering ? ShieldAlert : PlusCircle,
-        PayloadIcon: isRegistering ? ShieldAlert : UserPlus,
-        actionTitle: isRegistering ? 'Retorno' : 'Registrar',
-        description: isRegistering ? 'Cancelar Registro' : 'Gestión de Identidad',
-        buttonText: isRegistering ? 'Cerrar Formulario' : 'Iniciar Registro',
-        isActive: isRegistering,
-        onClick: () => {
-          if (isRegistering) {
-            setEditingUser(null);
-            setActivePanel('DIRECTORY');
-          } else {
-            setEditingUser(null);
-            setActivePanel('SIGNUP');
-          }
-        },
-      }
-    );
-  }, [activePanel, setSectionData, setActivePanel, setEditingUser]);
+  useUsersHeader();
 
   return (
     <div className="animate-in fade-in duration-700">

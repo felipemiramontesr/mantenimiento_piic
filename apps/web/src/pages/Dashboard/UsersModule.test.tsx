@@ -52,7 +52,14 @@ describe('UsersModule Component', () => {
     renderModule();
     // Updated to match Archon Standard labels (v.28.24.0)
     expect(screen.getByText(/EMPLEADO/i)).toBeInTheDocument();
-    expect(screen.getByText(/Alta de Personal/i)).toBeInTheDocument();
+  });
+
+  // FC204 F2 · Escenario 3 (C3-OBS2) — el alta murió en FC082: ningún control la ofrece.
+  it('FC204 F2 — el directorio no ofrece "Alta de Personal" ni "Iniciar Registro"', async () => {
+    renderModule();
+    await screen.findByText(/Administrar Personal/i);
+    expect(screen.queryByText(/Alta de Personal/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Iniciar Registro')).not.toBeInTheDocument();
   });
 
   // ── FC 074 F3 — Primera Oleada Adaptativa: ArchonAdaptiveView (TABLE + CARDS) en DIRECTORY ──
@@ -120,7 +127,7 @@ describe('UsersModule Component', () => {
       expect(screen.getAllByText('sin.nombre')).toHaveLength(2);
     });
 
-    it('clicking a card requests SIGNUP for that user, and the header "Iniciar Registro" action requests it too', async () => {
+    it('clicking a card opens the edit panel (SIGNUP) for that user', async () => {
       const setActivePanel = vi.fn();
       const setEditingUser = vi.fn();
       const user = { id: '1', fullName: 'Juan Perez', username: 'juan.perez' };
@@ -140,9 +147,6 @@ describe('UsersModule Component', () => {
       fireEvent.click(cards[0]);
       expect(setEditingUser).toHaveBeenCalledWith(user);
       expect(setActivePanel).toHaveBeenCalledWith('SIGNUP');
-
-      fireEvent.click(screen.getByText('Iniciar Registro'));
-      expect(setEditingUser).toHaveBeenCalledWith(null);
     });
   });
 

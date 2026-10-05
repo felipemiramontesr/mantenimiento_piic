@@ -129,20 +129,15 @@ function LoginCredentialFields({
   );
 }
 
-/** Botón de submit + links de contraseña olvidada / autoregistro (FC163 F2B4; FC177 F2 — link a /signup). */
+/** Botón de submit + link de autoregistro (FC163 F2B4; FC177 F2 — link a /signup). FC204 F2: sin el
+ *  botón inerte de contraseña olvidada hasta que FC187 F2–F5 entregue la recuperación. */
 function LoginSubmitButton({ loading }: { readonly loading: boolean }): React.JSX.Element {
   return (
     <div className="flex flex-col">
       <button type="submit" disabled={loading} className="btn-archon-primary w-full !md:w-full">
         {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
       </button>
-      <div className="flex items-center justify-between mt-[5px]">
-        <button
-          type="button"
-          className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
-        >
-          ¿Olvidaste tu contraseña?
-        </button>
+      <div className="flex items-center justify-end mt-[5px]">
         <Link
           to="/signup"
           className="text-pinnacle-navy/50 font-display font-bold text-xs hover:opacity-80 transition-all"

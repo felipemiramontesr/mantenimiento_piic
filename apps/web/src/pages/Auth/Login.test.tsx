@@ -47,6 +47,12 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.getByRole('button', { name: /acceder al sistema/i })).toBeInTheDocument();
   });
 
+  it('FC204 F2 · Escenario 3 — sin el botón inerte de contraseña olvidada; "Crear cuenta" sigue', () => {
+    renderComponent();
+    expect(screen.queryByText(/olvidaste tu contraseña/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /crear cuenta/i })).toHaveAttribute('href', '/signup');
+  });
+
   it('FC183 — loads with empty, sanitized credential fields (no hardcoded defaults)', () => {
     renderComponent();
     expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).toHaveValue('');
