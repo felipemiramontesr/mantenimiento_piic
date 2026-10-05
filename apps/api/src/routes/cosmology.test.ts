@@ -458,6 +458,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 900, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
@@ -470,7 +471,39 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(900);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(5); // FC192: 1 consulta de unicidad + mint + tenant + 2 seeds
+    // FC192: unicidad + mint + (FC204 F1b) consulta de handle + tenant + 2 seeds
+    expect(mockConnection.execute).toHaveBeenCalledTimes(6);
+    // FC204 F1b · Escenario 1 — el INSERT lleva un handle único y no vacío dentro de VARCHAR(20).
+    const [handleSql, handleParams] = mockConnection.execute.mock.calls[2] as [string, unknown[]];
+    expect(handleSql).toContain('FROM owners WHERE handle = ?');
+    expect(handleParams).toEqual(['FMS-NUEVOU']);
+    const [tenantSql, tenantParams] = mockConnection.execute.mock.calls[3] as [string, unknown[]];
+    expect(tenantSql).toContain('handle) VALUES (?, ?, ?, ?, ?)');
+    expect(tenantParams).toEqual([900, 'Nuevo Universo', 1, 1, 'FMS-NUEVOU']);
+  });
+
+  it('COSMOLOGY-CREATE-1d (FC204 F1b): handle base ocupado → sufijo aleatorio, sigue cabiendo en VARCHAR(20)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
+      .mockResolvedValueOnce([{ insertId: 904, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[{ id: 41 }]]) // resolveUniqueHandle: FMS-NUEVOU ya existe
+      .mockResolvedValueOnce([[]]) // resolveUniqueHandle: candidato con sufijo libre
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'Nuevo Universo', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(201);
+    const handle = (mockConnection.execute.mock.calls[4] as [string, unknown[]])[1][4] as string;
+    expect(handle).toMatch(/^FMS-NUEVOU-[A-Z0-9]{3}$/);
+    expect(handle.length).toBeLessThanOrEqual(20);
   });
 
   it('COSMOLOGY-CREATE-1c (FC204 F1 · Escenario 2): insertId 0 al acuñar → rollback, sin fila en tenants ni seeds', async () => {
@@ -500,6 +533,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 902, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
@@ -549,6 +583,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 901, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockRejectedValueOnce(new Error('DB connection lost mid-seed')); // seedSuperclusterBlueprint
     const res = await app.inject({
@@ -584,6 +619,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 950, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
@@ -608,7 +644,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(950);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(12); // FC192: +1 consulta de unicidad
+    expect(mockConnection.execute).toHaveBeenCalledTimes(13); // FC192: +1 consulta de unicidad; FC204 F1b: +1 de handle
   });
 
   it('COSMOLOGY-LINK-FAILCLOSED-MUROLE: R_global MU role absent — 500 MU_ROLE_NOT_CONFIGURED, no TX opened (Cond.R-177 R3 Bravo)', async () => {
@@ -734,6 +770,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // FC192 — assertUniqueUniverseLabel (sin colisión)
       .mockResolvedValueOnce([{ insertId: 951, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
@@ -1112,6 +1149,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[]]) // unicidad: sin colisión
       .mockResolvedValueOnce([{ insertId: 903, affectedRows: 1 }]) // mint
+      .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
@@ -1122,8 +1160,9 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       payload: { label: '  Flota    Norte  ', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
     });
     expect(res.statusCode).toBe(201);
-    const insertTenant = mockConnection.execute.mock.calls[2] as [string, unknown[]];
+    const insertTenant = mockConnection.execute.mock.calls[3] as [string, unknown[]];
     expect(insertTenant[1][1]).toBe('Flota Norte');
+    expect(insertTenant[1][4]).toBe('FMS-FLOTAN'); // FC204 F1b — handle del label normalizado
     expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO administrative_audit_logs'),
       expect.arrayContaining(['CREATE', expect.stringContaining('"label":"Flota Norte"')])

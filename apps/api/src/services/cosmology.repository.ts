@@ -284,17 +284,20 @@ export async function mintUniverseTenantId(
   return requirePositiveInsertId(result.insertId, 'UNIVERSE_TENANT_MINT_FAILED');
 }
 
-/** F2-I3(b) — `tenants.id` set explicitly to the minted id (not auto-generated here). */
+/** F2-I3(b) — `tenants.id` set explicitly to the minted id (not auto-generated here).
+ *  FC204 F1b — `handle` (NOT NULL, UNIQUE `idx_owners_handle`) goes in the INSERT: without it a
+ *  non-strict MariaDB stored '' and the second universe collided on the index. */
 export async function insertTenant(
   tenantId: number,
   label: string,
   universeTypeId: number,
   ownerTypeId: number,
+  handle: string,
   executor: Executor = db
 ): Promise<void> {
   await executor.execute<ResultSetHeader>(
-    'INSERT INTO tenants (id, label, universe_type_id, owner_type_id) VALUES (?, ?, ?, ?)',
-    [tenantId, label, universeTypeId, ownerTypeId]
+    'INSERT INTO tenants (id, label, universe_type_id, owner_type_id, handle) VALUES (?, ?, ?, ?, ?)',
+    [tenantId, label, universeTypeId, ownerTypeId, handle]
   );
 }
 

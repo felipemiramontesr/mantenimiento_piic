@@ -7,6 +7,7 @@ import { assertUniqueUniverseLabel } from './universeManagement.service';
 import { NOT_FOUND_TENANT } from './cosmology.queries';
 import { UniverseMutationError } from './universeLabel';
 import { invalidateUniverseCapabilities } from './universeCapabilities.service';
+import { resolveUniqueHandle } from '../utils/ownerHandle';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -198,7 +199,22 @@ function generateUniverseTenantCode(label: string): string {
   return `UNIV_${slug || 'X'}_${suffix}`;
 }
 
-type ValidatedUniverseTypes = { ok: true; universeTypeId: number; ownerTypeId: number };
+type ValidatedUniverseTypes = {
+  ok: true;
+  universeTypeId: number;
+  universeTypeCode: string;
+  ownerTypeId: number;
+};
+
+/** FC204 F1b — longest universe-type code that still fits `tenants.handle` VARCHAR(20): the handle is
+ *  `{PREFIX}-{6}` plus, on collision, `-{3}` (11 chars after the prefix). */
+export const UNIVERSE_HANDLE_PREFIX_MAX = 9;
+
+/** FC204 F1b — handle prefix for a new universe: its type code, or `UNV` when the code is too long
+ *  (R 491_AN). */
+export function universeHandlePrefix(universeTypeCode: string): string {
+  return universeTypeCode.length <= UNIVERSE_HANDLE_PREFIX_MAX ? universeTypeCode : 'UNV';
+}
 
 /** Validates both catalog codes before opening any transaction. */
 async function validateUniverseCreateTypes(
@@ -223,7 +239,12 @@ async function validateUniverseCreateTypes(
       message: 'Tipo de Owner inválido',
     };
   }
-  return { ok: true, universeTypeId: universeType.id, ownerTypeId: ownerType.id };
+  return {
+    ok: true,
+    universeTypeId: universeType.id,
+    universeTypeCode: universeType.code,
+    ownerTypeId: ownerType.id,
+  };
 }
 
 /** F2-I3 — the single TX: (FC192) name uniqueness → mint id → insert tenant → seed SC+Cúmulo
@@ -231,8 +252,7 @@ async function validateUniverseCreateTypes(
  *  R3 "MISMA TX"). La unicidad va DENTRO de la TX (Cond.R-192 A2), antes de acuñar el id. */
 async function runCreateUniverseTransaction(
   label: string,
-  universeTypeId: number,
-  ownerTypeId: number,
+  types: ValidatedUniverseTypes,
   callerId: number,
   userLink?: PreparedUserLink
 ): Promise<number> {
@@ -242,16 +262,24 @@ async function runCreateUniverseTransaction(
     await assertUniqueUniverseLabel(connection, label);
     const code = generateUniverseTenantCode(label);
     const tenantId = await CosmologyRepository.mintUniverseTenantId(code, label, connection);
+    // FC204 F1b — handle único en la misma TX, antes del INSERT (R 491_AN).
+    const handle = await resolveUniqueHandle(
+      connection,
+      universeHandlePrefix(types.universeTypeCode),
+      null,
+      label
+    );
     await CosmologyRepository.insertTenant(
       tenantId,
       label,
-      universeTypeId,
-      ownerTypeId,
+      types.universeTypeId,
+      types.ownerTypeId,
+      handle,
       connection
     );
     await CosmologyRepository.seedSuperclusterBlueprint(
       tenantId,
-      universeTypeId,
+      types.universeTypeId,
       callerId,
       connection
     );
@@ -292,13 +320,7 @@ export async function createUniverse(
 
   let tenantId: number;
   try {
-    tenantId = await runCreateUniverseTransaction(
-      label,
-      types.universeTypeId,
-      types.ownerTypeId,
-      callerId,
-      userLink
-    );
+    tenantId = await runCreateUniverseTransaction(label, types, callerId, userLink);
   } catch (e) {
     // FC192 — 409 UNIVERSE_NAME_ALREADY_EXISTS (nada se persistió: la TX ya hizo ROLLBACK).
     if (e instanceof UniverseMutationError) return { ok: false, ...e.failure };

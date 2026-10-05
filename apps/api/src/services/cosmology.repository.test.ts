@@ -236,12 +236,12 @@ describe('Universe_Create_And_Destroy (Fase 2)', () => {
     }
   );
 
-  it('insertTenant issues the INSERT with the minted id and given fields', async () => {
+  it('insertTenant issues the INSERT with the minted id, given fields and (FC204 F1b) the handle', async () => {
     vi.mocked(mockExecutor.execute).mockResolvedValueOnce([{ affectedRows: 1 }, []]);
-    await insertTenant(42, 'Nuevo Universo', 1, 1, mockExecutor);
+    await insertTenant(42, 'Nuevo Universo', 1, 1, 'FMS-NUEVOU', mockExecutor);
     expect(mockExecutor.execute).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO tenants'),
-      [42, 'Nuevo Universo', 1, 1]
+      expect.stringContaining('owner_type_id, handle) VALUES (?, ?, ?, ?, ?)'),
+      [42, 'Nuevo Universo', 1, 1, 'FMS-NUEVOU']
     );
   });
 
