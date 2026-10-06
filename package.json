@@ -1,6 +1,6 @@
 {
   "name": "mantenimiento-piic",
-  "version": "78.103.277",
+  "version": "78.103.278",
   "engines": {
     "node": ">=24.0.0"
   },
@@ -79,6 +79,7 @@
     "postcss": "^8.5.23",
     "filelist": "^2.0.2",
     "nanoid": "^3.3.17",
-    "undici": "^7.29.1"
+    "undici": "^7.29.1",
+    "source-map-js": "^1.2.2"
   }
 }
