@@ -338,6 +338,24 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
       expect(call[1]).toEqual([42]);
     });
 
+    it('GET /users?role= adds the role filter inside the session Universo', async () => {
+      const tenantToken = app.jwt.sign({
+        id: 10,
+        username: 'scoped_owner',
+        roleId: 1,
+        tenant_id: 42,
+        permissions: ['user:admin'],
+      });
+      await app.inject({
+        method: 'GET',
+        url: '/v1/auth/users?role=3',
+        headers: authHeader(tenantToken),
+      });
+      const call = vi.mocked(db.execute).mock.calls[0];
+      expect(call[0]).toContain('WHERE uom.owner_id IN (?) AND u.role_id = ?');
+      expect(call[1]).toEqual([42, 3]);
+    });
+
     it('GET /users without an active Universo returns an empty list without querying', async () => {
       const res = await app.inject({
         method: 'GET',

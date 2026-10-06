@@ -81,6 +81,15 @@ describe('obtainBotChallengePayload', () => {
     await expect(obtainBotChallengePayload()).rejects.toThrow('boom');
   });
 
+  it('el worker falla sin mensaje: rechaza con el texto genérico', async () => {
+    stubWorker((worker) => worker.onerror?.({ message: '' }));
+    await givenChallenge(1);
+
+    await expect(obtainBotChallengePayload()).rejects.toThrow(
+      'No se pudo resolver la verificación'
+    );
+  });
+
   it('reto sin solución en el rango: rechaza', async () => {
     vi.stubGlobal('Worker', undefined);
     const salt = 'sal?expires=9999999999&issued=1';

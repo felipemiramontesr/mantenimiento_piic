@@ -117,6 +117,28 @@ describe('verify', () => {
     expect(await botChallengeVerifier.verify(payload)).toBe(false);
   });
 
+  it.each([
+    ['sin "?" (no trae emisión ni caducidad)', 'sal-sin-parametros'],
+    ['caducidad no entera', 'sal?issued=1&expires=abc'],
+    ['emisión no entera', 'sal?issued=abc&expires=9999999999'],
+  ])('sal %s: inválido y sin tocar la DB', async (_label, salt) => {
+    const challenge = botChallengeVerifier.issue();
+
+    expect(await botChallengeVerifier.verify(solvedPayload(challenge, { salt }))).toBe(false);
+    expect(consumeNonce).not.toHaveBeenCalled();
+  });
+
+  it('sin JWT_SECRET (solo dev): firma y verifica con la llave de desarrollo', async () => {
+    const saved = process.env.JWT_SECRET;
+    delete process.env.JWT_SECRET;
+    try {
+      const challenge = botChallengeVerifier.issue();
+      expect(await botChallengeVerifier.verify(solvedPayload(challenge))).toBe(true);
+    } finally {
+      process.env.JWT_SECRET = saved;
+    }
+  });
+
   it('piso de tiempo: antes de minAgeMs es inválido; después, válido', async () => {
     vi.useFakeTimers();
     const challenge = botChallengeVerifier.issue();

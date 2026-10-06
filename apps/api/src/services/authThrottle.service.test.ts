@@ -41,6 +41,19 @@ describe('throttleKey', () => {
   it('el ámbito separa llaves: el mismo identificador en otro ámbito da otra llave', () => {
     expect(throttleKey('mail', 'x')).not.toBe(throttleKey('login-pair', 'x'));
   });
+
+  it('sin JWT_SECRET (solo dev): usa la llave de desarrollo, distinta de la de producción', () => {
+    const withSecret = throttleKey('mail', 'x');
+    const saved = process.env.JWT_SECRET;
+    delete process.env.JWT_SECRET;
+    try {
+      const devKey = throttleKey('mail', 'x');
+      expect(devKey).toMatch(/^[0-9a-f]{64}$/);
+      expect(devKey).not.toBe(withSecret);
+    } finally {
+      process.env.JWT_SECRET = saved;
+    }
+  });
 });
 
 describe('loginDelaySeconds — progresión acotada (Cond.R-199 P3)', () => {
@@ -156,6 +169,11 @@ describe('loginAccountRef — una sola llave por cuenta (424_AN)', () => {
 });
 
 describe('isLoginChallengeRequired / evaluateLoginChallenge (FAIL_GE3)', () => {
+  it('sin contadores en la ventana (cuenta ni IP): no exige reto', async () => {
+    (ThrottleRepository.readCounter as Mock).mockResolvedValue(null);
+    expect(await isLoginChallengeRequired('id:1', '203.0.113.1')).toBe(false);
+  });
+
   /** Contadores por llave: cuenta `id:1` e IP `203.0.113.1`. */
   function givenFailures(account: number, byIp: number): void {
     (ThrottleRepository.readCounter as Mock).mockImplementation(async (key: string) => {

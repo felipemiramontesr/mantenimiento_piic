@@ -103,20 +103,27 @@ function sameHex(a: string, b: string): boolean {
 }
 
 /** Firma y trabajo correctos, vigente y con el tiempo mínimo cumplido (sin tocar la DB). */
-function isValidSolution(solution: Solution, minAgeMs: number, nowMs: number): boolean {
-  const times = saltTimes(solution.salt);
-  if (!times || times.expiresS * 1000 <= nowMs || nowMs - times.issuedMs < minAgeMs) return false;
+function isValidSolution(
+  solution: Solution,
+  times: { issuedMs: number; expiresS: number },
+  minAgeMs: number,
+  nowMs: number
+): boolean {
+  if (times.expiresS * 1000 <= nowMs || nowMs - times.issuedMs < minAgeMs) return false;
   if (!sameHex(sign(solution.challenge), solution.signature)) return false;
   return sameHex(sha256Hex(`${solution.salt}${solution.number}`), solution.challenge);
 }
 
-/** Fail-closed (Inv-3): ausente, malformado, vencido, falso o repetido → `false`. */
+/** Fail-closed (Inv-3): ausente, malformado, vencido, falso o repetido → `false`. Los tiempos de la
+ *  sal se leen una sola vez y viajan validados hasta el consumo del nonce. */
 async function verify(payload: string | undefined, options: VerifyOptions = {}): Promise<boolean> {
   if (!payload) return false;
   const solution = decodeSolution(payload);
-  if (!solution || !isValidSolution(solution, options.minAgeMs ?? 0, Date.now())) return false;
-  const times = saltTimes(solution.salt);
-  return consumeNonce(solution.challenge, times?.expiresS ?? 0);
+  const times = solution ? saltTimes(solution.salt) : null;
+  if (!solution || !times || !isValidSolution(solution, times, options.minAgeMs ?? 0, Date.now())) {
+    return false;
+  }
+  return consumeNonce(solution.challenge, times.expiresS);
 }
 
 export const botChallengeVerifier: BotChallengeVerifier = { issue, verify };

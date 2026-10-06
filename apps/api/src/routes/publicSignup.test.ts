@@ -108,6 +108,17 @@ describe('POST /v1/public/signup', () => {
     }
   );
 
+  it('FC199 F3 — sin cuerpo: el reto se evalúa como ausente y responde 400 BOT_CHALLENGE_FAILED', async () => {
+    (botChallengeVerifier.verify as Mock).mockResolvedValue(false);
+
+    const res = await app.inject({ method: 'POST', url: '/v1/public/signup' });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({ success: false, code: 'BOT_CHALLENGE_FAILED' });
+    expect(botChallengeVerifier.verify).toHaveBeenCalledWith(undefined, { minAgeMs: 1500 });
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
   it('SIGNUP-1 (Scenario 1): payload válido → 201, sin necesidad de JWT (endpoint público)', async () => {
     const res = await app.inject({
       method: 'POST',

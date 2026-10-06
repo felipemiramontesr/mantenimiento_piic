@@ -24,9 +24,10 @@ export async function findOwnerMembershipIdsByUserId(
   return rows.map((r) => r.owner_id as number);
 }
 
-/** Dynamic user listing — optional owner-scope JOIN (BOLA filter) + optional role filter. */
+/** Dynamic user listing — owner-scope JOIN (BOLA filter) + optional role filter. FC204 F4: the scope is
+ *  always a non-empty list (Personal = the session's Universo); there is no unfiltered listing. */
 export async function findUsersByFilters(
-  ownerScope: number[] | null,
+  ownerScope: number[],
   role: string | undefined,
   executor: Executor = db
 ): Promise<RowDataPacket[]> {
@@ -41,14 +42,10 @@ export async function findUsersByFilters(
   `;
   const p: (string | number)[] = [];
 
-  if (ownerScope !== null) {
-    q += ` JOIN user_owner_membership uom ON u.id = uom.user_id WHERE uom.owner_id IN (${ownerScope
-      .map(() => '?')
-      .join(', ')})`;
-    p.push(...ownerScope);
-  } else {
-    q += ' WHERE 1=1';
-  }
+  q += ` JOIN user_owner_membership uom ON u.id = uom.user_id WHERE uom.owner_id IN (${ownerScope
+    .map(() => '?')
+    .join(', ')})`;
+  p.push(...ownerScope);
 
   if (role) {
     q += ' AND u.role_id = ?';

@@ -68,12 +68,12 @@ export async function getUserOwners(
   return { ok: true, data };
 }
 
-/** GET /users — BOLA-scoped listing; empty owner scope short-circuits to []. */
+/** GET /users — BOLA-scoped listing (FC204 F4: `personalScope`); empty scope short-circuits to []. */
 export async function listUsers(
-  ownerScope: number[] | null,
+  ownerScope: number[],
   role: string | undefined
 ): Promise<MappedUser[]> {
-  if (ownerScope !== null && ownerScope.length === 0) return [];
+  if (ownerScope.length === 0) return [];
   const rows = await UserRepository.findUsersByFilters(ownerScope, role);
   return rows.map(mapUserResponse);
 }

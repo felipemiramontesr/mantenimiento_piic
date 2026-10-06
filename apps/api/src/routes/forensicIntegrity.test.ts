@@ -257,6 +257,25 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       expect(response.statusCode).toBe(404);
     });
 
+    // FC204 F3 — la confirmación nominal ya vio al usuario, pero se borró antes del snapshot
+    // (carrera entre dos bajas): el servicio responde 404 D3 y libera la conexión.
+    it('should return 404 D3 when the user vanishes between the confirmation and the delete', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ userId: 1, tenantId: 41, tenantName: 'Flota Norte' }],
+        undefined,
+      ]); // findUserUniverses
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]); // snapshot before: ya no existe
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/auth/users/1',
+        headers: authHeader(),
+        payload: { reason: 'Race condition', confirmUniverseName: 'Flota Norte' },
+      });
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body).error).toBe('D3');
+      expect(mockConnection.release).toHaveBeenCalled();
+    });
+
     it('should return 500 when delete fails (catch block)', async () => {
       mockConnection.execute.mockRejectedValueOnce(new Error('FATAL_DELETE'));
       (db.execute as Mock).mockResolvedValueOnce([
