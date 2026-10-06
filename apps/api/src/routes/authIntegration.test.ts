@@ -1434,11 +1434,15 @@ describe('authIntegration.test', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[{ id: 9 }], undefined]) // findUserForUpdateById (snapshot before)
       .mockResolvedValueOnce([[{ owner_id: 42 }], undefined]); // findOwnerMembershipIdsByUserId -> target pertenece a owner 42, fuera del scope []
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ userId: 9, tenantId: 41, tenantName: 'Flota Norte' }],
+      undefined,
+    ]); // FC204 F3 — findUserUniverses (Universo del usuario)
     const res = await app.inject({
       method: 'DELETE',
       url: '/v1/auth/users/9',
       headers: { Authorization: `Bearer ${omegaScopedToken}` },
-      payload: { reason: 'Delete outside owner scope' },
+      payload: { reason: 'Delete outside owner scope', confirmUniverseName: 'Flota Norte' },
     });
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.payload).error).toBe('FORBIDDEN');
@@ -1479,11 +1483,18 @@ describe('authIntegration.test', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[{ id: 9 }], undefined]) // snapshot before
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // delete
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ userId: 9, tenantId: 41, tenantName: 'Flota Norte' }],
+      undefined,
+    ]); // FC204 F3 — findUserUniverses (Universo del usuario)
     const res = await app.inject({
       method: 'DELETE',
       url: '/v1/auth/users/9',
       headers: { Authorization: `Bearer ${wildcardNoRoleIdToken}` },
-      payload: { reason: 'Delete via wildcard permission, not roleId claim' },
+      payload: {
+        reason: 'Delete via wildcard permission, not roleId claim',
+        confirmUniverseName: 'Flota Norte',
+      },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload).success).toBe(true);
@@ -1526,11 +1537,15 @@ describe('authIntegration.test', () => {
     mockConnection.execute
       .mockResolvedValueOnce([[{ id: 9 }], undefined]) // snapshot before
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // delete
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ userId: 9, tenantId: 41, tenantName: 'Flota Norte' }],
+      undefined,
+    ]); // FC204 F3 — findUserUniverses (Universo del usuario)
     const rDelete = await app.inject({
       method: 'DELETE',
       url: '/v1/auth/users/9',
       headers: { Authorization: `Bearer ${omegaToken}` },
-      payload: { reason: 'Omega cleanup' },
+      payload: { reason: 'Omega cleanup', confirmUniverseName: 'Flota Norte' },
     });
     expect(rDelete.statusCode).toBe(200);
   });

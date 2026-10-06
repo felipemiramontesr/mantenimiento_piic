@@ -221,12 +221,16 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       mockConnection.execute
         .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // Delete
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ userId: 1, tenantId: 41, tenantName: 'Flota Norte' }],
+        undefined,
+      ]); // FC204 F3 — findUserUniverses
 
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/auth/users/1',
         headers: authHeader(),
-        payload: { reason: 'Termination' },
+        payload: { reason: 'Termination', confirmUniverseName: 'Flota Norte' },
       });
 
       expect(response.statusCode).toBe(200);
@@ -243,23 +247,27 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
     });
 
     it('should return 404 when user not found on delete', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // FC204 F3 — findUserUniverses: no existe
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/auth/users/999',
         headers: authHeader(),
-        payload: { reason: 'Not Found' },
+        payload: { reason: 'Not Found', confirmUniverseName: 'Flota Norte' },
       });
       expect(response.statusCode).toBe(404);
     });
 
     it('should return 500 when delete fails (catch block)', async () => {
       mockConnection.execute.mockRejectedValueOnce(new Error('FATAL_DELETE'));
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ userId: 1, tenantId: 41, tenantName: 'Flota Norte' }],
+        undefined,
+      ]); // FC204 F3 — findUserUniverses
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/auth/users/1',
         headers: authHeader(),
-        payload: { reason: 'Fatal Fail' },
+        payload: { reason: 'Fatal Fail', confirmUniverseName: 'Flota Norte' },
       });
       expect(response.statusCode).toBe(500);
     });

@@ -1289,17 +1289,26 @@ describe('FC185 F2 — POST /v1/cosmology/users/:id/mfa/reset', () => {
   });
 
   it('404 MFA_NOT_ENROLLED cuando el usuario objetivo no tiene credencial', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ userId: 20, tenantId: 41, tenantName: 'Flota Norte' }],
+      undefined,
+    ]); // FC204 F3 — findUserUniverses
     (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // findCredentialByUserId → sin fila
     const res = await app.inject({
       method: 'POST',
       url: '/v1/cosmology/users/20/mfa/reset',
       headers: omegaHeader(),
+      payload: { confirmUniverseName: 'Flota Norte' },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).code).toBe('MFA_NOT_ENROLLED');
   });
 
   it('200 — Ω resetea el MFA de otro usuario: borra credencial+backups en 1 TX', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ userId: 20, tenantId: 41, tenantName: 'Flota Norte' }],
+      undefined,
+    ]); // FC204 F3 — findUserUniverses
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 9, user_id: 20, type: 'totp', secret_encrypted: 'enc_x', is_confirmed: 1 }],
       undefined,
@@ -1309,6 +1318,7 @@ describe('FC185 F2 — POST /v1/cosmology/users/:id/mfa/reset', () => {
       method: 'POST',
       url: '/v1/cosmology/users/20/mfa/reset',
       headers: omegaHeader(),
+      payload: { confirmUniverseName: 'Flota Norte' },
     });
 
     expect(res.statusCode).toBe(200);

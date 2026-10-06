@@ -18,6 +18,8 @@ import {
   SessionCapabilities,
 } from '../services/sessionCapabilities.service';
 import { ScopedUser } from '../services/ownerScopeResolver';
+import { checkUniverseConfirmation } from '../services/platformUsers.service';
+import { confirmUniverseNameSchema } from './cosmologyPlatformUsers';
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -437,26 +439,41 @@ async function handlePatchUser(
   }
 }
 
+/** FC204 F3 — la baja exige, además del motivo, el nombre exacto del Universo del usuario. */
+const deleteUserBodySchema = z.object({
+  reason: z.string().min(5),
+  confirmUniverseName: confirmUniverseNameSchema,
+});
+
 async function handleDeleteUser(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<FastifyReply> {
   const { id } = request.params as { id: string };
-  const parse = z.object({ reason: z.string().min(5) }).safeParse(request.body);
-  if (!parse.success) {
-    return reply.code(400).send({ error: 'D1', details: parse.error.format() });
-  }
-  const { reason } = parse.data;
   await request.jwtVerify();
   const admin = request.user as ScopedUser & { roleId?: number };
   // FC159 R3b — enmienda de Ω: borrar usuarios es exclusivo de Ω en este estado del
   // sistema, no delegable vía `user:admin` (mismo idioma que handlePatchUser/
   // validateRoleIdUpdate para roleId=0, no un tercer criterio nuevo).
+  // FC204 F3 (T1) — ¬O → 403 antes de leer el cuerpo.
   const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
   if (!adminIsOmega) {
     return reply
       .code(403)
       .send({ success: false, code: 'FORBIDDEN', message: 'Solo Ω puede eliminar usuarios' });
+  }
+  const parse = deleteUserBodySchema.safeParse(request.body);
+  const userId = z.coerce.number().int().positive().safeParse(id);
+  if (!parse.success || !userId.success) {
+    return reply.code(400).send({ error: 'D1', details: parse.error?.format() });
+  }
+  const { reason, confirmUniverseName } = parse.data;
+  // FC204 F3 (T1) — ¬T ∨ ¬U → 400: el usuario pertenece a un Universo y Ω escribió su nombre exacto.
+  const failure = await checkUniverseConfirmation(userId.data, confirmUniverseName);
+  if (failure) {
+    return reply
+      .code(failure.status)
+      .send({ success: false, code: failure.code, message: failure.message });
   }
   try {
     const result = await UserManagementService.deleteUser(id, reason, admin);
