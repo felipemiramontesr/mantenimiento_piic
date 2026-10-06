@@ -16,6 +16,18 @@ const UNIVERSE = {
   activeClusters: 1,
 };
 
+/** FC204 F4 — un usuario de la consola de usuarios de plataforma, miembro de `UNIVERSE`. */
+const PLATFORM_USER = {
+  id: 20,
+  username: 'arc.user',
+  fullName: 'Arc User',
+  email: 'arc@piic.mx',
+  isActive: true,
+  tenantId: UNIVERSE.id,
+  tenantName: UNIVERSE.label,
+  cosmonautType: 'ARC',
+};
+
 async function mockCosmology(page: Page): Promise<void> {
   const isApi = (url: URL): boolean => url.port === '3001';
   await page.route(
@@ -33,6 +45,14 @@ async function mockCosmology(page: Page): Promise<void> {
     async (route) => {
       if (route.request().url().endsWith('/cosmology/universes')) {
         await route.fallback();
+        return;
+      }
+      if (new URL(route.request().url()).pathname.endsWith('/cosmology/users')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [PLATFORM_USER], total: 1 }),
+        });
         return;
       }
       await route.fulfill({
@@ -68,6 +88,20 @@ test.describe('ArchonModal — apertura con clic real (FC203 F1)', () => {
 
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('rename-universe-form')).toBeHidden();
+  });
+
+  test('FC204 F4 — Restablecer 2FA abre la confirmación nominal y se queda abierta', async ({
+    page,
+  }) => {
+    const key = `${PLATFORM_USER.id}-${UNIVERSE.id}`;
+    await page.getByTestId(`platform-user-reset-mfa-${key}`).click();
+
+    await expect(page.getByTestId('sovereign-action-modal')).toBeVisible();
+    await expect(page.getByTestId('sovereign-action-submit')).toBeDisabled();
+    // Escribir dentro tras el clic de apertura prueba que la ventana sigue montada.
+    await page.getByTestId('sovereign-action-universe-name').fill(UNIVERSE.label);
+    await expect(page.getByTestId('sovereign-action-submit')).toBeEnabled();
+    await expect(page.getByTestId('sovereign-action-modal')).toBeVisible();
   });
 
   test('Destruir abre su ventana de confirmación', async ({ page }) => {

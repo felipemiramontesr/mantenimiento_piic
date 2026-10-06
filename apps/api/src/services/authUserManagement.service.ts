@@ -29,6 +29,15 @@ import { detectEmailChange, EmailChange } from './emailChange.service';
 export const resolveOwnerScope = (user: ScopedUser): Promise<number[] | null> =>
   resolveOwnerScopeSsot(user);
 
+/** FC204 F4 — Personal (`GET /users`) is a tenant-level module: strictly the active Universo of the
+ *  session (`tenant_id`, R 485_AN reading 3), for every actor including Ω — never the flat list of
+ *  the whole database (Ω administers every Universo from the Cosmología console). No active
+ *  Universo → `[]`, which `listUsers` turns into an empty list. */
+export function personalScope(user: ScopedUser): number[] {
+  const tenantId = user.tenant_id;
+  return typeof tenantId === 'number' && tenantId > 0 ? [tenantId] : [];
+}
+
 /** True if targetUserId belongs to at least one owner in ownerScope. */
 export async function isUserInOwnerScope(
   connection: PoolConnection,

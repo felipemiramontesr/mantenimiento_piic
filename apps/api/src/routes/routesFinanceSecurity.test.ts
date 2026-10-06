@@ -314,19 +314,39 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
   });
 
   describe('3. User Directory Scoping & IDOR Prevention', () => {
-    it('GET /users filters user directory to common owners', async () => {
+    // FC204 F4 — Personal se acota al Universo activo de la sesión (tenant_id), no a la lista
+    // de owners de fleet:scoped ni a la base entera (R 485_AN, lectura 3).
+    it('GET /users filters the directory to the session Universo (tenant_id)', async () => {
+      const tenantToken = app.jwt.sign({
+        id: 10,
+        username: 'scoped_owner',
+        roleId: 1,
+        tenant_id: 42,
+        permissions: ['user:admin', 'fleet:scoped'],
+      });
       await app.inject({
         method: 'GET',
         url: '/v1/auth/users',
-        headers: authHeader(scopedToken),
+        headers: authHeader(tenantToken),
       });
 
-      expect(FleetService.getUserOwnerIds).toHaveBeenCalledWith(10);
+      expect(FleetService.getUserOwnerIds).not.toHaveBeenCalled();
       const call = vi.mocked(db.execute).mock.calls[0];
       expect(call[0]).toContain(
         'JOIN user_owner_membership uom ON u.id = uom.user_id WHERE uom.owner_id IN (?)'
       );
       expect(call[1]).toEqual([42]);
+    });
+
+    it('GET /users without an active Universo returns an empty list without querying', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/users',
+        headers: authHeader(scopedToken),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).data).toEqual([]);
+      expect(db.execute).not.toHaveBeenCalled();
     });
 
     it('PATCH /users/:id blocks user update if target does not share common owner', async () => {

@@ -457,10 +457,14 @@ describe('authIntegration.test', () => {
 
     // FC 082 F0c — /register fuera de la matriz: el endpoint murió (404, no 500).
     const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    // FC204 F4 — GET /users solo consulta con un Universo activo en sesión.
+    const tenantToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', tenant_id: 41, permissions: ['*'] });
     const r3 = await app.inject({
       method: 'GET',
       url: '/v1/auth/users',
-      headers: authHeader(),
+      headers: { Authorization: `Bearer ${tenantToken}` },
     });
     const r4 = await app.inject({
       method: 'PATCH',
@@ -1525,14 +1529,16 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('AUTH-BOLA-T5-5: Ω — GET y DELETE /users sin regresión (bypass total, incl. borrar)', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }], undefined]);
+  it('AUTH-BOLA-T5-5: Ω — GET /users acotado a su Universo activo (FC204 F4) y DELETE sin regresión', async () => {
+    // FC204 F4 — Personal ya no es la lista plana de la base ni para Ω: sin Universo activo, vacío.
     const rGet = await app.inject({
       method: 'GET',
       url: '/v1/auth/users',
       headers: { Authorization: `Bearer ${omegaToken}` },
     });
     expect(rGet.statusCode).toBe(200);
+    expect(JSON.parse(rGet.payload).data).toEqual([]);
+    expect(db.execute).not.toHaveBeenCalled();
 
     mockConnection.execute
       .mockResolvedValueOnce([[{ id: 9 }], undefined]) // snapshot before

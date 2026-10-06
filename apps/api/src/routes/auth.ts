@@ -369,8 +369,9 @@ async function handleLogout(_request: FastifyRequest, reply: FastifyReply): Prom
 async function handleGetUsers(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
   const { role } = request.query as { role?: string };
   try {
-    const ownerScope = await UserManagementService.resolveOwnerScope(request.user as ScopedUser);
-    const data = await UserManagementService.listUsers(ownerScope, role);
+    // FC204 F4 — acotado al Universo activo de la sesión (también para Ω).
+    const scope = UserManagementService.personalScope(request.user as ScopedUser);
+    const data = await UserManagementService.listUsers(scope, role);
     return reply.send({ success: true, data });
   } catch (e) {
     request.log.error(e);

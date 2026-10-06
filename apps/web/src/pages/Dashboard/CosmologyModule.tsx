@@ -11,6 +11,7 @@ import {
 } from './CosmologyModule/CosmologyForms';
 import RenameUniverseModal from './CosmologyModule/RenameUniverseModal';
 import SecurityEventsCard from './CosmologyModule/SecurityEvents/SecurityEventsCard';
+import PlatformUsersCard from './CosmologyModule/PlatformUsers/PlatformUsersCard';
 
 /**
  * FC161 F1 — Cosmology_Admin_Ui: Universes_List_Create_Destroy.
@@ -223,6 +224,22 @@ function useCosmologySectionHeader(refetch: () => void): void {
   }, [setSectionData, refetch]);
 }
 
+/** Consolas soberanas bajo los Universos: FC204 F4 usuarios de plataforma (todos los Universos e
+ *  itinerantes) y FC201 F3 eventos de seguridad — agrupadas para mantener `CosmologyModule` bajo
+ *  presupuesto. */
+function SovereignConsoles({
+  universes,
+}: {
+  readonly universes: UniverseRow[];
+}): React.JSX.Element {
+  return (
+    <>
+      <PlatformUsersCard universes={universes} />
+      <SecurityEventsCard />
+    </>
+  );
+}
+
 /** FC161 F1 — root page for `/dashboard/cosmology`: list/create/destroy Universos. */
 const CosmologyModule: React.FC = (): React.ReactElement => {
   const { isOmegaStrict } = usePermissions();
@@ -254,7 +271,7 @@ const CosmologyModule: React.FC = (): React.ReactElement => {
             onRename={setRenameTarget}
             onDestroy={setDestroyTarget}
           />
-          <SecurityEventsCard />
+          <SovereignConsoles universes={universes} />
         </div>
       </section>
 

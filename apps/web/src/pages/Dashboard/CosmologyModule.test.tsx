@@ -17,6 +17,10 @@ vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 vi.mock('./CosmologyModule/SecurityEvents/SecurityEventsCard', () => ({
   default: (): null => null,
 }));
+// FC204 F4 — la consola de usuarios de plataforma también tiene su propio test (PlatformUsersCard.test.tsx).
+vi.mock('./CosmologyModule/PlatformUsers/PlatformUsersCard', () => ({
+  default: (): null => null,
+}));
 
 vi.mock('../../api/client', () => ({
   default: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },
