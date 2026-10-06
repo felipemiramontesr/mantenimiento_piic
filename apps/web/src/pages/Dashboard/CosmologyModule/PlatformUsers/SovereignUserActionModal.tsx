@@ -143,10 +143,19 @@ function SovereignUserActionContent({ target, onClose, onDone }: ContentProps): 
     <ArchonModal isOpen onClose={onClose} maxWidth="max-w-lg" ariaLabel={copy.title}>
       <div className="p-8 space-y-4" data-testid="sovereign-action-modal">
         <h3 className="text-xl font-bold text-red-600">{copy.title}</h3>
+        <p className="text-[#0f2a44]/60 text-sm">{copy.warning}</p>
         <p className="text-[#0f2a44]/60 text-sm">
-          {copy.warning} Usuario: <strong className="text-[#0f2a44]">{target.user.username}</strong>
-          . Escribe <strong className="text-[#0f2a44]">{target.user.tenantName}</strong> para
-          confirmar.
+          Usuario:{' '}
+          <strong className="text-[#0f2a44]" data-testid="sovereign-action-username">
+            {target.user.username}
+          </strong>
+        </p>
+        <p className="text-[#0f2a44]/60 text-sm">
+          Escribe{' '}
+          <strong className="text-[#0f2a44]" data-testid="sovereign-action-expected-name">
+            {target.user.tenantName}
+          </strong>{' '}
+          para confirmar.
         </p>
         <ActionFields form={form} target={target} />
         <div className="grid grid-cols-2 gap-4">

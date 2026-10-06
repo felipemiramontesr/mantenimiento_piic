@@ -67,22 +67,32 @@ function usePlatformUsersPage(
 /** FC204 F4 — datos de la consola: filtro de Universo, búsqueda y página (la tarjeta solo se monta
  *  para Ω). Cambiar el filtro o la búsqueda vuelve a la página 1. */
 export default function usePlatformUsers(): PlatformUsersState {
-  const [scope, setScopeState] = useState<PlatformUserScope>('');
-  const [search, setSearchState] = useState('');
+  const [scope, setScope] = useState<PlatformUserScope>('');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [epoch, setEpoch] = useState(0);
   const fetched = usePlatformUsersPage(scope, search, page, epoch);
 
-  const setScope = useCallback((next: PlatformUserScope): void => {
-    setScopeState(next);
+  const selectScope = useCallback((next: PlatformUserScope): void => {
+    setScope(next);
     setPage(1);
   }, []);
-  const setSearch = useCallback((next: string): void => {
-    setSearchState(next);
+  const applySearch = useCallback((next: string): void => {
+    setSearch(next);
     setPage(1);
   }, []);
   const refetch = useCallback((): void => setEpoch((e) => e + 1), []);
   const pageCount = Math.max(1, Math.ceil(fetched.total / PLATFORM_USERS_PAGE_SIZE));
 
-  return { ...fetched, scope, setScope, search, setSearch, page, pageCount, setPage, refetch };
+  return {
+    ...fetched,
+    scope,
+    setScope: selectScope,
+    search,
+    setSearch: applySearch,
+    page,
+    pageCount,
+    setPage,
+    refetch,
+  };
 }
