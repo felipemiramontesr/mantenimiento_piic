@@ -40,7 +40,6 @@ interface UserContextType {
   fetchUsers: () => Promise<void>;
   toggleUserStatus: (id: string, currentStatus: boolean) => Promise<void>;
   updateUser: (id: string, data: Partial<UserIndustrial>, reason: string) => Promise<boolean>;
-  deleteUser: (id: string, reason: string) => Promise<boolean>;
   editingUser: UserIndustrial | null;
   setEditingUser: (user: UserIndustrial | null) => void;
   departments: string[];
@@ -186,30 +185,6 @@ function useUpdateUser(
   );
 }
 
-/** Eliminación de usuario — extraída del mismo motivo (Gate 2); mismo
- * comportamiento verbatim. */
-function useDeleteUser(
-  fetchUsers: () => Promise<void>
-): (id: string, reason: string) => Promise<boolean> {
-  return useCallback(
-    async (id: string, reason: string): Promise<boolean> => {
-      try {
-        const response = await api.delete(`/auth/users/${id}`, {
-          data: { reason },
-        });
-        if (response.data.success) {
-          await fetchUsers();
-          return true;
-        }
-        return false;
-      } catch {
-        return false;
-      }
-    },
-    [fetchUsers]
-  );
-}
-
 /** Memoiza el objeto `value` del Provider — extraída del mismo motivo (Gate
  * 2); mismo comportamiento verbatim (S6481: solo recalcula cuando cambia un
  * valor real, gracias a que los 3 handlers ya viajan en useCallback). */
@@ -222,7 +197,6 @@ function useUserContextValue(value: UserContextType): UserContextType {
     fetchUsers,
     toggleUserStatus,
     updateUser,
-    deleteUser,
     editingUser,
     setEditingUser,
     departments,
@@ -237,7 +211,6 @@ function useUserContextValue(value: UserContextType): UserContextType {
       fetchUsers,
       toggleUserStatus,
       updateUser,
-      deleteUser,
       editingUser,
       setEditingUser,
       departments,
@@ -250,7 +223,6 @@ function useUserContextValue(value: UserContextType): UserContextType {
       fetchUsers,
       toggleUserStatus,
       updateUser,
-      deleteUser,
       editingUser,
       departments,
       departmentsCatalog,
@@ -277,7 +249,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const toggleUserStatus = useToggleUserStatus(fetchUsers);
   const updateUser = useUpdateUser(fetchUsers);
-  const deleteUser = useDeleteUser(fetchUsers);
+  // FC204 F4 — sin `deleteUser`: la baja es soberana y vive en la consola de Cosmología.
 
   const contextValue = useUserContextValue({
     users,
@@ -287,7 +259,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchUsers,
     toggleUserStatus,
     updateUser,
-    deleteUser,
     editingUser,
     setEditingUser,
     departments,

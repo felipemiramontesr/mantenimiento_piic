@@ -25,7 +25,6 @@ const buildUserContextOverride = (
   fetchUsers: vi.fn(),
   toggleUserStatus: vi.fn(),
   updateUser: vi.fn(),
-  deleteUser: vi.fn(),
   editingUser: null,
   setEditingUser: overrides.setEditingUser ?? vi.fn(),
   departments: [],

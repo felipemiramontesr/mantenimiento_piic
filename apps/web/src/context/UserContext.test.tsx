@@ -33,9 +33,9 @@ const TestComponent = (): React.JSX.Element => {
 };
 
 // 🔱 FC162 R4-C — exposes the full action surface (toggleUserStatus/
-// updateUser/deleteUser) so tests can drive it, not just read derived state.
+// updateUser) so tests can drive it, not just read derived state. FC204 F4: deleteUser retired.
 const ActionsTestComponent = (): React.JSX.Element => {
-  const { toggleUserStatus, updateUser, deleteUser } = useUsers();
+  const { toggleUserStatus, updateUser } = useUsers();
   const [result, setResult] = React.useState<string>('none');
   return (
     <div>
@@ -55,14 +55,6 @@ const ActionsTestComponent = (): React.JSX.Element => {
         }}
       >
         update
-      </button>
-      <button
-        onClick={async (): Promise<void> => {
-          const ok = await deleteUser('1', 'reason');
-          setResult(ok ? 'delete-true' : 'delete-false');
-        }}
-      >
-        delete
       </button>
     </div>
   );
@@ -292,7 +284,7 @@ describe('UserContext (Silk Hydration Suite)', () => {
 
 /**
  * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — toggleUserStatus,
- * updateUser and deleteUser were never called by any existing test, and
+ * updateUser (and the since-retired deleteUser) were never called by any existing test, and
  * useUsers' no-provider throw had no direct coverage either.
  */
 const renderActions = async (): Promise<void> => {
@@ -388,46 +380,6 @@ describe('UserContext — updateUser', () => {
     fireEvent.click(screen.getByText('update'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('update-false'));
-  });
-});
-
-describe('UserContext — deleteUser', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('deletes and refreshes users on success', async () => {
-    vi.mocked(api.delete).mockResolvedValue({ data: { success: true } });
-    await renderActions();
-
-    const getCallsBefore = vi.mocked(api.get).mock.calls.length;
-    fireEvent.click(screen.getByText('delete'));
-
-    await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-true'));
-    expect(api.delete).toHaveBeenCalledWith('/auth/users/1', { data: { reason: 'reason' } });
-    expect(vi.mocked(api.get).mock.calls.length).toBeGreaterThan(getCallsBefore);
-  });
-
-  it('returns false without refreshing when the server reports success:false', async () => {
-    vi.mocked(api.delete).mockResolvedValue({ data: { success: false } });
-    await renderActions();
-
-    fireEvent.click(screen.getByText('delete'));
-
-    await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-false'));
-  });
-
-  it('returns false when the DELETE call rejects', async () => {
-    vi.mocked(api.delete).mockRejectedValue(new Error('network down'));
-    await renderActions();
-
-    fireEvent.click(screen.getByText('delete'));
-
-    await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-false'));
   });
 });
 

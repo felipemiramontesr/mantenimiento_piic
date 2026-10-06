@@ -12,7 +12,6 @@ import {
   Key,
   Eye,
   EyeOff,
-  Trash2,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import type { UserIndustrial } from '../../types/user';
@@ -143,18 +142,15 @@ interface UseAuditFlowArgs {
   formData: UserFormData;
   selectedFile: File | null;
   updateUser: (id: string, data: Partial<UserIndustrial>, reason: string) => Promise<boolean>;
-  deleteUser: (id: string, reason: string) => Promise<boolean>;
 }
 
 interface UseAuditFlowResult {
   isSubmitting: boolean;
   error: string | null;
   isAuditModalOpen: boolean;
-  auditAction: 'UPDATE' | 'DELETE';
   successData: { isEdit?: boolean } | null;
   handleFormSubmit: (e: React.FormEvent) => void;
   handleConfirmAudit: (reason: string) => Promise<void>;
-  openDeleteAudit: () => void;
   closeAuditModal: () => void;
 }
 
@@ -178,14 +174,14 @@ function makeFormSubmitHandler(
   formData: UserFormData,
   editingUser: UserIndustrial | null,
   setError: (e: string | null) => void,
-  startAudit: (action: 'UPDATE' | 'DELETE') => void
+  startAudit: () => void
 ): (e: React.FormEvent) => void {
   return (e: React.FormEvent): void => {
     e.preventDefault();
     const validationError = validateRegistrationForm(formData, editingUser);
     setError(validationError);
     if (validationError) return;
-    startAudit('UPDATE');
+    startAudit();
   };
 }
 
@@ -227,45 +223,30 @@ async function performUpdate(reason: string, args: PerformUpdateArgs): Promise<A
   return { ok: true };
 }
 
-/** Ejecuta el delete (FC163 F1B-1, split — sub-split de useAuditFlow). */
-async function performDelete(
-  reason: string,
-  editingUser: UserIndustrial | null,
-  deleteUser: (id: string, reason: string) => Promise<boolean>
-): Promise<AuditActionResult> {
-  if (!editingUser) return { ok: false };
-  const success = await deleteUser(editingUser.id, reason);
-  return success
-    ? { ok: true }
-    : { ok: false, error: 'Error al intentar eliminar la identidad del sistema.' };
-}
-
-/** Flujo de guardar/eliminar detrás de la justificación de auditoría (FC163 F1B-1, split). */
+/** Flujo de guardado detrás de la justificación de auditoría (FC163 F1B-1, split). FC204 F4: la baja
+ *  salió de Personal — vive en la consola de Cosmología con confirmación nominal del Universo. */
 function useAuditFlow({
   editingUser,
   formData,
   selectedFile,
   updateUser,
-  deleteUser,
 }: UseAuditFlowArgs): UseAuditFlowResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
   const [successData, setSuccessData] = useState<{ isEdit?: boolean } | null>(null);
 
-  const startAudit = (action: 'UPDATE' | 'DELETE'): void => {
-    setAuditAction(action);
-    setIsAuditModalOpen(true);
-  };
+  const startAudit = (): void => setIsAuditModalOpen(true);
 
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsSubmitting(true);
     try {
-      const result =
-        auditAction === 'UPDATE'
-          ? await performUpdate(reason, { editingUser, formData, selectedFile, updateUser })
-          : await performDelete(reason, editingUser, deleteUser);
+      const result = await performUpdate(reason, {
+        editingUser,
+        formData,
+        selectedFile,
+        updateUser,
+      });
       if (result.ok) setSuccessData({ isEdit: true });
       else if (result.error) setError(result.error);
     } catch {
@@ -282,11 +263,9 @@ function useAuditFlow({
     isSubmitting,
     error,
     isAuditModalOpen,
-    auditAction,
     successData,
     handleFormSubmit,
     handleConfirmAudit,
-    openDeleteAudit: (): void => startAudit('DELETE'),
     closeAuditModal: (): void => setIsAuditModalOpen(false),
   };
 }
@@ -629,26 +608,20 @@ interface FormActionsBarProps {
   editingUser: UserIndustrial | null;
   isSubmitting: boolean;
   canSubmit: boolean;
-  onDeleteClick: () => void;
   onCancelClick: () => void;
 }
 
-/** Barra de acciones: eliminar/cancelar/guardar (FC163 F1B-1, split). */
+/** Barra de acciones: cancelar/guardar (FC163 F1B-1, split). FC204 F4 — sin "Eliminar Personal": la
+ *  baja es soberana y vive en Cosmología (O 496_AN · R 497_AN). La columna izquierda queda vacía
+ *  para conservar la alineación de Cancelar/Guardar. */
 const FormActionsBar: React.FC<FormActionsBarProps> = ({
   editingUser,
   isSubmitting,
   canSubmit,
-  onDeleteClick,
   onCancelClick,
 }) => (
   <div className="archon-grid-2-sovereign mt-5 pt-0 border-t border-pinnacle-navy/5">
-    <div className="flex gap-4">
-      {editingUser && (
-        <button type="button" onClick={onDeleteClick} className="btn-sentinel-red w-full">
-          <Trash2 size={16} /> Eliminar Personal
-        </button>
-      )}
-    </div>
+    <div className="flex gap-4" />
     <div className="grid grid-cols-2 gap-4 w-full">
       <button type="button" onClick={onCancelClick} className="btn-sentinel-red w-full">
         Cancelar
@@ -668,13 +641,6 @@ const FormActionsBar: React.FC<FormActionsBarProps> = ({
   </div>
 );
 
-/** Título del modal de auditoría según la acción en curso (FC163 F1B-1, split). */
-function auditModalTitle(auditAction: 'UPDATE' | 'DELETE', fullName: string): string {
-  return auditAction === 'UPDATE'
-    ? `Actualización de identidad para ${fullName}`
-    : `Baja definitiva del personal: ${fullName}`;
-}
-
 interface RegistrationFormViewProps {
   editingUser: UserIndustrial | null;
   formData: UserFormData;
@@ -688,10 +654,8 @@ interface RegistrationFormViewProps {
   error: string | null;
   onFileChange: (file: File | null) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onDeleteClick: () => void;
   onCancelClick: () => void;
   isAuditModalOpen: boolean;
-  auditAction: 'UPDATE' | 'DELETE';
   onCloseAuditModal: () => void;
   onConfirmAudit: (reason: string) => Promise<void>;
 }
@@ -729,7 +693,6 @@ const RegistrationFormView: React.FC<RegistrationFormViewProps> = (props) => (
         editingUser={props.editingUser}
         isSubmitting={props.isSubmitting}
         canSubmit={props.canSubmit}
-        onDeleteClick={props.onDeleteClick}
         onCancelClick={props.onCancelClick}
       />
     </form>
@@ -738,8 +701,8 @@ const RegistrationFormView: React.FC<RegistrationFormViewProps> = (props) => (
       isOpen={props.isAuditModalOpen}
       onClose={props.onCloseAuditModal}
       onConfirm={props.onConfirmAudit}
-      title={auditModalTitle(props.auditAction, props.formData.fullName)}
-      actionType={props.auditAction}
+      title={`Actualización de identidad para ${props.formData.fullName}`}
+      actionType="UPDATE"
     />
   </>
 );
@@ -752,8 +715,7 @@ const RegistrationFormView: React.FC<RegistrationFormViewProps> = (props) => (
  * en F3 sobre el chasis Arc (§24.13 + Contrato de Onboarding §C).
  */
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
-  const { setActivePanel, editingUser, setEditingUser, updateUser, deleteUser, departments } =
-    useUsers();
+  const { setActivePanel, editingUser, setEditingUser, updateUser, departments } = useUsers();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
@@ -762,13 +724,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     isSubmitting,
     error,
     isAuditModalOpen,
-    auditAction,
     successData,
     handleFormSubmit,
     handleConfirmAudit,
-    openDeleteAudit,
     closeAuditModal,
-  } = useAuditFlow({ editingUser, formData, selectedFile, updateUser, deleteUser });
+  } = useAuditFlow({ editingUser, formData, selectedFile, updateUser });
 
   const closeToDirectory = (): void => {
     setEditingUser(null);
@@ -793,10 +753,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       error={error}
       onFileChange={setSelectedFile}
       onSubmit={handleFormSubmit}
-      onDeleteClick={openDeleteAudit}
       onCancelClick={closeToDirectory}
       isAuditModalOpen={isAuditModalOpen}
-      auditAction={auditAction}
       onCloseAuditModal={closeAuditModal}
       onConfirmAudit={handleConfirmAudit}
     />

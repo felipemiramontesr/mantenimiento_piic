@@ -61,7 +61,6 @@ const STABLE_USER_CONTEXT = {
   fetchUsers: vi.fn(),
   toggleUserStatus: vi.fn(),
   updateUser: vi.fn(),
-  deleteUser: vi.fn(),
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: [],

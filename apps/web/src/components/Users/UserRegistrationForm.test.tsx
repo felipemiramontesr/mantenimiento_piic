@@ -39,7 +39,6 @@ interface MockUserState {
   fetchUsers: Mock;
   toggleUserStatus: Mock;
   updateUser: Mock;
-  deleteUser: Mock;
   editingUser: Record<string, unknown> | null;
   setEditingUser: Mock;
   departments: string[];
@@ -54,7 +53,6 @@ const getMockState = (): MockUserState => ({
   fetchUsers: vi.fn().mockResolvedValue(true),
   toggleUserStatus: vi.fn(),
   updateUser: vi.fn().mockResolvedValue(true),
-  deleteUser: vi.fn().mockResolvedValue(true),
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: ['IT', 'Sistemas'],
@@ -248,7 +246,9 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(await screen.findByText(/Error de sincronización/i)).toBeInTheDocument();
   });
 
-  it('handles edit mode and user deletion', async () => {
+  // FC204 F4 (O 496_AN · R 497_AN) — la baja salió de Personal: vive en la consola de Cosmología
+  // con confirmación nominal del Universo. El formulario de edición conserva Cancelar y Guardar.
+  it('FC204 F4 — en edición no hay "Eliminar Personal"; Cancelar y Sincronizar siguen', () => {
     currentMockState.editingUser = {
       id: '1',
       username: 'admin',
@@ -258,42 +258,9 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       department: 'IT',
     };
     render(<UserRegistrationForm />);
-
-    fireEvent.click(screen.getByText(/Eliminar Personal/i));
-    const modal = await screen.findByRole('dialog');
-    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
-      target: { value: 'Delete reason' },
-    });
-
-    await act(async () => {
-      fireEvent.click(within(modal).getByText('Confirmar Baja'));
-    });
-    expect(currentMockState.deleteUser).toHaveBeenCalled();
-    expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
-  });
-
-  it('handles delete failure (logic branch)', async () => {
-    currentMockState.editingUser = {
-      id: '1',
-      username: 'admin',
-      fullName: 'Admin User',
-      email: 'a@p.com',
-      roleId: 0,
-      department: 'IT',
-    };
-    currentMockState.deleteUser.mockResolvedValue(false);
-    render(<UserRegistrationForm />);
-
-    fireEvent.click(screen.getByText(/Eliminar Personal/i));
-    const modal = await screen.findByRole('dialog');
-    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
-      target: { value: 'Delete reason' },
-    });
-    await act(async () => {
-      fireEvent.click(within(modal).getByText('Confirmar Baja'));
-    });
-
-    expect(await screen.findByText(/Error al intentar eliminar/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Eliminar Personal/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Cancelar')).toBeInTheDocument();
+    expect(screen.getByText(/Sincronizar Cambios/i)).toBeInTheDocument();
   });
 
   it('handles critical failure in handleConfirmAudit', async () => {
@@ -498,31 +465,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       fireEvent.click(within(screen.getByRole('dialog')).getByText('Sincronizar'));
     });
     expect(currentMockState.updateUser).not.toHaveBeenCalled();
-  });
-
-  it('performDelete does not call deleteUser when editingUser becomes null before the audit is confirmed', async () => {
-    currentMockState.editingUser = {
-      id: '1',
-      username: 'admin',
-      fullName: 'Admin User',
-      email: 'a@p.com',
-      roleId: 0,
-      department: 'IT',
-    };
-    const { rerender } = render(<UserRegistrationForm />);
-    fireEvent.click(screen.getByText(/Eliminar Personal/i));
-    const modal = await screen.findByRole('dialog');
-    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
-      target: { value: 'Delete reason' },
-    });
-
-    currentMockState.editingUser = null;
-    rerender(<UserRegistrationForm />);
-
-    await act(async () => {
-      fireEvent.click(within(screen.getByRole('dialog')).getByText('Confirmar Baja'));
-    });
-    expect(currentMockState.deleteUser).not.toHaveBeenCalled();
   });
 
   it('submit button is disabled when password set but shorter than 8 chars', () => {
