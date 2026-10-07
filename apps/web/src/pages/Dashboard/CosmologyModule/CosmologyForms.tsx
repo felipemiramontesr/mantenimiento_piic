@@ -147,6 +147,18 @@ function CreateUniverseSubmitFooter({
   );
 }
 
+const CREATE_UNIVERSE_GENERIC_ERROR = 'No se pudo crear el Universo. Intenta de nuevo.';
+
+/** FC205 F2 (B3-OBS1 · Invariante 3) — el mensaje de nombre repetido sale SOLO con el código
+ *  `UNIVERSE_NAME_ALREADY_EXISTS` (409 de FC192); cualquier otro fallo (otros 409 de vinculación,
+ *  400, 500, red) conserva el genérico. Propio del alta: no reutiliza `describeRenameError`. */
+export function describeCreateUniverseError(err: unknown): string {
+  const code = (err as { response?: { data?: { code?: unknown } } } | null)?.response?.data?.code;
+  return code === 'UNIVERSE_NAME_ALREADY_EXISTS'
+    ? 'Ya existe un universo con este nombre'
+    : CREATE_UNIVERSE_GENERIC_ERROR;
+}
+
 /** Formulario de alta — T5 `POST /v1/cosmology/universes`, con vinculación opcional de un usuario
  *  pendiente como Administrador del Universo (FC177 F3/F4, payload `linkedUserId`). */
 export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): React.JSX.Element {
@@ -171,7 +183,7 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
         linking.reset();
         onCreated();
       })
-      .catch(() => setError('No se pudo crear el Universo. Intenta de nuevo.'))
+      .catch((err) => setError(describeCreateUniverseError(err)))
       .finally(() => setSubmitting(false));
   };
 

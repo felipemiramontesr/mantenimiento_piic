@@ -186,6 +186,45 @@ describe('CosmologyModule', () => {
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
+  // FC205 F2 (B3-OBS1) — Escenarios 3 y 4: el mensaje de nombre repetido sale solo con su código.
+  it.each([
+    [
+      'Escenario 3: 409 UNIVERSE_NAME_ALREADY_EXISTS',
+      { response: { status: 409, data: { code: 'UNIVERSE_NAME_ALREADY_EXISTS' } } },
+      'Ya existe un universo con este nombre',
+    ],
+    [
+      'Escenario 4: otro 409 de vinculación',
+      { response: { status: 409, data: { code: 'LINKED_USER_ALREADY_MEMBER' } } },
+      'No se pudo crear el Universo. Intenta de nuevo.',
+    ],
+    [
+      'Escenario 4: 500',
+      { response: { status: 500, data: {} } },
+      'No se pudo crear el Universo. Intenta de nuevo.',
+    ],
+    [
+      'Escenario 4: falla de red',
+      new Error('Network Error'),
+      'No se pudo crear el Universo. Intenta de nuevo.',
+    ],
+  ])('FC205 F2 — %s → mensaje correcto y el nombre se conserva', async (_label, error, message) => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    vi.mocked(api.post).mockRejectedValueOnce(error);
+    fireEvent.change(screen.getByTestId('create-universe-label'), {
+      target: { value: 'QA Universo Prueba' },
+    });
+    fireEvent.click(screen.getByTestId('create-universe-submit'));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.getByTestId('create-universe-label')).toHaveValue('QA Universo Prueba');
+  });
+
   it('changing the owner-type select sends the newly selected value on submit', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);

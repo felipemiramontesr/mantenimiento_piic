@@ -73,6 +73,15 @@ beforeEach(() => {
 });
 
 describe('FC204 F4 — PlatformUsersCard', () => {
+  // FC205 F2 · Escenario 5 — el correo va cifrado y no se busca: el rótulo deja de prometerlo.
+  it('el buscador dice «Buscar (nombre, usuario o RFC)» sin mencionar el correo', async () => {
+    givenUsers([MEMBER]);
+    render(<PlatformUsersCard universes={UNIVERSES} />);
+    await screen.findByTestId('platform-user-row-20-41');
+    expect(screen.getByText('Buscar (nombre, usuario o RFC)')).toBeInTheDocument();
+    expect(screen.queryByText(/correo o RFC/i)).not.toBeInTheDocument();
+  });
+
   it('lista cada usuario con el nombre de su Universo; el itinerante no ofrece acciones', async () => {
     givenUsers([MEMBER, NOMAD]);
     render(<PlatformUsersCard universes={UNIVERSES} />);

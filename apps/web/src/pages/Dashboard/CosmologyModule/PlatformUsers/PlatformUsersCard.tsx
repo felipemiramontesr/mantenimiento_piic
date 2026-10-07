@@ -62,7 +62,7 @@ function PlatformUsersFilters({
           onChange={(value): void => state.setScope(scopeFromOption(value))}
         />
       </ArchonField>
-      <ArchonField label="Buscar (nombre, usuario, correo o RFC)" icon={Search}>
+      <ArchonField label="Buscar (nombre, usuario o RFC)" icon={Search}>
         <input
           value={draft}
           maxLength={100}
