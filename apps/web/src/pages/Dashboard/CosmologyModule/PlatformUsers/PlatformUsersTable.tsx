@@ -1,8 +1,11 @@
 import React from 'react';
-import { KeyRound, Trash2 } from 'lucide-react';
+import { KeyRound, Link2, Trash2 } from 'lucide-react';
 import ArchonDataTable, { ArchonTableHeader } from '../../../../components/UI/ArchonDataTable';
 import type { PlatformUser } from './platformUsersApi';
 import type { SovereignAction } from './SovereignUserActionModal';
+
+/** Acciones de una fila: las dos soberanas sobre un miembro, o (FC206 F1) vincular a un itinerante. */
+export type PlatformUserAction = SovereignAction | 'link';
 
 /** FC204 F4 — tabla de la consola: cada usuario con el nombre de su Universo y sus acciones. */
 
@@ -22,7 +25,7 @@ export function platformUserKey(user: PlatformUser): string {
 
 interface RowProps {
   readonly user: PlatformUser;
-  readonly onAction: (user: PlatformUser, action: SovereignAction) => void;
+  readonly onAction: (user: PlatformUser, action: PlatformUserAction) => void;
 }
 
 /** Botones soberanos: deshabilitados para un itinerante (sin Universo no hay nombre que confirmar). */
@@ -31,6 +34,16 @@ function RowActions({ user, onAction }: RowProps): React.JSX.Element {
   const hint = itinerant ? 'Sin Universo: la acción no aplica' : undefined;
   return (
     <div className="inline-flex items-center gap-4">
+      {itinerant && (
+        <button
+          type="button"
+          onClick={(): void => onAction(user, 'link')}
+          data-testid={`platform-user-link-${platformUserKey(user)}`}
+          className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 text-xs font-bold uppercase tracking-widest"
+        >
+          <Link2 size={12} /> Vincular a Universo
+        </button>
+      )}
       <button
         type="button"
         disabled={itinerant}
@@ -89,7 +102,7 @@ export default function PlatformUsersTable({
 }: {
   readonly users: PlatformUser[];
   readonly loading: boolean;
-  readonly onAction: (user: PlatformUser, action: SovereignAction) => void;
+  readonly onAction: (user: PlatformUser, action: PlatformUserAction) => void;
 }): React.JSX.Element {
   return (
     <ArchonDataTable<PlatformUser>

@@ -47,7 +47,9 @@ type BillingProfile = NonNullable<Awaited<ReturnType<typeof LinkingRepository.fi
 /** The 4 fail-closed candidate checks (Cond.R-177 R3, Bravo), extracted so `prepareUserLink`
  *  stays under Gate 2's budget: doesn't exist, already active, already belongs to a tenant, or
  *  never completed public signup (no billing snapshot). */
-async function validateLinkCandidate(userId: number): Promise<BillingProfile | LinkUserError> {
+export async function validateLinkCandidate(
+  userId: number
+): Promise<BillingProfile | LinkUserError> {
   const user = await LinkingRepository.findUserActiveState(userId);
   if (!user) {
     return {

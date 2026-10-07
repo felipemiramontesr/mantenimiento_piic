@@ -54,6 +54,20 @@ export async function resetPlatformUserMfa(userId: number, universeName: string)
   await api.post(`/cosmology/users/${userId}/mfa/reset`, { confirmUniverseName: universeName });
 }
 
+/** FC206 F1 — vincula un usuario itinerante a un Universo existente (Ω escribe el nombre exacto). */
+export async function linkPlatformUserToUniverse(
+  userId: number,
+  tenantId: number,
+  role: 'ARC' | 'MU',
+  universeName: string
+): Promise<void> {
+  await api.post(`/cosmology/users/${userId}/link-universe`, {
+    tenantId,
+    role,
+    confirmUniverseName: universeName,
+  });
+}
+
 /** Da de baja a un usuario (Ω escribe el nombre de su Universo y un motivo). */
 export async function deletePlatformUser(
   userId: number,
@@ -71,6 +85,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   USER_NOT_FOUND: 'El usuario ya no existe.',
   MFA_NOT_ENROLLED: 'El usuario no tiene 2FA configurado; no hay nada que restablecer.',
   FORBIDDEN: 'Acción exclusiva de GrayMan.',
+  // FC206 F1 — vinculación directa a un Universo.
+  LINKED_USER_NOT_FOUND: 'El usuario ya no existe.',
+  LINKED_USER_INACTIVE: 'El usuario está suspendido; no se puede vincular.',
+  LINKED_USER_ALREADY_MEMBER: 'El usuario ya pertenece a un Universo.',
+  LINKED_USER_MISSING_BILLING_PROFILE: 'El usuario no completó su registro fiscal.',
+  UNIVERSE_NOT_FOUND: 'El Universo ya no existe.',
+  MU_ALREADY_DESIGNATED: 'Ese Universo ya tiene Master of Universe; vincúlalo como ARC.',
+  ROLE_NOT_CONFIGURED: 'El rol no está configurado en el servidor.',
 };
 
 /** Mensaje en español para el error de una acción soberana (códigos del backend de FC204 F3). */

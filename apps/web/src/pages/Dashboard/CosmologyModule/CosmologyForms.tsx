@@ -17,6 +17,8 @@ export interface UniverseRow {
   universeTypeCode: string;
   activeSuperclusters: number;
   activeClusters: number;
+  /** FC206 F1 — ya tiene su MU (ancla `tenants.mu_user_id`): solo admite vincular como ARC. */
+  hasMu?: boolean;
 }
 
 // Cond.R-161 pregunta 1 (RESUELTO, `189_AN`/`190_AN`) — catálogos estables,

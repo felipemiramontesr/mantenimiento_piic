@@ -5,11 +5,9 @@ import ArchonSelect from '../../../../components/ArchonSelect';
 import type { UniverseRow } from '../CosmologyForms';
 import type { PlatformUser, PlatformUserScope } from './platformUsersApi';
 import usePlatformUsers, { PlatformUsersState } from './usePlatformUsers';
-import PlatformUsersTable from './PlatformUsersTable';
-import SovereignUserActionModal, {
-  SovereignAction,
-  SovereignActionTarget,
-} from './SovereignUserActionModal';
+import PlatformUsersTable, { PlatformUserAction } from './PlatformUsersTable';
+import LinkUniverseModal from './LinkUniverseModal';
+import SovereignUserActionModal, { SovereignActionTarget } from './SovereignUserActionModal';
 
 /**
  * FC204 F4 — Consola de Usuarios de Plataforma (solo Ω, §24.5): todos los cosmonautas con el
@@ -107,6 +105,31 @@ function PlatformUsersPager({ state }: { readonly state: PlatformUsersState }): 
   );
 }
 
+interface ActionTargets {
+  readonly target: SovereignActionTarget | null;
+  readonly linkUser: PlatformUser | null;
+  readonly onAction: (user: PlatformUser, action: PlatformUserAction) => void;
+  readonly close: () => void;
+}
+
+/** Qué modal abre cada acción: las soberanas sobre un miembro, o (FC206 F1) vincular a un itinerante. */
+function useActionTargets(): ActionTargets {
+  const [target, setTarget] = useState<SovereignActionTarget | null>(null);
+  const [linkUser, setLinkUser] = useState<PlatformUser | null>(null);
+  return {
+    target,
+    linkUser,
+    onAction: (user, action): void => {
+      if (action === 'link') setLinkUser(user);
+      else setTarget({ user, action });
+    },
+    close: (): void => {
+      setTarget(null);
+      setLinkUser(null);
+    },
+  };
+}
+
 /** Tarjeta de la consola. `universes` alimenta el selector (ya los carga `CosmologyModule`). */
 export default function PlatformUsersCard({
   universes,
@@ -114,9 +137,11 @@ export default function PlatformUsersCard({
   readonly universes: UniverseRow[];
 }): React.JSX.Element {
   const state = usePlatformUsers();
-  const [target, setTarget] = useState<SovereignActionTarget | null>(null);
-  const onAction = (user: PlatformUser, action: SovereignAction): void =>
-    setTarget({ user, action });
+  const actions = useActionTargets();
+  const onDone = (): void => {
+    actions.close();
+    state.refetch();
+  };
 
   return (
     <div
@@ -133,16 +158,19 @@ export default function PlatformUsersCard({
           Error al cargar los usuarios. Intenta de nuevo.
         </p>
       ) : (
-        <PlatformUsersTable users={state.users} loading={state.loading} onAction={onAction} />
+        <PlatformUsersTable
+          users={state.users}
+          loading={state.loading}
+          onAction={actions.onAction}
+        />
       )}
       <PlatformUsersPager state={state} />
-      <SovereignUserActionModal
-        target={target}
-        onClose={(): void => setTarget(null)}
-        onDone={(): void => {
-          setTarget(null);
-          state.refetch();
-        }}
+      <SovereignUserActionModal target={actions.target} onClose={actions.close} onDone={onDone} />
+      <LinkUniverseModal
+        user={actions.linkUser}
+        universes={universes}
+        onClose={actions.close}
+        onDone={onDone}
       />
     </div>
   );

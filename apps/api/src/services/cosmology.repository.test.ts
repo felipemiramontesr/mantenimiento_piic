@@ -24,13 +24,13 @@ import {
   seedClusterBlueprint,
   countZeroStateBuckets,
   destroyUniverseRow,
-  listUniverses,
   findMuCosmonautRoleId,
   usernameExists,
   insertSeedUser,
   insertTenantUserMembership,
   insertCosmonautRoleAssignment,
 } from './cosmology.repository';
+import { listUniverses } from './universeList.repository';
 
 /**
  * FC162 F1-T5 — cosmology.repository.ts had no dedicated repository-level

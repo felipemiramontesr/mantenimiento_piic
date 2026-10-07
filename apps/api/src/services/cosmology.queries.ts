@@ -1,4 +1,5 @@
 import * as CosmologyRepository from './cosmology.repository';
+import { listUniverses as findUniverseList } from './universeList.repository';
 import { findPendingUsers } from './universeUserLinking.repository';
 import EncryptionService from './encryption';
 
@@ -67,11 +68,13 @@ export interface UniverseView {
   universeTypeCode: string;
   activeSuperclusters: number;
   activeClusters: number;
+  /** FC206 F1 — the Universo already has its MU anchor (`tenants.mu_user_id`). */
+  hasMu: boolean;
 }
 
 /** T7 — lists every Universo with a quick operational census. */
 export async function listUniverses(): Promise<ListResult<UniverseView>> {
-  const rows = await CosmologyRepository.listUniverses();
+  const rows = await findUniverseList();
   return {
     ok: true,
     data: rows.map((r) => ({
@@ -80,6 +83,7 @@ export async function listUniverses(): Promise<ListResult<UniverseView>> {
       universeTypeCode: r.universeTypeCode,
       activeSuperclusters: Number(r.activeSuperclusters),
       activeClusters: Number(r.activeClusters),
+      hasMu: Boolean(r.hasMu),
     })),
   };
 }

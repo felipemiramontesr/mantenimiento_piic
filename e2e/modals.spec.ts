@@ -28,6 +28,16 @@ const PLATFORM_USER = {
   cosmonautType: 'ARC',
 };
 
+/** FC206 F1 — un itinerante (sin Universo) al que Ω puede vincular. */
+const ITINERANT_USER = {
+  ...PLATFORM_USER,
+  id: 21,
+  username: 'nomad',
+  tenantId: null,
+  tenantName: null,
+  cosmonautType: null,
+};
+
 async function mockCosmology(page: Page): Promise<void> {
   const isApi = (url: URL): boolean => url.port === '3001';
   await page.route(
@@ -51,7 +61,7 @@ async function mockCosmology(page: Page): Promise<void> {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: [PLATFORM_USER], total: 1 }),
+          body: JSON.stringify({ success: true, data: [PLATFORM_USER, ITINERANT_USER], total: 2 }),
         });
         return;
       }
@@ -102,6 +112,16 @@ test.describe('ArchonModal — apertura con clic real (FC203 F1)', () => {
     await page.getByTestId('sovereign-action-universe-name').fill(UNIVERSE.label);
     await expect(page.getByTestId('sovereign-action-submit')).toBeEnabled();
     await expect(page.getByTestId('sovereign-action-modal')).toBeVisible();
+  });
+
+  test('FC206 F1 — Vincular a Universo abre su ventana y se queda abierta', async ({ page }) => {
+    await page.getByTestId(`platform-user-link-${ITINERANT_USER.id}-itinerant`).click();
+
+    await expect(page.getByTestId('link-universe-modal')).toBeVisible();
+    await expect(page.getByTestId('link-universe-submit')).toBeDisabled();
+    // Escribir dentro tras el clic de apertura prueba que la ventana sigue montada.
+    await page.getByTestId('link-universe-name').fill(UNIVERSE.label);
+    await expect(page.getByTestId('link-universe-modal')).toBeVisible();
   });
 
   test('Destruir abre su ventana de confirmación', async ({ page }) => {

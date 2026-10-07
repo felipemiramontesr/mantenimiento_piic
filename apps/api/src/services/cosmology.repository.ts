@@ -477,26 +477,3 @@ export async function insertCosmonautRoleAssignment(
     [userId, roleId, tenantId, assignedBy]
   );
 }
-
-export interface UniverseListRow extends RowDataPacket {
-  id: number;
-  label: string;
-  universeTypeCode: string;
-  activeSuperclusters: number;
-  activeClusters: number;
-}
-
-/** T7 — every Universo with its type and a quick census of active SC/Cúmulo counts. */
-export async function listUniverses(executor: Executor = db): Promise<UniverseListRow[]> {
-  const [rows] = await executor.execute<UniverseListRow[]>(
-    `SELECT t.id, t.label, ut.code AS universeTypeCode,
-       (SELECT COUNT(*) FROM universe_superclusters us
-          WHERE us.tenant_id = t.id AND us.state = 'ACTIVE') AS activeSuperclusters,
-       (SELECT COUNT(*) FROM universe_clusters uc
-          WHERE uc.tenant_id = t.id AND uc.state = 'ACTIVE') AS activeClusters
-     FROM tenants t
-     JOIN universe_types ut ON ut.id = t.universe_type_id
-     ORDER BY t.id`
-  );
-  return rows;
-}

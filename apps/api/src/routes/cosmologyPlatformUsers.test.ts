@@ -328,3 +328,60 @@ describe('FC204 T1 — 16 filas de AccionSoberanaPermitida(O, U, C, T)', () => {
     }
   );
 });
+
+/**
+ * FC206 F1 — POST /v1/cosmology/users/:id/link-universe: el cableado de la ruta (guard Ω, validación
+ * del cuerpo y mapeo del resultado). Las 10 filas de T1 viven en universeDirectLink.service.test.ts.
+ */
+describe('FC206 F1 — POST /v1/cosmology/users/:id/link-universe', () => {
+  const link = (
+    headers: Record<string, string>,
+    payload: object
+  ): Promise<{ statusCode: number; body: string }> =>
+    app.inject({ method: 'POST', url: '/v1/cosmology/users/20/link-universe', headers, payload });
+  const BODY = { tenantId: 41, confirmUniverseName: UNIVERSE };
+
+  it('T1 fila 10: un no-Ω recibe 403 sin tocar la base', async () => {
+    const res = await link(arcHeader(), BODY);
+    expect(res.statusCode).toBe(403);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['sin tenantId', { confirmUniverseName: UNIVERSE }],
+    ['tenantId 0', { tenantId: 0, confirmUniverseName: UNIVERSE }],
+    ['sin nombre', { tenantId: 41 }],
+    ['rol inventado', { ...BODY, role: 'OMEGA' }],
+  ])('400 VALIDATION_ERROR %s', async (_label, payload) => {
+    const res = await link(omegaHeader(), payload);
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('el usuario no existe → 404 LINKED_USER_NOT_FOUND', async () => {
+    const res = await link(omegaHeader(), BODY);
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('LINKED_USER_NOT_FOUND');
+  });
+
+  it('itinerante válido a Universo con MU → 200 como ARC (rol por defecto)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ is_active: 1 }], undefined]) // findUserActiveState
+      .mockResolvedValueOnce([[], undefined]) // findTenantMembershipOwnerIds: itinerante
+      .mockResolvedValueOnce([[{ rfc: 'XAXX010101000' }], undefined]) // findBillingProfile
+      .mockResolvedValueOnce([[{ id: 41, label: UNIVERSE, mu_user_id: 5 }], undefined]) // destino
+      .mockResolvedValueOnce([[{ id: 7 }], undefined]); // findArcCosmonautRoleId
+    const res = await link(omegaHeader(), BODY);
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toEqual({ success: true, role: 'ARC' });
+    const sqls = mockConnection.execute.mock.calls.map(([sql]) => String(sql));
+    expect(sqls[0]).toContain(
+      'INSERT INTO tenant_user_memberships (user_id, owner_id, cosmonaut_type)'
+    );
+    expect(mockConnection.execute.mock.calls[0][1]).toEqual([20, 41, 'ARC']);
+    expect(sqls[1]).toContain('INSERT INTO cosmonaut_role_assignments');
+    expect(mockConnection.execute.mock.calls[1][1]).toEqual([20, 7, 41, 1]);
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+});
