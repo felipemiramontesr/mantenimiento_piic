@@ -22,7 +22,7 @@ export interface PlatformUserRow extends RowDataPacket {
   id: number;
   username: string;
   fullName: string | null;
-  email: string;
+  email: string | null;
   isActive: number;
   tenantId: number | null;
   tenantName: string | null;
@@ -46,7 +46,9 @@ function likeContains(term: string): string {
   return `%${escaped}%`;
 }
 
-/** WHERE clause + params for the scope and the text search (name, username, email, RFC). */
+/** WHERE clause + params for the scope and the text search (name, username, RFC). FC205 F1: `u.email`
+ *  is stored encrypted (iv:tag:hex), so a LIKE on it can never match and it is not searched; a typed
+ *  e-mail only matches through `username` when the username is that e-mail. */
 function buildWhere(filter: PlatformUserFilter): { sql: string; params: (string | number)[] } {
   const clauses: string[] = [];
   const params: (string | number)[] = [];
@@ -58,8 +60,8 @@ function buildWhere(filter: PlatformUserFilter): { sql: string; params: (string 
   }
   if (filter.search) {
     const like = likeContains(filter.search);
-    clauses.push('(u.full_name LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR ubp.rfc LIKE ?)');
-    params.push(like, like, like, like);
+    clauses.push('(u.full_name LIKE ? OR u.username LIKE ? OR ubp.rfc LIKE ?)');
+    params.push(like, like, like);
   }
   return { sql: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '', params };
 }

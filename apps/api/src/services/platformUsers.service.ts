@@ -1,4 +1,5 @@
 import * as PlatformUsersRepository from './platformUsers.repository';
+import EncryptionService from './encryption';
 import type { PlatformUserScope } from './platformUsers.repository';
 
 /**
@@ -53,7 +54,10 @@ export async function listPlatformUsers(
       id: row.id,
       username: row.username,
       fullName: row.fullName,
-      email: row.email,
+      // FC205 F1 (PU-DEF1) — `users.email` se guarda cifrado (iv:tag:hex). Mismo guard que
+      // cosmology.queries/authSession: nulo o vacío → ''; formato roto → el texto guardado (T1 fila 2).
+      // El claro solo sale por esta ruta soberana (requireOmega, Invariante 1).
+      email: row.email ? EncryptionService.decrypt(row.email) : '',
       isActive: Boolean(row.isActive),
       tenantId: row.tenantId,
       tenantName: row.tenantName,

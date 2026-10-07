@@ -94,7 +94,7 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
             id: 20,
             username: 'arc.user',
             fullName: 'Arc User',
-            email: 'arc@piic.mx',
+            email: 'enc_arc@piic.mx', // FC205 F1 — en la base va cifrado
             isActive: 1,
             tenantId: 41,
             tenantName: UNIVERSE,
@@ -104,7 +104,7 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
             id: 21,
             username: 'nomad',
             fullName: null,
-            email: 'nomad@piic.mx',
+            email: null, // FC205 F1 — sin correo → ''
             isActive: 0,
             tenantId: null,
             tenantName: null,
@@ -132,7 +132,12 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
       tenantName: UNIVERSE,
       cosmonautType: 'ARC',
     });
-    expect(body.data[1]).toMatchObject({ isActive: false, tenantId: null, tenantName: null });
+    expect(body.data[1]).toMatchObject({
+      email: '',
+      isActive: false,
+      tenantId: null,
+      tenantName: null,
+    });
     const [sql, params] = (db.execute as Mock).mock.calls[0] as [string, unknown[]];
     expect(sql).not.toContain('WHERE');
     expect(params).toEqual([25, 0]);
@@ -169,7 +174,8 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
     expect(params).toEqual([25, 0]);
   });
 
-  it('búsqueda por nombre, usuario, correo y RFC; % _ \\ tecleados son literales', async () => {
+  // FC205 F1 (Escenario 2) — el correo va cifrado: ya no se busca con LIKE.
+  it('búsqueda por nombre, usuario y RFC (sin u.email); % _ \\ tecleados son literales', async () => {
     const res = await app.inject({
       method: 'GET',
       url: `/v1/cosmology/users?q=${encodeURIComponent('50%_x\\')}`,
@@ -177,11 +183,10 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
     });
     expect(res.statusCode).toBe(200);
     const [sql, params] = (db.execute as Mock).mock.calls[0] as [string, unknown[]];
-    expect(sql).toContain(
-      'u.full_name LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR ubp.rfc LIKE ?'
-    );
+    expect(sql).toContain('(u.full_name LIKE ? OR u.username LIKE ? OR ubp.rfc LIKE ?)');
+    expect(sql).not.toContain('u.email LIKE');
     const like = '%50\\%\\_x\\\\%';
-    expect(params).toEqual([like, like, like, like, 25, 0]);
+    expect(params).toEqual([like, like, like, 25, 0]);
   });
 });
 
