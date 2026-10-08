@@ -46,7 +46,9 @@ export default defineConfig({
       ? [visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true })]
       : []),
     VitePWA({
-      registerType: 'autoUpdate',
+      // FC206 F3 — 'prompt': la versión nueva espera a que el usuario la acepte (PwaUpdateBanner);
+      // con 'autoUpdate' una pestaña abierta días no se enteraba hasta recargar (QA-OBS-PWA).
+      registerType: 'prompt',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         cleanupOutdatedCaches: true,
@@ -100,6 +102,8 @@ export default defineConfig({
     reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
+    // FC206 F3 — el módulo virtual del plugin PWA no existe fuera de Vite: stub sin service worker.
+    alias: { 'virtual:pwa-register/react': '/src/test/pwaRegisterStub.ts' },
     globalTeardown: './src/test/globalTeardown.ts',
     pool: 'threads',
     // Vitest 4: poolOptions.threads.{min,max}Threads fue reemplazado por

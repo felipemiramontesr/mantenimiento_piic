@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/filename-case */
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/react" />
 
 /** Inyectada en build-time por vite.config.ts (define) — versión real del deploy */
 // eslint-disable-next-line no-underscore-dangle

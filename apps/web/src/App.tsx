@@ -31,6 +31,7 @@ import RealtimeTrackingModule from './pages/Dashboard/RealtimeTrackingModule';
 import ProfileView from './pages/Profile/ProfileView';
 import TalleresDirectory from './pages/Social/TalleresDirectory';
 import { UserProvider } from './context/UserContext';
+import PwaUpdateBanner from './pwa/PwaUpdateBanner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ArchonErrorBoundary from './components/Common/ArchonErrorBoundary';
 import './index.css';
@@ -136,6 +137,8 @@ const App: React.FC = () => (
       {/* 🛡️ Protected Sovereign Grid */}
       <Route path="*" element={<AuthenticatedRoutes />} />
     </Routes>
+    {/* FC206 F3 — aviso de versión nueva en cualquier pantalla (login incluido). */}
+    <PwaUpdateBanner />
   </BrowserRouter>
 );
 
