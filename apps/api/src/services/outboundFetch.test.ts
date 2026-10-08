@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import {
   OUTBOUND_ALLOWLIST,
+  isAllowlistedHost,
   outboundAllowed,
   isPrivateIp,
   outboundFetch,
@@ -229,6 +230,47 @@ describe('outboundFetch — pipeline SSRF (Scenario 4)', () => {
     expect(captured.method).toBe('POST');
     expect((captured.headers as Record<string, string>)['Content-Type']).toBe('application/json');
     expect(captured.body).toBe('{"a":1}');
+  });
+});
+
+describe('FC207 F1 — host del proveedor de mosaicos en la allowlist (variable A)', () => {
+  const TILE_HOST = 'tiles.example.com';
+
+  beforeEach(() => {
+    resetOutboundState();
+    resetSecurityMetrics();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('con MAP_TILES_UPSTREAM_URL https, su host sale y buffer() entrega los bytes', async () => {
+    vi.stubEnv('MAP_TILES_UPSTREAM_URL', `https://${TILE_HOST}/{z}/{x}/{y}.png?api_key=k`);
+    expect(isAllowlistedHost(TILE_HOST)).toBe(true);
+    const res = await outboundFetch(
+      `https://${TILE_HOST}/1/0/0.png?api_key=k`,
+      {},
+      { resolve: publicResolver, request: okTransport() }
+    );
+    expect((await res.buffer()).toString('utf8')).toBe('{"ok":true}');
+  });
+
+  it('sin la variable, o con ella en http, el host sigue fuera y una IP privada se rechaza igual', async () => {
+    expect(isAllowlistedHost(TILE_HOST)).toBe(false);
+    vi.stubEnv('MAP_TILES_UPSTREAM_URL', `http://${TILE_HOST}/{z}/{x}/{y}.png`);
+    expect(isAllowlistedHost(TILE_HOST)).toBe(false);
+    vi.stubEnv('MAP_TILES_UPSTREAM_URL', `https://${TILE_HOST}/{z}/{x}/{y}.png`);
+    await expect(
+      outboundFetch(
+        `https://${TILE_HOST}/1/0/0.png`,
+        {},
+        {
+          resolve: async () => ['10.0.0.9'],
+          request: okTransport(),
+        }
+      )
+    ).rejects.toBeInstanceOf(SsrfBlockedError);
   });
 });
 

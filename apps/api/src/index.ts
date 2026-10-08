@@ -21,6 +21,7 @@ import {
   anomalyDetectionRoutes,
   operatorScorecardRoutes,
   co2Routes,
+  telemetryTilesRoutes,
   fleetMaintenanceRoutes,
   workOrderRoutes,
   reportsRoutes,
@@ -230,6 +231,7 @@ function registerV1Routes(fastify: FastifyInstance): void {
   fastify.register(onboardingRoutes, { prefix: '/v1' });
   fastify.register(securityRoutes, { prefix: '/v1' });
   fastify.register(realtimeTelemetryRoutes, { prefix: '/v1' });
+  fastify.register(telemetryTilesRoutes, { prefix: '/v1' }); // FC207 F1 (gate RASTREO)
   fastify.register(fleetTcoRoutes, { prefix: '/v1' });
   fastify.register(fleetRecallsRoutes, { prefix: '/v1' });
   fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
@@ -269,6 +271,7 @@ function registerUniverseRoutes(fastify: FastifyInstance): void {
   fastify.register(anomalyDetectionRoutes, { prefix: universePrefix });
   fastify.register(operatorScorecardRoutes, { prefix: universePrefix });
   fastify.register(co2Routes, { prefix: universePrefix });
+  fastify.register(telemetryTilesRoutes, { prefix: universePrefix });
   fastify.register(recallsNhtsaRoutes, { prefix: universePrefix });
   fastify.register(recallsInternalRoutes, { prefix: universePrefix });
   fastify.register(socialRoutes, { prefix: universePrefix });

@@ -10,7 +10,6 @@ vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children: React.ReactNode }): React.JSX.Element => (
     <div data-testid="mock-map-container">{children}</div>
   ),
-  TileLayer: (): React.JSX.Element => <div data-testid="mock-tile-layer" />,
   Marker: ({ children }: { children: React.ReactNode }): React.JSX.Element => (
     <div data-testid="mock-marker">{children}</div>
   ),
@@ -32,6 +31,11 @@ vi.mock('leaflet', () => ({
 }));
 
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
+
+// FC207 F1 — la capa autenticada se prueba aparte (SovereignTileLayer.test.tsx)
+vi.mock('./SovereignTileLayer', () => ({
+  default: (): React.JSX.Element => <div data-testid="mock-tile-layer" />,
+}));
 
 const MOCK_UNITS: TelemetryUnit[] = [
   {
@@ -68,8 +72,22 @@ describe('FC-3 Realtime_Telemetry FaseC — RealtimeTrackingModule', () => {
     render(<RealtimeTrackingModule />);
 
     expect(screen.getByTestId('realtime-tracking-module')).toBeInTheDocument();
-    expect(screen.getByText('Rastreo en Tiempo Real')).toBeInTheDocument();
     expect(screen.getByTestId('mock-map-container')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-tile-layer')).toBeInTheDocument();
+  });
+
+  it('FC207 F1 (F-OBS1): publica título y descripción en el encabezado soberano', () => {
+    vi.spyOn(telemetryHook, 'useRealtimeTelemetry').mockReturnValue({
+      units: MOCK_UNITS.slice(0, 1),
+      isLoading: false,
+      error: null,
+      lastRefresh: null,
+    });
+
+    render(<RealtimeTrackingModule />);
+    expect(screen.getByTestId('layout-title')).toHaveTextContent('Rastreo en Tiempo Real');
+    expect(screen.getByTestId('layout-description')).toHaveTextContent('Telemetría GPS en Vivo');
+    expect(screen.getByText('1 unidad')).toBeInTheDocument();
   });
 
   it('AT-RT-C-2: shows loading spinner while fetching', () => {

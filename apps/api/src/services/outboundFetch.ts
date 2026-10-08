@@ -4,7 +4,7 @@
  * Wrapper único para TODA salida HTTP del API (∀ call-site — verificado por scan).
  * T1: OutboundAllowed ≡ (host ∈ Allowlist) ∧ (scheme = https) ∧ ¬PrivateIP(resolución final).
  * Requisitos v1.1 (dictamen Alfa 20:54 + Bravo 20:41):
- *   (a) redirects nativos DESACTIVADOS — todo 3xx se rechaza sin seguirse;
+ *   (a) redirects nativos DESACTIVADOS — cualquier 3xx se rechaza sin seguirse;
  *   (b) resolución host→IP manual ANTES de conectar;
  *   (c) conexión TCP a la IP pinneada con SNI/servername + header Host del hostname;
  *   (d) validación anti-IP-privada/link-local sobre TODAS las IPs resueltas.
@@ -14,12 +14,24 @@ import * as dns from 'node:dns';
 import * as https from 'node:https';
 
 import { logSecurityEvent } from './securityLog';
+import { configuredTileHost } from './mapTileUpstream';
 
 export const OUTBOUND_ALLOWLIST = [
   'api.nhtsa.gov',
   'oauth2.googleapis.com',
   'fcm.googleapis.com',
 ] as const;
+
+/**
+ * Variable A de T1. FC207 F1: además de la lista fija, el host del proveedor de mosaicos que Ω
+ * configuró en el entorno del servidor (`MAP_TILES_UPSTREAM_URL`); jamás un host de la petición.
+ */
+export function isAllowlistedHost(hostname: string): boolean {
+  return (
+    (OUTBOUND_ALLOWLIST as readonly string[]).includes(hostname) ||
+    hostname === configuredTileHost(process.env.MAP_TILES_UPSTREAM_URL)
+  );
+}
 
 export const DEFAULT_TIMEOUT_MS = 8_000;
 const BREAKER_WINDOW_MS = 10_000;
@@ -176,6 +188,7 @@ export interface OutboundResponse {
   headers: Record<string, string | string[] | undefined>;
   text: () => Promise<string>;
   json: () => Promise<unknown>;
+  buffer: () => Promise<Buffer>;
 }
 
 export interface OutboundInit {
@@ -246,7 +259,7 @@ async function resolveAndValidateTarget(
   deps: OutboundDeps
 ): Promise<{ parsed: URL; addresses: string[] }> {
   const parsed = new URL(url);
-  const allowlisted = (OUTBOUND_ALLOWLIST as readonly string[]).includes(parsed.hostname);
+  const allowlisted = isAllowlistedHost(parsed.hostname);
   const isHttps = parsed.protocol === 'https:';
   if (!allowlisted || !isHttps) {
     throw blockAndLog(
@@ -337,5 +350,6 @@ export async function outboundFetch(
     text: () => Promise.resolve(raw.body.toString('utf8')),
     // `.then` conserva el contrato: un cuerpo no-JSON es rechazo, no excepción síncrona.
     json: () => Promise.resolve().then(() => JSON.parse(raw.body.toString('utf8')) as unknown),
+    buffer: () => Promise.resolve(raw.body), // FC207 F1 — mosaicos PNG del mapa
   };
 }

@@ -6,6 +6,7 @@ import fleetIntelligencePlugin from './fleetIntelligence';
 import anomalyDetectionPlugin from './anomalyDetection';
 import operatorScorecardPlugin from './operatorScorecard';
 import co2Plugin from './co2';
+import telemetryTilesPlugin from './telemetryTiles';
 import fleetMaintenancePlugin from './fleetMaintenance';
 import workOrderPlugin from './workOrders';
 import reportsPlugin from './reports';
@@ -49,6 +50,11 @@ export const operatorScorecardRoutes = withCapability(
   operatorScorecardPlugin
 );
 export const co2Routes = withCapability({ supercluster: 'RASTREO' }, co2Plugin);
+// FC207 F1 — los mosaicos del mapa son parte de Rastreo: sin el SC activo no hay mapa
+export const telemetryTilesRoutes = withCapability(
+  { supercluster: 'RASTREO' },
+  telemetryTilesPlugin
+);
 
 // MANTENIMIENTO (dependencia declarada → RASTREO, D9)
 export const fleetMaintenanceRoutes = withCapability(
