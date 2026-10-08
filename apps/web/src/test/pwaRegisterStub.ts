@@ -15,6 +15,6 @@ export function useRegisterSW(): {
   return {
     needRefresh: [false, noop],
     offlineReady: [false, noop],
-    updateServiceWorker: async (): Promise<void> => undefined,
+    updateServiceWorker: (): Promise<void> => Promise.resolve(),
   };
 }
