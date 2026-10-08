@@ -12,8 +12,8 @@ import { recordAuditLog } from './auditService';
 
 /**
  * FC206 F1 — Ω links an EXISTING itinerant user to an EXISTING Universo (QA E3). T1 of the FC, in
- * guard order: the 4 candidate gates of `validateLinkCandidate` (404 / 409 inactive / 409 member /
- * 409 billing) → Universo exists (404) → exact name (400) → MU requested on an anchored Universo
+ * guard order: the 5 candidate gates of `validateLinkCandidate` (404 / 403 Ω, FC207 F2 / 409
+ * inactive / 409 member / 409 billing) → Universo exists (404) → exact name (400) → MU requested on an anchored Universo
  * (409, never silently downgraded). Then one TX: typed membership + scoped role (`assigned_by` = Ω)
  * + `designateMasterOfUniverse` only for MU. Single-Universe invariant: an existing membership is
  * gate 3, so nobody ends up in two Universos.

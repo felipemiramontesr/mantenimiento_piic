@@ -37,6 +37,7 @@ const MEMBER: PlatformUser = {
   fullName: 'Arc User',
   email: 'arc@piic.mx',
   isActive: true,
+  roleId: 2,
   tenantId: 41,
   tenantName: 'Flota Norte',
   cosmonautType: 'ARC',
@@ -47,6 +48,7 @@ const NOMAD: PlatformUser = {
   fullName: null,
   email: 'nomad@piic.mx',
   isActive: false,
+  roleId: 2,
   tenantId: null,
   tenantName: null,
   cosmonautType: null,
@@ -92,6 +94,26 @@ describe('FC204 F4 — PlatformUsersCard', () => {
     expect(screen.getByTestId('platform-user-delete-21-itinerant')).toBeDisabled();
     expect(screen.getByTestId('platform-users-total')).toHaveTextContent('2 usuario(s)');
     expect(lastUsersParams()).toEqual({ page: 1, pageSize: 25 });
+  });
+
+  it('FC207 F2: Ω (roleId 0) sale «Soberano / Global», sin «Vincular a Universo» ni acciones', async () => {
+    const OMEGA: PlatformUser = { ...NOMAD, id: 1, username: 'grayman', isActive: true, roleId: 0 };
+    givenUsers([OMEGA, NOMAD]);
+    render(<PlatformUsersCard universes={UNIVERSES} />);
+    const row = await screen.findByTestId('platform-user-row-1-itinerant');
+    expect(screen.getByTestId('platform-user-sovereign-1-itinerant')).toHaveTextContent(
+      'Soberano / Global'
+    );
+    expect(row).not.toHaveTextContent('Itinerante');
+    expect(screen.queryByTestId('platform-user-link-1-itinerant')).not.toBeInTheDocument();
+    expect(screen.getByTestId('platform-user-reset-mfa-1-itinerant')).toBeDisabled();
+    expect(screen.getByTestId('platform-user-reset-mfa-1-itinerant')).toHaveAttribute(
+      'title',
+      'Cuenta soberana Ω: la acción no aplica'
+    );
+    // El itinerante que no es Ω conserva su vinculación.
+    expect(screen.getByTestId('platform-user-row-21-itinerant')).toHaveTextContent('Itinerante');
+    expect(screen.getByTestId('platform-user-link-21-itinerant')).toBeInTheDocument();
   });
 
   it('Escenario 4: filtrar por un Universo o por itinerantes cambia el tenantId de la consulta', async () => {
@@ -202,6 +224,7 @@ describe('describeSovereignActionError', () => {
     [{ response: { data: { code: 'UNIVERSE_NAME_MISMATCH' } } }, 'no coincide'],
     [{ response: { data: { code: 'USER_WITHOUT_UNIVERSE' } } }, 'ningún Universo'],
     [{ response: { data: { code: 'USER_NOT_FOUND' } } }, 'ya no existe'],
+    [{ response: { data: { code: 'CANNOT_LINK_OMEGA_USER' } } }, 'cuenta soberana Omega'],
     [{ response: { data: { error: 'FORBIDDEN' } } }, 'exclusiva de GrayMan'],
     [{ response: { data: { code: 'OTRO' } } }, 'No se pudo completar'],
     [new Error('red'), 'No se pudo completar'],

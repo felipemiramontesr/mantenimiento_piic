@@ -24,6 +24,7 @@ export interface PlatformUserRow extends RowDataPacket {
   fullName: string | null;
   email: string | null;
   isActive: number;
+  roleId: number;
   tenantId: number | null;
   tenantName: string | null;
   cosmonautType: 'MU' | 'ARC' | null;
@@ -74,7 +75,7 @@ export async function listPlatformUsers(
   const where = buildWhere(filter);
   const [rows] = await executor.execute<PlatformUserRow[]>(
     `SELECT u.id, u.username, u.full_name AS fullName, u.email, u.is_active AS isActive,
-            t.id AS tenantId, t.label AS tenantName, m.cosmonaut_type AS cosmonautType
+            u.role_id AS roleId, t.id AS tenantId, t.label AS tenantName, m.cosmonaut_type AS cosmonautType
      ${FROM_PLATFORM_USERS} ${where.sql}
      ORDER BY u.id, t.id
      LIMIT ? OFFSET ?`,

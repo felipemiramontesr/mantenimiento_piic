@@ -19,6 +19,7 @@ const USER: PlatformUser = {
   fullName: 'Arc User',
   email: 'arc@piic.mx',
   isActive: true,
+  roleId: 2,
   tenantId: 41,
   tenantName: 'Flota Norte',
   cosmonautType: 'ARC',

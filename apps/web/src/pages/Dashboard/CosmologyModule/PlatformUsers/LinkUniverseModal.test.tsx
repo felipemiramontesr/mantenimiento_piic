@@ -39,6 +39,7 @@ const NOMAD: PlatformUser = {
   fullName: 'Arc Nómada',
   email: 'nomad@piic.mx',
   isActive: true,
+  roleId: 2,
   tenantId: null,
   tenantName: null,
   cosmonautType: null,

@@ -17,6 +17,8 @@ export interface PlatformUser {
   readonly fullName: string | null;
   readonly email: string;
   readonly isActive: boolean;
+  /** FC207 F2 — `0` = la cuenta soberana Ω (no pertenece a ningún Universo). */
+  readonly roleId: number;
   readonly tenantId: number | null;
   readonly tenantName: string | null;
   readonly cosmonautType: 'MU' | 'ARC' | null;
@@ -90,6 +92,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   LINKED_USER_INACTIVE: 'El usuario está suspendido; no se puede vincular.',
   LINKED_USER_ALREADY_MEMBER: 'El usuario ya pertenece a un Universo.',
   LINKED_USER_MISSING_BILLING_PROFILE: 'El usuario no completó su registro fiscal.',
+  CANNOT_LINK_OMEGA_USER: 'La cuenta soberana Omega no puede vincularse a un Universo.', // FC207 F2
   UNIVERSE_NOT_FOUND: 'El Universo ya no existe.',
   MU_ALREADY_DESIGNATED: 'Ese Universo ya tiene Master of Universe; vincúlalo como ARC.',
   ROLE_NOT_CONFIGURED: 'El rol no está configurado en el servidor.',

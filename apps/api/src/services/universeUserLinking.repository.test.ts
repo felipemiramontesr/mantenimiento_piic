@@ -77,9 +77,12 @@ describe('findBillingProfile', () => {
 });
 
 describe('findUserActiveState', () => {
-  it('maps is_active to a boolean', async () => {
-    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[{ is_active: 0 }], []]);
-    expect(await findUserActiveState(501, mockExecutor)).toEqual({ isActive: false });
+  it('maps is_active to a boolean and projects role_id (FC207 F2)', async () => {
+    vi.mocked(mockExecutor.execute).mockResolvedValueOnce([[{ is_active: 0, role_id: 0 }], []]);
+    expect(await findUserActiveState(501, mockExecutor)).toEqual({ isActive: false, roleId: 0 });
+    expect(vi.mocked(mockExecutor.execute).mock.calls.at(-1)?.[0]).toBe(
+      'SELECT is_active, role_id FROM users WHERE id = ?'
+    );
   });
 
   it("returns null when the user doesn't exist", async () => {

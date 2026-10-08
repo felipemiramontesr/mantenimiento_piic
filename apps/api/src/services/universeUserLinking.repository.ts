@@ -78,17 +78,19 @@ export async function findBillingProfile(
   return rows.length > 0 ? rows[0] : null;
 }
 
-/** Minimal row for the fail-closed pre-checks (`is_active`) — the whole `users.*` row isn't
- *  needed, unlike the seed-flow's lookups elsewhere. */
+/** Minimal row for the fail-closed pre-checks (`is_active`, and `role_id` for FC207 F2's Ω
+ *  gate) — the whole `users.*` row isn't needed, unlike the seed-flow's lookups elsewhere. */
 export async function findUserActiveState(
   userId: number,
   executor: Executor = db
-): Promise<{ isActive: boolean } | null> {
+): Promise<{ isActive: boolean; roleId: number } | null> {
   const [rows] = await executor.execute<RowDataPacket[]>(
-    'SELECT is_active FROM users WHERE id = ?',
+    'SELECT is_active, role_id FROM users WHERE id = ?',
     [userId]
   );
-  return rows.length > 0 ? { isActive: Boolean(rows[0].is_active) } : null;
+  return rows.length > 0
+    ? { isActive: Boolean(rows[0].is_active), roleId: Number(rows[0].role_id) }
+    : null;
 }
 
 /** F3-I3(a) — activates a quarantined user at link time (`is_active: false → true`). */

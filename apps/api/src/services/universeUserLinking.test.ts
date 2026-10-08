@@ -62,9 +62,29 @@ describe('FC177 F3 — prepareUserLink', () => {
     });
   });
 
+  it.each([true, false])(
+    'FC207 T1 puerta 2: Ω (role_id 0, activo=%s) → 403 CANNOT_LINK_OMEGA_USER antes de inactividad y membresías',
+    async (isActive) => {
+      (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
+      (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive, roleId: 0 });
+      const result = await prepareUserLink(1);
+      expect(result).toEqual({
+        ok: false,
+        status: 403,
+        code: 'CANNOT_LINK_OMEGA_USER',
+        message: 'La cuenta soberana Omega no puede vincularse a un Universo',
+      });
+      expect(CosmonautRepository.findTenantMembershipOwnerIds).not.toHaveBeenCalled();
+      expect(LinkingRepository.findBillingProfile).not.toHaveBeenCalled();
+    }
+  );
+
   it('user inactive/suspended (FC182 — is_active now signals admin suspension, not quarantine) → 409 LINKED_USER_INACTIVE', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: false });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({
+      isActive: false,
+      roleId: 2,
+    });
     const result = await prepareUserLink(501);
     expect(result).toEqual({
       ok: false,
@@ -77,7 +97,10 @@ describe('FC177 F3 — prepareUserLink', () => {
 
   it('user already belongs to a Universo → 409 LINKED_USER_ALREADY_MEMBER', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({
+      isActive: true,
+      roleId: 2,
+    });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([4]);
     const result = await prepareUserLink(501);
     expect(result).toEqual({
@@ -91,7 +114,10 @@ describe('FC177 F3 — prepareUserLink', () => {
 
   it('user never completed signup fiscal data → 409 LINKED_USER_MISSING_BILLING_PROFILE', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({
+      isActive: true,
+      roleId: 2,
+    });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([]);
     (LinkingRepository.findBillingProfile as Mock).mockResolvedValue(null);
     const result = await prepareUserLink(501);
@@ -105,7 +131,10 @@ describe('FC177 F3 — prepareUserLink', () => {
 
   it('happy path (FC182): valid active Arc candidate → PreparedUserLink with mapped billing fields', async () => {
     (CosmologyRepository.findMuCosmonautRoleId as Mock).mockResolvedValue(9);
-    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({ isActive: true });
+    (LinkingRepository.findUserActiveState as Mock).mockResolvedValue({
+      isActive: true,
+      roleId: 2,
+    });
     (CosmonautRepository.findTenantMembershipOwnerIds as Mock).mockResolvedValue([]);
     (LinkingRepository.findBillingProfile as Mock).mockResolvedValue(BILLING_ROW);
     const result = await prepareUserLink(501);

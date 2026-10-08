@@ -159,6 +159,7 @@ describe('T1 — vinculación directa por Ω (FC206 F1)', () => {
     [7, 409, 'LINKED_USER_ALREADY_MEMBER'],
     [8, 409, 'LINKED_USER_INACTIVE'],
     [9, 404, 'LINKED_USER_NOT_FOUND'],
+    [10, 403, 'CANNOT_LINK_OMEGA_USER'], // FC207 F2
   ])(
     'fila %i: la puerta del candidato responde %i %s antes de mirar el Universo',
     async (_row, status, code) => {

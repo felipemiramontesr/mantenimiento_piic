@@ -44,46 +44,54 @@ export type PreparedUserLink = {
 
 type BillingProfile = NonNullable<Awaited<ReturnType<typeof LinkingRepository.findBillingProfile>>>;
 
-/** The 4 fail-closed candidate checks (Cond.R-177 R3, Bravo), extracted so `prepareUserLink`
- *  stays under Gate 2's budget: doesn't exist, already active, already belongs to a tenant, or
- *  never completed public signup (no billing snapshot). */
+/** Ω's canonical predicate (migration 170): `role_id = 0`, never the username. */
+const OMEGA_ROLE_ID = 0;
+
+/** Build a fail-closed rejection. */
+function reject(status: number, code: string, message: string): LinkUserError {
+  return { ok: false, status, code, message };
+}
+
+/** FC207 T1 gates 1–3 on the user row: doesn't exist (404), is Ω (403 — checked before
+ *  inactivity, so an inactive Ω still gets 403), or is suspended (409). `null` = passes. */
+function rejectUserRow(user: { isActive: boolean; roleId: number } | null): LinkUserError | null {
+  if (!user) return reject(404, 'LINKED_USER_NOT_FOUND', 'Usuario no encontrado');
+  if (user.roleId === OMEGA_ROLE_ID) {
+    return reject(
+      403,
+      'CANNOT_LINK_OMEGA_USER',
+      'La cuenta soberana Omega no puede vincularse a un Universo'
+    );
+  }
+  if (!user.isActive) {
+    return reject(
+      409,
+      'LINKED_USER_INACTIVE',
+      'El usuario está desactivado o suspendido — no elegible para vinculación'
+    );
+  }
+  return null;
+}
+
+/** The 5 fail-closed candidate checks in FC207 T1 order (Cond.R-177 R3 + FC207 F2's Ω gate):
+ *  doesn't exist, is Ω, suspended, already belongs to a tenant, or never completed public
+ *  signup (no billing snapshot). */
 export async function validateLinkCandidate(
   userId: number
 ): Promise<BillingProfile | LinkUserError> {
-  const user = await LinkingRepository.findUserActiveState(userId);
-  if (!user) {
-    return {
-      ok: false,
-      status: 404,
-      code: 'LINKED_USER_NOT_FOUND',
-      message: 'Usuario no encontrado',
-    };
-  }
-  if (!user.isActive) {
-    return {
-      ok: false,
-      status: 409,
-      code: 'LINKED_USER_INACTIVE',
-      message: 'El usuario está desactivado o suspendido — no elegible para vinculación',
-    };
-  }
+  const rowRejection = rejectUserRow(await LinkingRepository.findUserActiveState(userId));
+  if (rowRejection) return rowRejection;
   const memberships = await CosmonautRepository.findTenantMembershipOwnerIds(userId);
   if (memberships.length > 0) {
-    return {
-      ok: false,
-      status: 409,
-      code: 'LINKED_USER_ALREADY_MEMBER',
-      message: 'El usuario ya pertenece a un Universo',
-    };
+    return reject(409, 'LINKED_USER_ALREADY_MEMBER', 'El usuario ya pertenece a un Universo');
   }
   const billing = await LinkingRepository.findBillingProfile(userId);
   if (!billing) {
-    return {
-      ok: false,
-      status: 409,
-      code: 'LINKED_USER_MISSING_BILLING_PROFILE',
-      message: 'El usuario no completó su registro fiscal',
-    };
+    return reject(
+      409,
+      'LINKED_USER_MISSING_BILLING_PROFILE',
+      'El usuario no completó su registro fiscal'
+    );
   }
   return billing;
 }

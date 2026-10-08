@@ -96,6 +96,7 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
             fullName: 'Arc User',
             email: 'enc_arc@piic.mx', // FC205 F1 — en la base va cifrado
             isActive: 1,
+            roleId: 2,
             tenantId: 41,
             tenantName: UNIVERSE,
             cosmonautType: 'ARC',
@@ -106,6 +107,8 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
             fullName: null,
             email: null, // FC205 F1 — sin correo → ''
             isActive: 0,
+            roleId: 0, // FC207 F2 — Ω
+
             tenantId: null,
             tenantName: null,
             cosmonautType: null,
@@ -128,6 +131,7 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
       fullName: 'Arc User',
       email: 'arc@piic.mx',
       isActive: true,
+      roleId: 2,
       tenantId: 41,
       tenantName: UNIVERSE,
       cosmonautType: 'ARC',
@@ -135,6 +139,7 @@ describe('FC204 F3 — GET /v1/cosmology/users', () => {
     expect(body.data[1]).toMatchObject({
       email: '',
       isActive: false,
+      roleId: 0,
       tenantId: null,
       tenantName: null,
     });
@@ -365,9 +370,18 @@ describe('FC206 F1 — POST /v1/cosmology/users/:id/link-universe', () => {
     expect(JSON.parse(res.body).code).toBe('LINKED_USER_NOT_FOUND');
   });
 
+  it('FC207 F2: la cuenta Ω (role_id 0) → 403 CANNOT_LINK_OMEGA_USER, sin mirar membresías', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[{ is_active: 1, role_id: 0 }], undefined]);
+    const res = await link(omegaHeader(), BODY);
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('CANNOT_LINK_OMEGA_USER');
+    expect(db.execute).toHaveBeenCalledTimes(1);
+    expect(db.getConnection).not.toHaveBeenCalled();
+  });
+
   it('itinerante válido a Universo con MU → 200 como ARC (rol por defecto)', async () => {
     (db.execute as Mock)
-      .mockResolvedValueOnce([[{ is_active: 1 }], undefined]) // findUserActiveState
+      .mockResolvedValueOnce([[{ is_active: 1, role_id: 2 }], undefined]) // findUserActiveState
       .mockResolvedValueOnce([[], undefined]) // findTenantMembershipOwnerIds: itinerante
       .mockResolvedValueOnce([[{ rfc: 'XAXX010101000' }], undefined]) // findBillingProfile
       .mockResolvedValueOnce([[{ id: 41, label: UNIVERSE, mu_user_id: 5 }], undefined]) // destino

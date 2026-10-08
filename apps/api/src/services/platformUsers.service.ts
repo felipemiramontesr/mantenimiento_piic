@@ -27,6 +27,8 @@ export interface PlatformUser {
   fullName: string | null;
   email: string;
   isActive: boolean;
+  /** FC207 F2 — `0` = Ω: the console hides «Vincular a Universo» for it. */
+  roleId: number;
   tenantId: number | null;
   tenantName: string | null;
   cosmonautType: 'MU' | 'ARC' | null;
@@ -59,6 +61,7 @@ export async function listPlatformUsers(
       // El claro solo sale por esta ruta soberana (requireOmega, Invariante 1).
       email: row.email ? EncryptionService.decrypt(row.email) : '',
       isActive: Boolean(row.isActive),
+      roleId: Number(row.roleId),
       tenantId: row.tenantId,
       tenantName: row.tenantName,
       cosmonautType: row.cosmonautType,

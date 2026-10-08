@@ -28,13 +28,25 @@ interface RowProps {
   readonly onAction: (user: PlatformUser, action: PlatformUserAction) => void;
 }
 
-/** Botones soberanos: deshabilitados para un itinerante (sin Universo no hay nombre que confirmar). */
+/** FC207 F2 — predicado canónico de Ω (migración 170): `role_id = 0`, nunca el username. */
+export function isOmegaUser(user: PlatformUser): boolean {
+  return user.roleId === 0;
+}
+
+/** Texto del botón deshabilitado: Ω es soberano; cualquier otro sin Universo es itinerante. */
+function disabledHint(user: PlatformUser): string | undefined {
+  if (isOmegaUser(user)) return 'Cuenta soberana Ω: la acción no aplica';
+  return user.tenantName === null ? 'Sin Universo: la acción no aplica' : undefined;
+}
+
+/** Botones soberanos: deshabilitados sin Universo (no hay nombre que confirmar). «Vincular a
+ *  Universo» solo para un itinerante que no es Ω (FC207 F2: Ω jamás se ancla a un Universo). */
 function RowActions({ user, onAction }: RowProps): React.JSX.Element {
   const itinerant = user.tenantName === null;
-  const hint = itinerant ? 'Sin Universo: la acción no aplica' : undefined;
+  const hint = disabledHint(user);
   return (
     <div className="inline-flex items-center gap-4">
-      {itinerant && (
+      {itinerant && !isOmegaUser(user) && (
         <button
           type="button"
           onClick={(): void => onAction(user, 'link')}
@@ -68,6 +80,25 @@ function RowActions({ user, onAction }: RowProps): React.JSX.Element {
   );
 }
 
+/** Celda de Universo: Ω lleva la etiqueta soberana; sin Universo, «Itinerante». */
+function UniverseCell({ user }: { readonly user: PlatformUser }): React.JSX.Element {
+  if (isOmegaUser(user)) {
+    return (
+      <span
+        data-testid={`platform-user-sovereign-${platformUserKey(user)}`}
+        className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-bold uppercase tracking-widest text-amber-800"
+      >
+        Soberano / Global
+      </span>
+    );
+  }
+  return user.tenantName === null ? (
+    <span className="text-pinnacle-navy/40 italic">Itinerante</span>
+  ) : (
+    <span>{user.tenantName}</span>
+  );
+}
+
 /** Una fila de la consola. */
 function PlatformUserRow({ user, onAction }: RowProps): React.JSX.Element {
   return (
@@ -81,7 +112,7 @@ function PlatformUserRow({ user, onAction }: RowProps): React.JSX.Element {
       </td>
       <td className="py-3 px-3 text-pinnacle-navy/70">{user.email}</td>
       <td className="py-3 px-3 text-pinnacle-navy">
-        {user.tenantName ?? <span className="text-pinnacle-navy/40 italic">Itinerante</span>}
+        <UniverseCell user={user} />
       </td>
       <td className="py-3 px-3 text-center text-pinnacle-navy/60">{user.cosmonautType ?? '—'}</td>
       <td className="py-3 px-3 text-center text-pinnacle-navy/60">

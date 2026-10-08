@@ -23,6 +23,7 @@ const PLATFORM_USER = {
   fullName: 'Arc User',
   email: 'arc@piic.mx',
   isActive: true,
+  roleId: 2, // FC207 F2 — no es Ω
   tenantId: UNIVERSE.id,
   tenantName: UNIVERSE.label,
   cosmonautType: 'ARC',
