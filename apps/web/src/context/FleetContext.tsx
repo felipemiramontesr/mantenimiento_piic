@@ -66,7 +66,7 @@ function extractUnitsArray(raw: unknown): unknown[] {
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 // ─── transformUnits (S6606/no-nested-ternary + Gate 2 max-lines-per-function) ──
-// Todo el motor de normalización se mueve a funciones de módulo puras (no
+// El motor completo de normalización se mueve a funciones de módulo puras (no
 // cierran sobre nada del componente) — reemplaza el
 // `useMemo(() => (raw) => data.map(...), [])` anterior: una función de
 // módulo pura ya es siempre-estable, no necesita memoización. Mismo
@@ -316,8 +316,9 @@ function computeFleetStats(units: FleetUnit[], incidentsCount: number): FleetSta
 // ─── Hydration + acciones (Gate 2 max-lines-per-function) ──────────────────
 
 /** Hydration de `/fleet` vía Silk — extraída de `FleetProvider` por el mismo
- * motivo (Gate 2); mismo comportamiento verbatim. */
-function useFleetUnitsHydration(): {
+ * motivo (Gate 2). FC207 F3 (F-OBS2): sin `fleet:unit:view:any` el endpoint es `null` y no se pide
+ * (un Arc no dispara 403 al entrar al Comando). */
+function useFleetUnitsHydration(canViewFleet: boolean): {
   units: FleetUnit[];
   setUnits: React.Dispatch<React.SetStateAction<FleetUnit[]>>;
   unitsSyncing: boolean;
@@ -327,10 +328,10 @@ function useFleetUnitsHydration(): {
   const unitsOptions = useMemo(
     () => ({
       key: 'fleet_units',
-      endpoint: '/fleet',
+      endpoint: canViewFleet ? '/fleet' : null,
       transform: transformFleetUnits,
     }),
-    []
+    [canViewFleet]
   );
 
   const {
@@ -484,7 +485,9 @@ function useGetUnitDetails(
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { hasPermission } = usePermissions();
 
-  const { units, setUnits, unitsSyncing, refreshUnits, unitsError } = useFleetUnitsHydration();
+  const { units, setUnits, unitsSyncing, refreshUnits, unitsError } = useFleetUnitsHydration(
+    hasPermission('fleet:unit:view:any')
+  );
   const { incidentsCount, refreshIncidents } = useFleetIncidentsHydration(hasPermission);
 
   const loading = unitsSyncing && !units.length;

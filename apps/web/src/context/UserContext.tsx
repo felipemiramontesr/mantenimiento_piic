@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import useSilkHydration from '../hooks/useSilkHydration';
+import usePermissions from '../hooks/usePermissions';
 import { UserIndustrial, UserPanel } from '../types/user';
 import { DEPARTAMENTOS } from '../constants/fleetConstants';
 import api from '../api/client';
@@ -56,7 +57,7 @@ export const UserContext = createContext<UserContextType | undefined>(undefined)
 // verbatim en cada una, solo el sitio cambió.
 
 /** 1. Universal Hydration Layer (DRY) — directorio de usuarios. */
-function useUsersHydration(): {
+function useUsersHydration(canAdminUsers: boolean): {
   users: UserIndustrial[];
   usersSyncing: boolean;
   fetchUsers: () => Promise<void>;
@@ -80,13 +81,14 @@ function useUsersHydration(): {
     []
   );
 
+  // FC207 F3 (F-OBS2) — sin `user:admin` no se pide el directorio (sin 403 en consola).
   const usersOptions = useMemo(
     () => ({
       key: 'users_directory',
-      endpoint: '/auth/users',
+      endpoint: canAdminUsers ? '/auth/users' : null,
       transform: usersTransform,
     }),
-    [usersTransform]
+    [usersTransform, canAdminUsers]
   );
 
   const {
@@ -101,16 +103,17 @@ function useUsersHydration(): {
 /** Catálogo de departamentos — extraída del mismo motivo (Gate 2); mismo
  * comportamiento verbatim (fallback a `DEPARTAMENTOS` legacy si el catálogo
  * remoto viene vacío). */
-function useDepartmentsHydration(): {
+function useDepartmentsHydration(canViewCatalog: boolean): {
   departmentsData: CatalogOption[];
   departments: string[];
 } {
+  // FC207 F3 (F-OBS2) — sin `fleet:catalog:view` no se pide el catálogo (queda el fallback legacy).
   const departmentsOptions = useMemo(
     () => ({
       key: 'system_departments',
-      endpoint: '/catalogs/DEPARTMENT',
+      endpoint: canViewCatalog ? '/catalogs/DEPARTMENT' : null,
     }),
-    []
+    [canViewCatalog]
   );
 
   const { data: departmentsData } = useSilkHydration<CatalogOption>(departmentsOptions);
@@ -236,8 +239,11 @@ function useUserContextValue(value: UserContextType): UserContextType {
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.JSX.Element => {
-  const { users, usersSyncing, fetchUsers } = useUsersHydration();
-  const { departmentsData, departments } = useDepartmentsHydration();
+  const { hasPermission } = usePermissions();
+  const { users, usersSyncing, fetchUsers } = useUsersHydration(hasPermission('user:admin'));
+  const { departmentsData, departments } = useDepartmentsHydration(
+    hasPermission('fleet:catalog:view')
+  );
 
   // FC 082 F3c2 (Cond.2 Bravo) — dropdown de roles legacy retirado junto con
   // /auth/roles (410) y el CRUD de RolesManager. Roles reales se gestionan

@@ -35,8 +35,17 @@ export async function findUsersByFilters(
   // era además un bug real preexistente: excluía en silencio del Directorio
   // a cualquier usuario con role_id != 0 (roles solo tiene la fila 0 desde
   // mig.164) — nunca visible porque PROD sigue zero-state.
+  // FC207 F3 (C3-OBS3) — el rol visible sale del tipo de cosmonauta de la membresía ya unida (vista
+  // de mig.171 sobre tenant_user_memberships, `cosmonaut_type` de mig.154): sin joins extra.
   let q = `
-    SELECT DISTINCT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
+    SELECT DISTINCT u.*,
+      (CASE
+        WHEN u.role_id = 0 THEN 'GrayMan'
+        WHEN uom.cosmonaut_type = 'MU' THEN 'Master of Universe'
+        WHEN uom.cosmonaut_type = 'ARC' THEN 'Cosmonauta ARC'
+        ELSE NULL
+      END) as role_name,
+      cat.label as department_name
     FROM users u
     LEFT JOIN common_catalogs cat ON u.department_id = cat.id
   `;

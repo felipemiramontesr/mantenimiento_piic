@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowRight, Gauge, ShieldCheck, Navigation, ShieldAlert, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  Gauge,
+  ShieldCheck,
+  Navigation,
+  ShieldAlert,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
+import usePermissions from '../../hooks/usePermissions';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 import CategoryAnalyticsCard from '../../components/Dashboard/CategoryAnalyticsCard';
@@ -171,16 +180,75 @@ function buildKpiModules(
   ];
 }
 
+interface NavigateProps {
+  readonly onNavigate: (path: string) => void;
+}
+
+/** Tablero de flota y personal: solo se monta con `fleet:unit:view:any` (FC207 F3 · F-OBS2). */
+function FleetCommandGrid({ onNavigate }: NavigateProps): React.ReactElement {
+  const { stats, loading } = useFleet();
+  const { users } = useUsers();
+  const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
+  const categoryModules = buildCategoryModules(stats);
+  const kpiModules = buildKpiModules(stats, activePersonnelCount);
+  const handleViewDetails = (categoryKey: string): void =>
+    onNavigate(`/dashboard/fleet?categoria=${categoryKey}`);
+
+  return (
+    <section className="archon-workspace-chassis">
+      <div className="archon-axial-container">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="archon-grid-sovereign">
+            {categoryModules.map((c) => (
+              <CategoryAnalyticsCard key={c.categoryKey} {...c} onViewDetails={handleViewDetails} />
+            ))}
+            {kpiModules.map((k) => (
+              <CenterModuleCard key={k.label} {...k} loading={loading} onNavigate={onNavigate} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Bienvenida del cosmonauta sin permisos de flota: sin peticiones de flota ni de personal, con
+ *  acceso directo a Arcsial (FC207 F3 · F-OBS2). */
+function CosmonautWelcome({ onNavigate }: NavigateProps): React.ReactElement {
+  return (
+    <section className="archon-workspace-chassis" data-testid="cosmonaut-welcome">
+      <div className="archon-axial-container">
+        <div className="card-archon-sovereign max-w-xl mx-auto text-center">
+          <div className="card-sovereign-header">
+            <Sparkles size={20} className="text-pinnacle-navy" />
+            <span className="card-sovereign-title">Bienvenido a Archon</span>
+          </div>
+          <p className="text-pinnacle-navy/70 py-6">
+            Tu cuenta todavía no opera la flota de un Universo. Mientras tanto, la red Arcsial está
+            abierta para ti.
+          </p>
+          <button
+            type="button"
+            className="btn-archon-primary"
+            onClick={(): void => onNavigate('/dashboard/social')}
+          >
+            Ir a Arcsial <ArrowRight size={12} className="ml-2" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /**
  * 🔱 Archon Component: ArchonCenter
  * Implementation: Sovereign Command Center View (V.78.100.87)
  * Objective: High-density predictive analytics and fleet health orchestration.
- * Migration: 100% Sovereign Inner Architecture (DRY).
+ * FC207 F3 (F-OBS2): sin `fleet:unit:view:any` muestra la bienvenida del cosmonauta.
  */
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { stats, loading } = useFleet();
-  const { users } = useUsers();
+  const { hasPermission } = usePermissions();
   const { setSectionData } = useSovereignLayout();
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
 
@@ -188,49 +256,17 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     setSectionData('Centro de Comando', 'Análisis Predictivo de Segmentos Operativos', null);
   }, [setSectionData]);
 
-  const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
-
-  const handleViewDetails = (categoryKey: string): void => {
-    void navigate(`/dashboard/fleet?categoria=${categoryKey}`);
-  };
-
-  // FC165 F3 Slice3.1 — purga: `CenterModuleCard` solo se instancia desde
-  // `kpiModules` (`KpiModuleDef.path: string`, requerido, literales no-vacíos
-  // en `buildKpiModulesPrimary`/`Secondary`), así que `path` nunca llega
-  // undefined aquí — se estrecha el tipo en vez de dejar un fallback muerto
-  // (censo vivo: 0 hits en la rama `!path` tras la suite completa).
   const handleNavigate = (path: string): void => {
     void navigate(path);
   };
 
-  const categoryModules = buildCategoryModules(stats);
-  const kpiModules = buildKpiModules(stats, activePersonnelCount);
-
   return (
     <div className="animate-in fade-in duration-700">
-      <section className="archon-workspace-chassis">
-        <div className="archon-axial-container">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <div className="archon-grid-sovereign">
-              {categoryModules.map((c) => (
-                <CategoryAnalyticsCard
-                  key={c.categoryKey}
-                  {...c}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-              {kpiModules.map((k) => (
-                <CenterModuleCard
-                  key={k.label}
-                  {...k}
-                  loading={loading}
-                  onNavigate={handleNavigate}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {hasPermission('fleet:unit:view:any') ? (
+        <FleetCommandGrid onNavigate={handleNavigate} />
+      ) : (
+        <CosmonautWelcome onNavigate={handleNavigate} />
+      )}
 
       <AccessControlSlideOver
         isOpen={isAccessControlOpen}

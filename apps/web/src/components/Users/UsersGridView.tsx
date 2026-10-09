@@ -32,11 +32,14 @@ const matchFieldInUser = (
   return null;
 };
 
+/** Insignia del rol. FC207 F3 (C3-OBS3): MU en esmeralda y ARC en azul celeste. */
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-slate-100 text-slate-600';
   const name = roleName.toLowerCase();
 
-  if (name.includes('archon')) styles = 'bg-pinnacle-navy text-white';
+  if (name.includes('master of universe')) styles = 'bg-emerald-600 text-white';
+  else if (name.includes('cosmonauta arc')) styles = 'bg-sky-500 text-white';
+  else if (name.includes('archon')) styles = 'bg-pinnacle-navy text-white';
   else if (name.includes('gerente')) styles = 'bg-emerald-100 text-emerald-700';
   else if (name.includes('superintendente')) styles = 'bg-sky-100 text-sky-700';
   else if (name.includes('jefe') || name.includes('mantenimiento'))
@@ -74,7 +77,11 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
 /** Celda de rol + departamento (FC163 F2B4 Sub-Batch 4B-2). */
 const RoleCell = ({ user }: { user: UserIndustrial }): React.JSX.Element => (
   <div className="flex flex-col items-center gap-1.5">
-    <RoleBadge roleName={user.roleName || 'Usuario'} />
+    {user.roleName ? (
+      <RoleBadge roleName={user.roleName} />
+    ) : (
+      <span className="text-archon-sm font-bold text-pinnacle-navy/40">—</span>
+    )}
     <div className="flex items-center gap-1 opacity-40">
       <Briefcase size={9} />
       <span className="text-archon-sm font-bold uppercase">{user.department || 'GENERAL'}</span>

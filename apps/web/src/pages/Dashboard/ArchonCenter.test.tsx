@@ -17,6 +17,21 @@ vi.mock('react-router', async (): Promise<unknown> => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+// FC207 F3 — el tablero de flota exige `fleet:unit:view:any`; por defecto el usuario lo tiene.
+const grantedPermissions = vi.hoisted(() => ({ list: ['fleet:unit:view:any'] as string[] }));
+vi.mock('../../hooks/usePermissions', async (): Promise<unknown> => {
+  const actual = await vi.importActual<typeof import('../../hooks/usePermissions')>(
+    '../../hooks/usePermissions'
+  );
+  return {
+    ...actual,
+    default: (): ReturnType<typeof actual.default> => ({
+      ...actual.default(),
+      hasPermission: (slug: string): boolean => grantedPermissions.list.includes(slug),
+    }),
+  };
+});
+
 vi.mock('../../components/Identity/AccessControlSlideOver', () => ({
   default: ({ onClose }: { isOpen: boolean; onClose: () => void }): React.JSX.Element => (
     <button data-testid="mock-access-control-close" onClick={onClose}>
@@ -28,6 +43,7 @@ vi.mock('../../components/Identity/AccessControlSlideOver', () => ({
 describe('ArchonCenter Component (Apex Standard)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    grantedPermissions.list = ['fleet:unit:view:any'];
   });
 
   const renderModule = async (): Promise<void> => {
@@ -35,6 +51,16 @@ describe('ArchonCenter Component (Apex Standard)', () => {
       render(<ArchonCenter />);
     });
   };
+
+  it('FC207 F3 (F-OBS2): sin permiso de flota muestra la bienvenida y lleva a Arcsial', async () => {
+    grantedPermissions.list = [];
+    await renderModule();
+    expect(screen.getByTestId('cosmonaut-welcome')).toHaveTextContent('Bienvenido a Archon');
+    expect(screen.queryByText(/Fuerza Operativa/i)).toBeNull();
+    expect(screen.queryByText('Vehículos de Flota')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Ir a Arcsial/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/social');
+  });
 
   it('renders branding name and command titles', async () => {
     await renderModule();

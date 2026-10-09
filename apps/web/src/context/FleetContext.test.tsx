@@ -556,6 +556,37 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
     vi.doUnmock('../hooks/usePermissions');
   });
 
+  it('FC207 F3 (F-OBS2): sin fleet:unit:view:any no pide /fleet (sin 403 en el Comando)', async () => {
+    vi.doMock('../hooks/usePermissions', () => ({
+      default: (): object => ({
+        hasPermission: (perm: string): boolean => perm !== 'fleet:unit:view:any',
+        hasAnyPermission: (): boolean => true,
+        isOmnipotent: (): boolean => false,
+      }),
+    }));
+    vi.resetModules();
+    const { default: isolatedApi } = await import('../api/client');
+    const { FleetProvider: IsolatedProvider, useFleet: useIsolatedFleet } = await import(
+      './FleetContext'
+    );
+    const Probe = (): React.JSX.Element => {
+      const { units, loading } = useIsolatedFleet();
+      return <div data-testid="state">{`${loading}-${units.length}`}</div>;
+    };
+    vi.mocked(isolatedApi.get).mockResolvedValue({ data: { data: [] } });
+
+    render(
+      <IsolatedProvider>
+        <Probe />
+      </IsolatedProvider>
+    );
+
+    await waitFor(() => expect(isolatedApi.get).toHaveBeenCalledWith('/incidents'));
+    expect(screen.getByTestId('state').textContent).toBe('false-0');
+    expect(isolatedApi.get).not.toHaveBeenCalledWith('/fleet');
+    vi.doUnmock('../hooks/usePermissions');
+  });
+
   it('reports loading=true synchronously while the initial fetch is still in flight', async () => {
     // sync() only shows loading when !isSilent && prev.length===0 -- and
     // isSilent comes from `!!archonCache.get(key)`, so an empty-array cache

@@ -108,7 +108,17 @@ describe('SignupPage Component (FC177 F2)', () => {
     await waitFor(() => {
       expect(screen.getByTestId('signup-success')).toBeInTheDocument();
     });
-    expect(screen.getByText(/pendiente de activación/i)).toBeInTheDocument();
+    // FC207 F3 (A3-OBS1/A3-OBS2) — texto de Modelo B y regreso de alto contraste
+    expect(
+      screen.getByText(
+        'Tu cuenta fue creada correctamente. Ya puedes iniciar sesión con tus credenciales y acceder a la red Arcsial mientras te vinculas a un Universo.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/pendiente de activación/i)).not.toBeInTheDocument();
+    const back = screen.getByTestId('signup-back-to-login');
+    expect(back).toHaveClass('btn-archon-primary');
+    expect(back).not.toHaveClass('btn-archon-ghost');
+    expect(back).toHaveAttribute('href', '/login');
     expect(screen.queryByTestId('signup-form')).not.toBeInTheDocument();
   });
 

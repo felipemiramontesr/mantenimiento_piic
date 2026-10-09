@@ -15,6 +15,16 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+// FC207 F3 — la hidratación depende de `user:admin` y `fleet:catalog:view`; por defecto, ambos.
+const grantedPermissions = vi.hoisted(() => ({
+  list: ['user:admin', 'fleet:catalog:view'] as string[],
+}));
+vi.mock('../hooks/usePermissions', () => ({
+  default: (): { hasPermission: (slug: string) => boolean } => ({
+    hasPermission: (slug: string): boolean => grantedPermissions.list.includes(slug),
+  }),
+}));
+
 vi.mock('../utils/archonCache', () => ({
   archonCache: {
     get: vi.fn(),
@@ -380,6 +390,36 @@ describe('UserContext — updateUser', () => {
     fireEvent.click(screen.getByText('update'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('update-false'));
+  });
+});
+
+describe('UserContext — FC207 F3 (F-OBS2): corte de hidratación sin permiso', () => {
+  afterEach(() => {
+    cleanup();
+    grantedPermissions.list = ['user:admin', 'fleet:catalog:view'];
+  });
+
+  it.each([
+    [[], []],
+    [['user:admin'], ['/auth/users']],
+    [['fleet:catalog:view'], ['/catalogs/DEPARTMENT']],
+  ])('con permisos %j solo pide %j', async (granted, expected) => {
+    vi.clearAllMocks();
+    grantedPermissions.list = granted;
+    vi.mocked(api.get).mockResolvedValue({ data: [] });
+    render(
+      <UserProvider>
+        <DetailComponent />
+      </UserProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('departments')).toBeInTheDocument());
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    const urls = vi.mocked(api.get).mock.calls.map(([url]) => url);
+    expect(urls.sort()).toEqual([...expected].sort());
+    // Sin catálogo remoto queda el respaldo local de departamentos.
+    expect(screen.getByTestId('departments').textContent).not.toBe('');
   });
 });
 

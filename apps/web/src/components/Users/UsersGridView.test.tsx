@@ -309,6 +309,39 @@ describe('UsersGridView Component', () => {
     expect(screen.getByText('Técnico')).toBeInTheDocument();
   });
 
+  it('FC207 F3 (C3-OBS3): insignias MU esmeralda y ARC celeste; sin rol no inventa «Usuario»', () => {
+    const cosmonauts = [
+      { ...mockUsers[0], roleName: 'Master of Universe' },
+      { ...mockUsers[1], roleName: 'Cosmonauta ARC', uuid: 'uuid-arc', id: '4' },
+      { ...mockUsers[1], roleName: null, uuid: 'uuid-none', id: '5' },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: cosmonauts } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getByText('Master of Universe')).toHaveClass('bg-emerald-600');
+    expect(screen.getByText('Cosmonauta ARC')).toHaveClass('bg-sky-500');
+    expect(screen.queryByText('Usuario')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('un rol sin estilo propio queda neutro; sin número ni uuid usa sus respaldos', () => {
+    const plain = [
+      { ...mockUsers[1], roleName: 'Invitado', employeeNumber: '', uuid: undefined, id: '7' },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: plain } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getByText('Invitado')).toHaveClass('bg-slate-100', 'text-slate-600');
+    expect(screen.getByText('SIN NÚMERO')).toBeInTheDocument();
+    expect(screen.getByTitle('Ver nodo de usuario')).toHaveAttribute('href', '/dashboard/users/7');
+  });
+
   it('identity sort with null fullName uses username as fallback in comparator', () => {
     const usersNullName = [
       { ...mockUsers[0], fullName: null },

@@ -287,7 +287,8 @@ function SignupForm({
   );
 }
 
-/** Confirmación post-registro — Scenario 1: nace en cuarentena, NO se inicia sesión aquí. */
+/** Confirmación post-registro (Modelo B, FC207 F3 · A3-OBS1/A3-OBS2): la cuenta nace activa en
+ *  Arcsial; no se inicia sesión aquí, el botón de regreso es de alto contraste. */
 function SignupSuccessPanel(): React.JSX.Element {
   return (
     <div className="w-full max-w-[440px] text-center" data-testid="signup-success">
@@ -295,10 +296,10 @@ function SignupSuccessPanel(): React.JSX.Element {
         Registro Recibido
       </h2>
       <p className="text-pinnacle-navy/60 text-lg mb-8">
-        Tu cuenta fue creada correctamente y está pendiente de activación. Un administrador la
-        vinculará a tu Universo — recibirás acceso cuando eso ocurra.
+        Tu cuenta fue creada correctamente. Ya puedes iniciar sesión con tus credenciales y acceder
+        a la red Arcsial mientras te vinculas a un Universo.
       </p>
-      <Link to="/login" className="btn-archon-ghost">
+      <Link to="/login" className="btn-archon-primary" data-testid="signup-back-to-login">
         Volver al inicio de sesión
       </Link>
     </div>
