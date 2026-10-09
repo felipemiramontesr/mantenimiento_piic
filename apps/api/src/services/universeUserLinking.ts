@@ -52,9 +52,26 @@ function reject(status: number, code: string, message: string): LinkUserError {
   return { ok: false, status, code, message };
 }
 
+/** Gate 4 rejection — already in a Universo (single-Universe invariant). */
+export const ALREADY_MEMBER_REJECTION = reject(
+  409,
+  'LINKED_USER_ALREADY_MEMBER',
+  'El usuario ya pertenece a un Universo'
+);
+
+/** Gate 5 rejection — never completed the public signup's fiscal snapshot. */
+export const MISSING_BILLING_REJECTION = reject(
+  409,
+  'LINKED_USER_MISSING_BILLING_PROFILE',
+  'El usuario no completó su registro fiscal'
+);
+
 /** FC207 T1 gates 1–3 on the user row: doesn't exist (404), is Ω (403 — checked before
- *  inactivity, so an inactive Ω still gets 403), or is suspended (409). `null` = passes. */
-function rejectUserRow(user: { isActive: boolean; roleId: number } | null): LinkUserError | null {
+ *  inactivity, so an inactive Ω still gets 403), or is suspended (409). `null` = passes.
+ *  FC209 F2 reuses it for Arcsial's UNIVERSE invitations (T1 4b–4c, T2 rows 5–6). */
+export function rejectUserRow(
+  user: { isActive: boolean; roleId: number } | null
+): LinkUserError | null {
   if (!user) return reject(404, 'LINKED_USER_NOT_FOUND', 'Usuario no encontrado');
   if (user.roleId === OMEGA_ROLE_ID) {
     return reject(
@@ -82,18 +99,9 @@ export async function validateLinkCandidate(
   const rowRejection = rejectUserRow(await LinkingRepository.findUserActiveState(userId));
   if (rowRejection) return rowRejection;
   const memberships = await CosmonautRepository.findTenantMembershipOwnerIds(userId);
-  if (memberships.length > 0) {
-    return reject(409, 'LINKED_USER_ALREADY_MEMBER', 'El usuario ya pertenece a un Universo');
-  }
+  if (memberships.length > 0) return ALREADY_MEMBER_REJECTION;
   const billing = await LinkingRepository.findBillingProfile(userId);
-  if (!billing) {
-    return reject(
-      409,
-      'LINKED_USER_MISSING_BILLING_PROFILE',
-      'El usuario no completó su registro fiscal'
-    );
-  }
-  return billing;
+  return billing ?? MISSING_BILLING_REJECTION;
 }
 
 /** Cond.R-177 R3 (Bravo) — fail-closed if the target isn't a valid linking candidate. Mirrors

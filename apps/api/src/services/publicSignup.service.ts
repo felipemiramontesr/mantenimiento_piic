@@ -4,6 +4,7 @@ import * as CosmologyRepository from './cosmology.repository';
 import * as PublicSignupRepository from './publicSignup.repository';
 import EncryptionService from './encryption';
 import { findUserByEmail } from './authSession.service';
+import { createProfileForNewUser } from './arcsialProfiles.service';
 
 /**
  * FC177 F2 — Public_Signup_Endpoint_And_Form (Cond.R-177 R1/R2/R3, Bravo 312_AN). The one and
@@ -90,6 +91,8 @@ async function runSignupTransaction(
       null,
       connection
     );
+    // FC209 F2 (R 540/542_AN) — perfil de Arcsial con su @handle en la misma TX: nadie existe sin él.
+    await createProfileForNewUser(userId, input.fullName, connection);
     await connection.commit();
     return userId;
   } catch (e) {

@@ -4,6 +4,7 @@ import * as CosmologyRepository from './cosmology.repository';
 import * as PublicSignupRepository from './publicSignup.repository';
 import { findUserByEmail } from './authSession.service';
 import { publicSignup, PublicSignupInput } from './publicSignup.service';
+import { createProfileForNewUser } from './arcsialProfiles.service';
 
 /**
  * FC177 F2 — unit-tests `publicSignup.service.ts` in isolation (every collaborator mocked at
@@ -25,6 +26,8 @@ vi.mock('./publicSignup.repository', () => ({
   markPublicSignup: vi.fn(),
 }));
 vi.mock('./authSession.service', () => ({ findUserByEmail: vi.fn() }));
+// FC209 F2 — la regla del handle se prueba en arcsialProfiles.service.test.ts; aquí, que entra en la TX.
+vi.mock('./arcsialProfiles.service', () => ({ createProfileForNewUser: vi.fn() }));
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn() }));
 vi.mock('./encryption', () => ({ default: { encrypt: vi.fn((v: string) => `enc_${v}`) } }));
 
@@ -103,8 +106,23 @@ describe('FC177 F2 — publicSignup()', () => {
       null, // 0 human caller at signup time
       conn
     );
+    // FC209 F2 (R 540/542_AN) — el perfil de Arcsial nace en la misma TX, antes del COMMIT.
+    expect(createProfileForNewUser).toHaveBeenCalledWith(501, 'Cliente Ejemplo', conn);
+    expect(vi.mocked(createProfileForNewUser).mock.invocationCallOrder[0]).toBeLessThan(
+      conn.commit.mock.invocationCallOrder[0]
+    );
     expect(conn.commit).toHaveBeenCalled();
     expect(conn.release).toHaveBeenCalled();
+  });
+
+  it('FC209 F2 — si el perfil de Arcsial falla, el registro completo revierte', async () => {
+    const conn = mockConnection();
+    (db.getConnection as Mock).mockResolvedValue(conn);
+    (CosmologyRepository.insertSeedUser as Mock).mockResolvedValue(501);
+    vi.mocked(createProfileForNewUser).mockRejectedValueOnce(new Error('sin handle libre'));
+    await expect(publicSignup(INPUT)).rejects.toThrow('sin handle libre');
+    expect(conn.rollback).toHaveBeenCalled();
+    expect(conn.commit).not.toHaveBeenCalled();
   });
 
   it('fail-closed (Cond.R-182, mirrors FC177 F3 MU_ROLE_NOT_CONFIGURED) — rol Arc no configurado → 500, 0 TX abierta', async () => {

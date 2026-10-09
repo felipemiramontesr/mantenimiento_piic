@@ -46,6 +46,7 @@ import ownerProfileRoutes from './routes/ownerProfile';
 import onboardingRoutes from './routes/onboarding';
 import securityRoutes from './routes/security';
 import socialRoutes from './routes/social';
+import arcsialRoutes from './routes/arcsial';
 import universeContextPlugin from './plugins/universeContext';
 import {
   logSecurityEvent,
@@ -242,6 +243,7 @@ function registerV1Routes(fastify: FastifyInstance): void {
   fastify.register(recallsNhtsaRoutes, { prefix: '/v1' });
   fastify.register(recallsInternalRoutes, { prefix: '/v1' });
   fastify.register(socialRoutes, { prefix: '/v1' });
+  fastify.register(arcsialRoutes, { prefix: '/v1' }); // FC209 F2 — contactos e invitaciones
 }
 
 /**
