@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Globe, Pencil, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Globe, Layers, Pencil, Trash2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import api from '../../api/client';
@@ -10,6 +10,7 @@ import {
   DestroyUniverseModal,
 } from './CosmologyModule/CosmologyForms';
 import RenameUniverseModal from './CosmologyModule/RenameUniverseModal';
+import UniverseCapabilitiesModal from './CosmologyModule/UniverseCapabilitiesModal';
 import SecurityEventsCard from './CosmologyModule/SecurityEvents/SecurityEventsCard';
 import PlatformUsersCard from './CosmologyModule/PlatformUsers/PlatformUsersCard';
 
@@ -81,14 +82,21 @@ const TypeBadge: React.FC<{ code: string }> = ({ code }) => (
   </span>
 );
 
-interface UniverseTableRowProps {
-  readonly row: UniverseRow;
+/** Acciones de una fila; FC208 F2 suma «Cúmulos» (gobernanza de capacidades). */
+interface UniverseActions {
+  readonly onManageCapabilities: (u: UniverseRow) => void;
   readonly onRename: (u: UniverseRow) => void;
   readonly onDestroy: (u: UniverseRow) => void;
 }
 
+interface UniverseTableRowProps {
+  readonly row: UniverseRow;
+  readonly actions: UniverseActions;
+}
+
 /** Single table row — extracted so `UniversesTable` stays under budget. */
-function UniverseTableRow({ row, onRename, onDestroy }: UniverseTableRowProps): React.ReactElement {
+function UniverseTableRow({ row, actions }: UniverseTableRowProps): React.ReactElement {
+  const { onManageCapabilities, onRename, onDestroy } = actions;
   return (
     <tr
       key={row.id}
@@ -103,6 +111,14 @@ function UniverseTableRow({ row, onRename, onDestroy }: UniverseTableRowProps): 
       <td className="py-3 px-3 text-center text-pinnacle-navy/60">{row.activeClusters}</td>
       <td className="py-3 px-3 text-right">
         <div className="inline-flex items-center gap-4">
+          <button
+            type="button"
+            onClick={(): void => onManageCapabilities(row)}
+            data-testid={`cosmology-universe-manage-${row.id}`}
+            className="inline-flex items-center gap-1 text-sky-700 hover:text-sky-900 text-xs font-bold uppercase tracking-widest"
+          >
+            <Layers size={12} /> Cúmulos
+          </button>
           <button
             type="button"
             onClick={(): void => onRename(row)}
@@ -129,16 +145,14 @@ interface UniversesTableProps {
   readonly universes: UniverseRow[];
   readonly loading: boolean;
   readonly error: boolean;
-  readonly onRename: (u: UniverseRow) => void;
-  readonly onDestroy: (u: UniverseRow) => void;
+  readonly actions: UniverseActions;
 }
 
 function UniversesTable({
   universes,
   loading,
   error,
-  onRename,
-  onDestroy,
+  actions,
 }: UniversesTableProps): React.JSX.Element {
   if (error) {
     return (
@@ -158,19 +172,9 @@ function UniversesTable({
       testId="cosmology-universes-table"
       variant="embedded"
       emptyMessage="No hay Universos registrados."
-      renderRow={(row): React.ReactNode => (
-        <UniverseTableRow row={row} onRename={onRename} onDestroy={onDestroy} />
-      )}
+      renderRow={(row): React.ReactNode => <UniverseTableRow row={row} actions={actions} />}
     />
   );
-}
-
-interface UniversesDirectoryCardProps {
-  readonly universes: UniverseRow[];
-  readonly loading: boolean;
-  readonly error: boolean;
-  readonly onRename: (u: UniverseRow) => void;
-  readonly onDestroy: (u: UniverseRow) => void;
 }
 
 /** Card wrapping the header + `UniversesTable` — extracted to keep `CosmologyModule` under budget. */
@@ -178,9 +182,8 @@ function UniversesDirectoryCard({
   universes,
   loading,
   error,
-  onRename,
-  onDestroy,
-}: UniversesDirectoryCardProps): React.JSX.Element {
+  actions,
+}: UniversesTableProps): React.JSX.Element {
   return (
     <div
       className="card-archon-sovereign bg-white p-10 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 [--card-accent:#0f2a44]"
@@ -190,13 +193,7 @@ function UniversesDirectoryCard({
         <Globe size={22} className="text-[var(--card-accent)]" />
         <h3 className="card-sovereign-title text-archon-xl opacity-100">Universos Registrados</h3>
       </div>
-      <UniversesTable
-        universes={universes}
-        loading={loading}
-        error={error}
-        onRename={onRename}
-        onDestroy={onDestroy}
-      />
+      <UniversesTable universes={universes} loading={loading} error={error} actions={actions} />
     </div>
   );
 }
@@ -240,24 +237,83 @@ function SovereignConsoles({
   );
 }
 
+interface UniverseTargets {
+  readonly capabilities: UniverseRow | null;
+  readonly rename: UniverseRow | null;
+  readonly destroy: UniverseRow | null;
+  readonly actions: UniverseActions;
+  readonly close: () => void;
+}
+
+/** El Universo sobre el que se abrió cada modal (uno a la vez) y las acciones que los abren. */
+function useUniverseTargets(): UniverseTargets {
+  const [capabilities, setCapabilities] = useState<UniverseRow | null>(null);
+  const [rename, setRename] = useState<UniverseRow | null>(null);
+  const [destroy, setDestroy] = useState<UniverseRow | null>(null);
+  const actions = useMemo(
+    () => ({ onManageCapabilities: setCapabilities, onRename: setRename, onDestroy: setDestroy }),
+    []
+  );
+  const close = useCallback((): void => {
+    setCapabilities(null);
+    setRename(null);
+    setDestroy(null);
+  }, []);
+  return { capabilities, rename, destroy, actions, close };
+}
+
+interface UniverseModalsProps {
+  readonly targets: UniverseTargets;
+  readonly refetch: () => void;
+  readonly renameLocal: (universeId: number, label: string) => void;
+}
+
+/** Modales de Cúmulos (FC208 F2: cada cambio recarga los contadores), renombrar y destruir. */
+function UniverseModals({ targets, refetch, renameLocal }: UniverseModalsProps): React.JSX.Element {
+  return (
+    <>
+      <UniverseCapabilitiesModal
+        universe={targets.capabilities}
+        onClose={targets.close}
+        onChanged={refetch}
+      />
+      <RenameUniverseModal
+        universe={targets.rename}
+        onClose={targets.close}
+        onRenamed={(universeId, label): void => {
+          renameLocal(universeId, label);
+          targets.close();
+        }}
+      />
+      <DestroyUniverseModal
+        universe={targets.destroy}
+        onClose={targets.close}
+        onDestroyed={(): void => {
+          targets.close();
+          refetch();
+        }}
+      />
+    </>
+  );
+}
+
+const NO_ACCESS = (
+  <div className="animate-in fade-in duration-700">
+    <div className="card-archon-sovereign text-center py-12 text-pinnacle-navy/40 text-sm font-medium">
+      Sin acceso — sección exclusiva de GrayMan.
+    </div>
+  </div>
+);
+
 /** FC161 F1 — root page for `/dashboard/cosmology`: list/create/destroy Universos. */
 const CosmologyModule: React.FC = (): React.ReactElement => {
   const { isOmegaStrict } = usePermissions();
   const omega = isOmegaStrict();
   const { universes, loading, error, refetch, renameLocal } = useUniverses(omega);
-  const [destroyTarget, setDestroyTarget] = useState<UniverseRow | null>(null);
-  const [renameTarget, setRenameTarget] = useState<UniverseRow | null>(null);
+  const targets = useUniverseTargets();
   useCosmologySectionHeader(refetch);
 
-  if (!omega) {
-    return (
-      <div className="animate-in fade-in duration-700">
-        <div className="card-archon-sovereign text-center py-12 text-pinnacle-navy/40 text-sm font-medium">
-          Sin acceso — sección exclusiva de GrayMan.
-        </div>
-      </div>
-    );
-  }
+  if (!omega) return NO_ACCESS;
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -268,30 +324,12 @@ const CosmologyModule: React.FC = (): React.ReactElement => {
             universes={universes}
             loading={loading}
             error={error}
-            onRename={setRenameTarget}
-            onDestroy={setDestroyTarget}
+            actions={targets.actions}
           />
           <SovereignConsoles universes={universes} />
         </div>
       </section>
-
-      <RenameUniverseModal
-        universe={renameTarget}
-        onClose={(): void => setRenameTarget(null)}
-        onRenamed={(universeId, label): void => {
-          renameLocal(universeId, label);
-          setRenameTarget(null);
-        }}
-      />
-
-      <DestroyUniverseModal
-        universe={destroyTarget}
-        onClose={(): void => setDestroyTarget(null)}
-        onDestroyed={(): void => {
-          setDestroyTarget(null);
-          refetch();
-        }}
-      />
+      <UniverseModals targets={targets} refetch={refetch} renameLocal={renameLocal} />
     </div>
   );
 };
