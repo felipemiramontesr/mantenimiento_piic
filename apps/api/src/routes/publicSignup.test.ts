@@ -30,7 +30,8 @@ const mockConnection = {
 // FC199 F3 — el motor PoW tiene sus propias pruebas; aquí se controla su veredicto.
 vi.mock('../services/botChallenge.service', () => ({ botChallengeVerifier: { verify: vi.fn() } }));
 // FC209 F2 — el alta del perfil de Arcsial tiene sus pruebas (arcsialProfiles.service.test.ts).
-vi.mock('../services/arcsialProfiles.service', () => ({
+vi.mock('../services/arcsialProfiles.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/arcsialProfiles.service')>()),
   createProfileForNewUser: vi.fn().mockResolvedValue('arc_00000000'),
 }));
 vi.mock('../services/db', () => ({

@@ -60,6 +60,26 @@ describe('arcsialProfiles.repository', () => {
     expect(await Profiles.findHandleByUserId(5, conn)).toBe('ana');
     expect(await Profiles.findHandleByUserId(6, conn)).toBeNull();
   });
+
+  it('FC209 F3: perfil propio y Universo del MU, o null', async () => {
+    const profile = { userId: 5, handle: 'ana', displayName: 'Ana', avatarUrl: null };
+    rows([profile], [], [{ id: 41, label: 'Flota Norte' }], []);
+    expect(await Profiles.findProfileByUserId(5, conn)).toEqual(profile);
+    expect(await Profiles.findProfileByUserId(6, conn)).toBeNull();
+    expect(await Profiles.findMuUniverse(3, conn)).toEqual({ id: 41, label: 'Flota Norte' });
+    expect(await Profiles.findMuUniverse(4, conn)).toBeNull();
+    expect(call(2).sql).toContain('WHERE mu_user_id = ?');
+  });
+
+  it('FC209 F3: contactos (la otra parte del par) y bloqueos propios, sin correo', async () => {
+    rows([{ id: 9 }], [{ blockedId: 9 }]);
+    expect(await Profiles.listContacts(3, conn)).toEqual([{ id: 9 }]);
+    expect(await Profiles.listBlocks(3, conn)).toEqual([{ blockedId: 9 }]);
+    expect(call(0).sql).toContain('IF(c.user_id_low = ?, c.user_id_high, c.user_id_low)');
+    expect(call(0).params).toEqual([3, 3, 3]);
+    expect(call(1).sql).toContain('WHERE b.blocker_id = ?');
+    [0, 1].forEach((n) => expect(call(n).sql).not.toMatch(/email/i));
+  });
 });
 
 describe('arcsialRelations.repository', () => {

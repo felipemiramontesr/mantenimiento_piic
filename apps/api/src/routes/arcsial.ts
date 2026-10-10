@@ -2,7 +2,13 @@ import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } f
 import { z } from 'zod';
 import requireSession from '../middleware/requireSession';
 import { HANDLE_PATTERN } from '../services/arcsialHandle';
-import { changeOwnHandle, lookupByHandle } from '../services/arcsialProfiles.service';
+import {
+  changeOwnHandle,
+  getOwnProfile,
+  listOwnBlocks,
+  listOwnContacts,
+  lookupByHandle,
+} from '../services/arcsialProfiles.service';
 import { issueInvitation, listInvitations } from '../services/arcsialInvitations.service';
 import { acceptInvitation, blockUser, closeInvitation } from '../services/arcsialResponses.service';
 import type { ArcsialError } from '../services/arcsialProfiles.service';
@@ -54,6 +60,12 @@ async function handleLookup(request: FastifyRequest, reply: FastifyReply): Promi
   const query = lookupQuerySchema.safeParse(request.query);
   if (!query.success) return badRequest(reply);
   return sendResult(reply, await lookupByHandle(callerId(request), query.data.handle));
+}
+
+/** GET /social/profile, /social/contacts y /social/blocks (FC209 F3): lecturas propias. */
+function ownReadHandler(read: (userId: number) => Promise<({ ok: true } & object) | ArcsialError>) {
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> =>
+    sendResult(reply, await read(callerId(request)));
 }
 
 /** PATCH /social/profile/handle. */
@@ -114,6 +126,9 @@ export default function arcsialRoutes(
 ): void {
   fastify.addHook('onRequest', requireSession);
   fastify.get('/social/users/lookup', handleLookup);
+  fastify.get('/social/profile', ownReadHandler(getOwnProfile));
+  fastify.get('/social/contacts', ownReadHandler(listOwnContacts));
+  fastify.get('/social/blocks', ownReadHandler(listOwnBlocks));
   fastify.patch('/social/profile/handle', handleChangeHandle);
   fastify.get('/social/invitations', handleList);
   fastify.post('/social/invitations', handleIssue);

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { MessageSquare, PlusCircle, RefreshCw, AlertCircle, Users, Edit } from 'lucide-react';
+import { MessageSquare, PlusCircle, RefreshCw, AlertCircle, Users, Edit, Mail } from 'lucide-react';
 import { useSocialPosts, type SocialPost, type ReactionType } from '../../hooks/useSocialPosts';
 import ProfileEditSlideOver from './ProfileEditSlideOver';
 import PostCard from '../../components/Social/PostCard';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
+import ProfileContactsTab from '../Social/ProfileContactsTab';
+import InvitationsInbox from '../Social/InvitationsInbox';
 
 interface ProfileHeaderActionsProps {
   readonly onRefresh: () => void;
@@ -254,7 +256,8 @@ function ProfileWallHeader({ onRefresh, onEditClick }: ProfileWallHeaderProps): 
   );
 }
 
-const ProfileView: React.FC = () => {
+/** El muro social de Arcsial (publicaciones, reacciones y comentarios). */
+function ArcsialWall(): React.JSX.Element {
   const {
     posts,
     isLoading,
@@ -267,7 +270,6 @@ const ProfileView: React.FC = () => {
     addComment,
   } = useSocialPosts();
   const { currentUser } = useAuth();
-  const { setSectionData } = useSovereignLayout();
   const [editOpen, setEditOpen] = useState(false);
   const { newContent, setNewContent, postError, onSubmit } = useCreatePostForm(createPost);
   const { handleRefresh, handleDeletePost, handleReact } = useProfileWallActions(
@@ -277,12 +279,11 @@ const ProfileView: React.FC = () => {
   );
 
   useEffect(() => {
-    setSectionData('Arcsial', 'Muro de la comunidad Archon');
     refresh().catch(() => undefined);
-  }, [setSectionData, refresh]);
+  }, [refresh]);
 
   return (
-    <div data-testid="profile-view" className="flex flex-col gap-6 max-w-2xl mx-auto py-6">
+    <div className="flex flex-col gap-6">
       <ProfileWallHeader onRefresh={handleRefresh} onEditClick={(): void => setEditOpen(true)} />
 
       <NewPostForm
@@ -305,6 +306,67 @@ const ProfileView: React.FC = () => {
       />
 
       <ProfileEditSlideOver isOpen={editOpen} onClose={(): void => setEditOpen(false)} />
+    </div>
+  );
+}
+
+/** FC209 F3 — pestañas de Arcsial. Las tres viven en `/dashboard/social`: es la única ruta del Arc
+ *  itinerante (`Layout.tsx`), así que contactos e invitaciones no pueden ir en otra URL. */
+const ARCSIAL_TABS = [
+  { key: 'wall', label: 'Muro', Icon: MessageSquare },
+  { key: 'contacts', label: 'Contactos', Icon: Users },
+  { key: 'invitations', label: 'Invitaciones', Icon: Mail },
+] as const;
+
+type ArcsialTab = (typeof ARCSIAL_TABS)[number]['key'];
+
+/** Barra de pestañas. */
+function ArcsialTabBar({
+  active,
+  onSelect,
+}: {
+  readonly active: ArcsialTab;
+  readonly onSelect: (tab: ArcsialTab) => void;
+}): React.JSX.Element {
+  return (
+    <div role="tablist" className="flex gap-6 border-b border-slate-200">
+      {ARCSIAL_TABS.map(({ key, label, Icon }) => (
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={active === key}
+          onClick={(): void => onSelect(key)}
+          data-testid={`arcsial-tab-${key}`}
+          className={`-mb-px inline-flex items-center gap-1.5 border-b-2 pb-2 text-xs font-black uppercase tracking-widest ${
+            active === key
+              ? 'border-[#0f2a44] text-[#0f2a44]'
+              : 'border-transparent text-[#0f2a44]/40 hover:text-[#0f2a44]'
+          }`}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Arcsial (`/dashboard/social`): encabezado de la sección y la pestaña activa. */
+const ProfileView: React.FC = () => {
+  const { setSectionData } = useSovereignLayout();
+  const [tab, setTab] = useState<ArcsialTab>('wall');
+
+  useEffect(() => {
+    setSectionData('Arcsial', 'Muro de la comunidad Archon');
+  }, [setSectionData]);
+
+  return (
+    <div data-testid="profile-view" className="flex flex-col gap-6 max-w-2xl mx-auto py-6">
+      <ArcsialTabBar active={tab} onSelect={setTab} />
+      {tab === 'wall' && <ArcsialWall />}
+      {tab === 'contacts' && <ProfileContactsTab />}
+      {tab === 'invitations' && <InvitationsInbox />}
     </div>
   );
 };

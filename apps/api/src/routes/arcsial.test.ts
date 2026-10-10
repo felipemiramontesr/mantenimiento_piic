@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import buildApp from '../index';
-import { changeOwnHandle, lookupByHandle } from '../services/arcsialProfiles.service';
+import {
+  changeOwnHandle,
+  getOwnProfile,
+  listOwnBlocks,
+  listOwnContacts,
+  lookupByHandle,
+} from '../services/arcsialProfiles.service';
 import { issueInvitation, listInvitations } from '../services/arcsialInvitations.service';
 import { acceptInvitation, blockUser, closeInvitation } from '../services/arcsialResponses.service';
 
@@ -21,6 +27,9 @@ vi.mock('../services/arcsialProfiles.service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/arcsialProfiles.service')>()),
   lookupByHandle: vi.fn(),
   changeOwnHandle: vi.fn(),
+  getOwnProfile: vi.fn(),
+  listOwnContacts: vi.fn(),
+  listOwnBlocks: vi.fn(),
 }));
 vi.mock('../services/arcsialInvitations.service', () => ({
   issueInvitation: vi.fn(),
@@ -73,16 +82,41 @@ describe('FC209 F2 — rutas de Arcsial', () => {
   );
 
   it('lookup normaliza a minúsculas y devuelve el perfil público; el 404 del servicio pasa tal cual', async () => {
-    const profile = { userId: 9, handle: 'ana', displayName: 'Ana', avatarUrl: null };
-    vi.mocked(lookupByHandle).mockResolvedValueOnce({ ok: true, profile });
+    const profile = { id: 9, handle: 'ana', displayName: 'Ana', avatarUrl: null };
+    vi.mocked(lookupByHandle).mockResolvedValueOnce({ ok: true, ...profile });
     const res = await call('GET', '/v1/social/users/lookup?handle=%20ANA%20');
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ success: true, profile });
+    // FC209 — forma del contrato: { id, handle, displayName, avatarUrl } (sin anidar, sin correo).
+    expect(res.json()).toEqual({ success: true, ...profile });
     expect(lookupByHandle).toHaveBeenCalledWith(3, 'ana');
     vi.mocked(lookupByHandle).mockResolvedValueOnce(NOT_FOUND);
     const missing = await call('GET', '/v1/social/users/lookup?handle=nadie');
     expect(missing.statusCode).toBe(404);
     expect(missing.json()).toMatchObject({ success: false, code: 'USER_NOT_FOUND' });
+  });
+
+  it('FC209 F3: perfil, contactos y bloqueos propios, siempre de la sesión', async () => {
+    const own = {
+      id: 3,
+      handle: 'mu_norte',
+      displayName: 'Mu',
+      avatarUrl: null,
+      muUniverse: { id: 41, label: 'Flota Norte' },
+    };
+    vi.mocked(getOwnProfile).mockResolvedValue({ ok: true, ...own });
+    vi.mocked(listOwnContacts).mockResolvedValue({ ok: true, contacts: [] });
+    vi.mocked(listOwnBlocks).mockResolvedValue({ ok: true, blocks: [] });
+    expect((await call('GET', '/v1/social/profile')).json()).toEqual({ success: true, ...own });
+    expect((await call('GET', '/v1/social/contacts')).json()).toEqual({
+      success: true,
+      contacts: [],
+    });
+    expect((await call('GET', '/v1/social/blocks')).json()).toEqual({ success: true, blocks: [] });
+    expect(getOwnProfile).toHaveBeenCalledWith(3);
+    expect(listOwnContacts).toHaveBeenCalledWith(3);
+    expect(listOwnBlocks).toHaveBeenCalledWith(3);
+    vi.mocked(getOwnProfile).mockResolvedValue(NOT_FOUND);
+    expect((await call('GET', '/v1/social/profile')).statusCode).toBe(404);
   });
 
   it('PATCH handle: valida y delega', async () => {

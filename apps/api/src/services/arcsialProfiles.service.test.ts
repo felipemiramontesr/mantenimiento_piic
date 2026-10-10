@@ -6,7 +6,10 @@ import { recordAuditLog } from './auditService';
 import {
   changeOwnHandle,
   createProfileForNewUser,
+  getOwnProfile,
   isDuplicateEntry,
+  listOwnBlocks,
+  listOwnContacts,
   lookupByHandle,
 } from './arcsialProfiles.service';
 
@@ -18,6 +21,10 @@ vi.mock('./arcsialProfiles.repository', () => ({
   findProfileByHandle: vi.fn(),
   findHandleByUserId: vi.fn(),
   updateHandle: vi.fn(),
+  findProfileByUserId: vi.fn(),
+  findMuUniverse: vi.fn(),
+  listContacts: vi.fn(),
+  listBlocks: vi.fn(),
 }));
 vi.mock('./arcsialRelations.repository', () => ({ isBlockedEitherWay: vi.fn() }));
 vi.mock('./auditService', () => ({ recordAuditLog: vi.fn() }));
@@ -95,7 +102,39 @@ describe('lookupByHandle', () => {
   it('visible ⇒ el perfil público', async () => {
     vi.mocked(Profiles.findProfileByHandle).mockResolvedValue(PROFILE);
     vi.mocked(isBlockedEitherWay).mockResolvedValue(false);
-    expect(await lookupByHandle(3, 'ana')).toEqual({ ok: true, profile: PROFILE });
+    expect(await lookupByHandle(3, 'ana')).toEqual({
+      ok: true,
+      id: 9,
+      handle: 'ana',
+      displayName: 'Ana',
+      avatarUrl: null,
+    });
+  });
+});
+
+describe('FC209 F3 — lecturas propias', () => {
+  it('getOwnProfile: forma pública + Universo donde es MU; 404 sin perfil', async () => {
+    vi.mocked(Profiles.findProfileByUserId).mockResolvedValueOnce(PROFILE);
+    vi.mocked(Profiles.findMuUniverse).mockResolvedValueOnce({ id: 41, label: 'Flota Norte' });
+    expect(await getOwnProfile(9)).toEqual({
+      ok: true,
+      id: 9,
+      handle: 'ana',
+      displayName: 'Ana',
+      avatarUrl: null,
+      muUniverse: { id: 41, label: 'Flota Norte' },
+    });
+    vi.mocked(Profiles.findProfileByUserId).mockResolvedValueOnce(null);
+    expect(await getOwnProfile(9)).toMatchObject({ status: 404 });
+  });
+
+  it('contactos y bloqueos del usuario', async () => {
+    vi.mocked(Profiles.listContacts).mockResolvedValue([]);
+    vi.mocked(Profiles.listBlocks).mockResolvedValue([]);
+    expect(await listOwnContacts(9)).toEqual({ ok: true, contacts: [] });
+    expect(await listOwnBlocks(9)).toEqual({ ok: true, blocks: [] });
+    expect(Profiles.listContacts).toHaveBeenCalledWith(9);
+    expect(Profiles.listBlocks).toHaveBeenCalledWith(9);
   });
 });
 
