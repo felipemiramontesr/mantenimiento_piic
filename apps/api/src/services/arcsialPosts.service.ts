@@ -129,7 +129,8 @@ export interface PostPage {
 
 /** Empaqueta una página: si vino llena, la siguiente empieza bajo su última publicación. */
 function toPage(posts: ArcsialPost[], limit: number): PostPage {
-  return { posts, nextBeforeId: posts.length === limit ? posts[posts.length - 1].id : null };
+  const last = posts.at(-1);
+  return { posts, nextBeforeId: last && posts.length === limit ? last.id : null };
 }
 
 /** Qué ve quien consulta: el dueño ve cada visibilidad; el resto, según siga al actor o sea su contacto. */

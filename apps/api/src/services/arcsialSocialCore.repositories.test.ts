@@ -101,14 +101,15 @@ describe('arcsialActors.repository', () => {
   it('búsqueda por nombre: solo visibles, sin bloqueados, máximo 10 y comodines escapados', async () => {
     const card = { handle: 'ana', displayName: 'Ana', avatarUrl: null, actorType: 'USER' };
     rows([card]);
-    expect(await Actors.searchActorsByName(3, '50%_a\\b', conn)).toEqual([card]);
+    expect(await Actors.searchActorsByName(3, '50%_a!b', conn)).toEqual([card]);
     const { sql, params } = call();
     expect(sql).toContain('a.is_searchable = 1');
     expect(sql).toContain('a.display_name LIKE ?');
     expect(sql).toContain('arcsial_blocks');
     expect(sql).toContain(`LIMIT ${Actors.SEARCH_LIMIT}`);
     expect(sql).not.toMatch(/email|username/i);
-    expect(params).toEqual(['%50\\%\\_a\\\\b%', 3, 3]);
+    expect(sql).toContain("ESCAPE '!'");
+    expect(params).toEqual(['%50!%!_a!!b%', 3, 3]);
   });
 });
 

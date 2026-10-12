@@ -158,9 +158,9 @@ export async function updateProfilePresentation(
   );
 }
 
-/** Escapa los comodines de LIKE para que el texto se busque literal. */
+/** Escapa los comodines de LIKE con `!` (el carácter de ESCAPE) para que el texto se busque literal. */
 function likeLiteral(text: string): string {
-  return text.replaceAll(/[\\%_]/g, String.raw`\$&`);
+  return text.replaceAll(/[!%_]/g, '!$&');
 }
 
 /**
@@ -175,7 +175,7 @@ export async function searchActorsByName(
   const [rows] = await executor.execute<RowDataPacket[]>(
     `SELECT a.handle, a.display_name AS displayName, a.avatar_url AS avatarUrl, a.actor_type AS actorType
      FROM arcsial_actors a
-     WHERE a.is_searchable = 1 AND a.display_name LIKE ? ESCAPE '\\\\'
+     WHERE a.is_searchable = 1 AND a.display_name LIKE ? ESCAPE '!'
        AND NOT EXISTS (
          SELECT 1 FROM arcsial_blocks b
          WHERE (b.blocker_id = ? AND b.blocked_id = a.user_id)

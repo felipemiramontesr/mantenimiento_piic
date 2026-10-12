@@ -59,7 +59,7 @@ export async function resolveActingActor(
 ): Promise<ArcsialActor | null> {
   if (asUniverseTenantId === undefined) return ActorsRepository.findActorByUserId(userId);
   const actor = await ActorsRepository.findActorByTenantId(asUniverseTenantId);
-  return actor && actor.muUserId === userId ? actor : null;
+  return actor?.muUserId === userId ? actor : null;
 }
 
 export interface ActorView {
