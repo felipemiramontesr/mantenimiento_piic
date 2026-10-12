@@ -1,0 +1,6 @@
+# FC211 F2 (D11) — los archivos de assets/ llevan huella en el nombre: un año de caché, sin revalidar.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
