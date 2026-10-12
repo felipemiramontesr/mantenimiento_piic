@@ -1,319 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { MessageSquare, PlusCircle, RefreshCw, AlertCircle, Users, Edit, Mail } from 'lucide-react';
-import { useSocialPosts, type SocialPost, type ReactionType } from '../../hooks/useSocialPosts';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { ArrowLeft, Edit, Mail, Newspaper, UserCircle, Users } from 'lucide-react';
 import ProfileEditSlideOver from './ProfileEditSlideOver';
-import PostCard from '../../components/Social/PostCard';
-import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import AT from '../../styles/archonTypography';
+import { fetchOwnProfile, HANDLE_PATTERN, OwnProfile } from '../Social/arcsialApi';
+import ActorSearch from '../Social/ActorSearch';
+import ActorView from '../Social/ActorView';
+import FeedTab from '../Social/FeedTab';
 import ProfileContactsTab from '../Social/ProfileContactsTab';
 import InvitationsInbox from '../Social/InvitationsInbox';
 
-interface ProfileHeaderActionsProps {
-  readonly onRefresh: () => void;
-  readonly onEditClick: () => void;
-}
-
-/** Botones de refrescar/editar perfil en el header del muro social (FC163 F2B4 Sub-Batch 4B-1). */
-function ProfileHeaderActions({
-  onRefresh,
-  onEditClick,
-}: ProfileHeaderActionsProps): React.JSX.Element {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        data-testid="profile-refresh-btn"
-        onClick={onRefresh}
-        className="inline-flex items-center gap-1.5 h-11 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        Actualizar
-      </button>
-      <button
-        type="button"
-        data-testid="profile-edit-btn"
-        onClick={onEditClick}
-        className="btn-sentinel-sky-static text-[10px]"
-      >
-        <Edit className="w-3 h-3" />
-        Editar perfil
-      </button>
-    </div>
-  );
-}
-
-interface NewPostFormProps {
-  readonly username: string;
-  readonly newContent: string;
-  readonly onContentChange: (v: string) => void;
-  readonly onSubmit: (e: React.FormEvent) => void;
-  readonly postError: string | null;
-}
-
-/** Formulario de creación de publicación en el muro social (FC163 F2B4 Sub-Batch 4B-1). */
-function NewPostForm({
-  username,
-  newContent,
-  onContentChange,
-  onSubmit,
-  postError,
-}: NewPostFormProps): React.JSX.Element {
-  return (
-    <form
-      data-testid="post-create-form"
-      onSubmit={onSubmit}
-      className="card-archon-sovereign bg-white p-6 space-y-3 [--card-accent:#0f2a44]"
-    >
-      <div className="card-sovereign-header !mb-0">
-        <MessageSquare size={22} className="text-[var(--card-accent)]" />
-        <h3 className="card-sovereign-title text-archon-xl opacity-100">{username}</h3>
-      </div>
-      <textarea
-        data-testid="post-content-input"
-        value={newContent}
-        onChange={(e): void => onContentChange(e.target.value)}
-        placeholder="Comparte una actualización del taller…"
-        rows={3}
-        className="w-full archon-input resize-none"
-      />
-      {postError && (
-        <div
-          data-testid="post-create-error"
-          className="flex items-center gap-2 text-red-600 text-archon-sm font-black"
-        >
-          <AlertCircle className="w-3.5 h-3.5" />
-          {postError}
-        </div>
-      )}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          data-testid="post-submit-btn"
-          disabled={!newContent.trim()}
-          className="btn-sentinel-sky text-xs"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          Publicar
-        </button>
-      </div>
-    </form>
-  );
-}
-
-interface PostsWallProps {
-  readonly isLoading: boolean;
-  readonly error: string | null;
-  readonly posts: SocialPost[];
-  readonly currentUserId: number | undefined;
-  readonly onDeletePost: (id: number) => void;
-  readonly onReact: (postId: number, type: ReactionType) => void;
-  readonly fetchComments: ReturnType<typeof useSocialPosts>['fetchComments'];
-  readonly addComment: ReturnType<typeof useSocialPosts>['addComment'];
-}
-
-type PostsListProps = Omit<PostsWallProps, 'isLoading' | 'error'>;
-
-/** Lista de publicaciones o estado vacío (FC163 F2B4 Sub-Batch 4B-1). */
-function PostsList({
-  posts,
-  currentUserId,
-  onDeletePost,
-  onReact,
-  fetchComments,
-  addComment,
-}: PostsListProps): React.JSX.Element {
-  if (posts.length === 0) {
-    return (
-      <div
-        data-testid="profile-posts-empty"
-        className="flex flex-col items-center gap-2 py-10 text-[#0f2a44]/40"
-      >
-        <MessageSquare className="w-6 h-6 opacity-30" />
-        <span className={AT.sectionDescription}>Sin publicaciones aún</span>
-      </div>
-    );
-  }
-  return (
-    <>
-      {posts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          isOwner={currentUserId === post.authorId}
-          onDelete={onDeletePost}
-          onReact={onReact}
-          fetchComments={fetchComments}
-          addComment={addComment}
-        />
-      ))}
-    </>
-  );
-}
-
-/** Estados de carga/error y lista de publicaciones del muro social (FC163 F2B4 Sub-Batch 4B-1). */
-function PostsWall(props: PostsWallProps): React.JSX.Element {
-  const { isLoading, error } = props;
-  if (isLoading) {
-    return (
-      <div data-testid="profile-loading" className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-pinnacle-navy border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div
-        data-testid="profile-error"
-        className="flex items-center gap-2 text-red-600 text-archon-sm font-black"
-      >
-        <AlertCircle className="w-4 h-4" />
-        {error}
-      </div>
-    );
-  }
-  return (
-    <div data-testid="profile-wall" className="flex flex-col gap-4">
-      <PostsList {...props} />
-    </div>
-  );
-}
-
-interface CreatePostFormState {
-  newContent: string;
-  setNewContent: (v: string) => void;
-  postError: string | null;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-/** Estado y submit del formulario de nueva publicación (FC163 F2B4 Sub-Batch 4B-1). */
-function useCreatePostForm(createPost: (text: string) => Promise<void>): CreatePostFormState {
-  const [newContent, setNewContent] = useState('');
-  const [postError, setPostError] = useState<string | null>(null);
-
-  const onSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    setPostError(null);
-    if (!newContent.trim()) return;
-    createPost(newContent.trim())
-      .then(() => setNewContent(''))
-      .catch((err: unknown) => {
-        const msg =
-          err && typeof err === 'object' && 'response' in err
-            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error ??
-              'Error al publicar'
-            : 'Error al publicar';
-        setPostError(
-          msg === 'PII_DETECTED_IN_POST'
-            ? 'La publicación contiene datos sensibles (placa o VIN).'
-            : msg
-        );
-      });
-  };
-
-  return { newContent, setNewContent, postError, onSubmit };
-}
-
-interface ProfileWallActions {
-  handleRefresh: () => void;
-  handleDeletePost: (id: number) => void;
-  handleReact: (postId: number, type: ReactionType) => void;
-}
-
-/** Handlers fire-and-forget del muro social (refrescar/eliminar/reaccionar) (FC163 F2B4 Sub-Batch 4B-1). */
-function useProfileWallActions(
-  refresh: () => Promise<void>,
-  deletePost: (id: number) => Promise<void>,
-  addReaction: (postId: number, type: ReactionType) => Promise<void>
-): ProfileWallActions {
-  const handleRefresh = (): void => {
-    refresh().catch(() => undefined);
-  };
-  const handleDeletePost = (id: number): void => {
-    deletePost(id).catch(() => undefined);
-  };
-  const handleReact = (postId: number, type: ReactionType): void => {
-    addReaction(postId, type).catch(() => undefined);
-  };
-  return { handleRefresh, handleDeletePost, handleReact };
-}
-
-interface ProfileWallHeaderProps {
-  readonly onRefresh: () => void;
-  readonly onEditClick: () => void;
-}
-
-/** Título del muro social + acciones de refrescar/editar (FC163 F2B4 Sub-Batch 4B-1). */
-function ProfileWallHeader({ onRefresh, onEditClick }: ProfileWallHeaderProps): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Users className="w-4 h-4 text-pinnacle-navy" />
-        <span className={AT.sectionTitle}>Muro Social</span>
-      </div>
-      <ProfileHeaderActions onRefresh={onRefresh} onEditClick={onEditClick} />
-    </div>
-  );
-}
-
-/** El muro social de Arcsial (publicaciones, reacciones y comentarios). */
-function ArcsialWall(): React.JSX.Element {
-  const {
-    posts,
-    isLoading,
-    error,
-    refresh,
-    createPost,
-    deletePost,
-    addReaction,
-    fetchComments,
-    addComment,
-  } = useSocialPosts();
-  const { currentUser } = useAuth();
-  const [editOpen, setEditOpen] = useState(false);
-  const { newContent, setNewContent, postError, onSubmit } = useCreatePostForm(createPost);
-  const { handleRefresh, handleDeletePost, handleReact } = useProfileWallActions(
-    refresh,
-    deletePost,
-    addReaction
-  );
-
-  useEffect(() => {
-    refresh().catch(() => undefined);
-  }, [refresh]);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <ProfileWallHeader onRefresh={handleRefresh} onEditClick={(): void => setEditOpen(true)} />
-
-      <NewPostForm
-        username={currentUser?.username ?? 'Usuario'}
-        newContent={newContent}
-        onContentChange={setNewContent}
-        onSubmit={onSubmit}
-        postError={postError}
-      />
-
-      <PostsWall
-        isLoading={isLoading}
-        error={error}
-        posts={posts}
-        currentUserId={currentUser ? Number(currentUser.id) : undefined}
-        onDeletePost={handleDeletePost}
-        onReact={handleReact}
-        fetchComments={fetchComments}
-        addComment={addComment}
-      />
-
-      <ProfileEditSlideOver isOpen={editOpen} onClose={(): void => setEditOpen(false)} />
-    </div>
-  );
-}
-
-/** FC209 F3 — pestañas de Arcsial. Las tres viven en `/dashboard/social`: es la única ruta del Arc
- *  itinerante (`Layout.tsx`), así que contactos e invitaciones no pueden ir en otra URL. */
+/**
+ * FC210 F3 — Arcsial vive entero en `/dashboard/social`, la única ruta del Arc itinerante
+ * (`Layout.tsx` compara la ruta exacta): las pestañas son estado local y el perfil de un actor se abre
+ * con `?handle=`, sin cambiar de ruta. El muro legado sobre `social_posts` ya no se muestra (D10).
+ */
 const ARCSIAL_TABS = [
-  { key: 'wall', label: 'Muro', Icon: MessageSquare },
+  { key: 'feed', label: 'Feed', Icon: Newspaper },
+  { key: 'wall', label: 'Muro Propio', Icon: UserCircle },
   { key: 'contacts', label: 'Contactos', Icon: Users },
   { key: 'invitations', label: 'Invitaciones', Icon: Mail },
 ] as const;
@@ -329,7 +33,7 @@ function ArcsialTabBar({
   readonly onSelect: (tab: ArcsialTab) => void;
 }): React.JSX.Element {
   return (
-    <div role="tablist" className="flex gap-6 border-b border-slate-200">
+    <div role="tablist" className="flex flex-wrap gap-6 border-b border-slate-200">
       {ARCSIAL_TABS.map(({ key, label, Icon }) => (
         <button
           key={key}
@@ -352,21 +56,158 @@ function ArcsialTabBar({
   );
 }
 
-/** Arcsial (`/dashboard/social`): encabezado de la sección y la pestaña activa. */
+interface OwnProfileState {
+  readonly own: OwnProfile | null;
+  readonly reload: () => void;
+}
+
+/** Perfil de Arcsial de la sesión (handle propio y Universo del que es MU). */
+function useOwnProfile(): OwnProfileState {
+  const [own, setOwn] = useState<OwnProfile | null>(null);
+  const reload = useCallback((): void => {
+    fetchOwnProfile()
+      .then(setOwn)
+      .catch(() => setOwn(null));
+  }, []);
+  useEffect(reload, [reload]);
+  return { own, reload };
+}
+
+interface ActorNavigation {
+  /** Handle del perfil abierto con `?handle=`, o null. Un valor fuera del patrón se ignora. */
+  readonly viewed: string | null;
+  readonly open: (handle: string) => void;
+  readonly close: () => void;
+}
+
+/** Navegación al perfil de un actor sin salir de `/dashboard/social`. */
+function useActorNavigation(): ActorNavigation {
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('handle') ?? '';
+  return {
+    viewed: HANDLE_PATTERN.test(raw) ? raw : null,
+    open: (handle): void => setParams({ handle }),
+    close: (): void => setParams({}),
+  };
+}
+
+interface TabPanelProps {
+  readonly tab: ArcsialTab;
+  readonly profile: OwnProfileState;
+  readonly onOpenActor: (handle: string) => void;
+}
+
+/** «Muro Propio»: el perfil y el muro del actor de la sesión. */
+function OwnWall({ profile, onOpenActor }: Omit<TabPanelProps, 'tab'>): React.JSX.Element {
+  const { own } = profile;
+  if (!own) {
+    return (
+      <p className="text-sm text-[#0f2a44]/40" data-testid="own-wall-loading">
+        Cargando tu perfil…
+      </p>
+    );
+  }
+  return (
+    <ActorView
+      handle={own.handle}
+      ownHandle={own.handle}
+      muUniverse={own.muUniverse}
+      onOpenActor={onOpenActor}
+    />
+  );
+}
+
+/** Contenido de la pestaña activa. */
+function TabPanel({ tab, profile, onOpenActor }: TabPanelProps): React.JSX.Element {
+  if (tab === 'feed') {
+    return <FeedTab muUniverse={profile.own?.muUniverse ?? null} onOpenActor={onOpenActor} />;
+  }
+  if (tab === 'wall') return <OwnWall profile={profile} onOpenActor={onOpenActor} />;
+  if (tab === 'contacts') return <ProfileContactsTab onProfileSaved={profile.reload} />;
+  return <InvitationsInbox />;
+}
+
+/** Perfil de otro actor, con el regreso a las pestañas. */
+function ViewedActor({
+  handle,
+  profile,
+  navigation,
+}: {
+  readonly handle: string;
+  readonly profile: OwnProfileState;
+  readonly navigation: ActorNavigation;
+}): React.JSX.Element {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={navigation.close}
+        data-testid="actor-back"
+        className="inline-flex items-center gap-1.5 self-start text-xs font-black uppercase tracking-widest text-[#0f2a44]/60 hover:text-[#0f2a44]"
+      >
+        <ArrowLeft size={14} /> Volver
+      </button>
+      <ActorView
+        key={handle}
+        handle={handle}
+        ownHandle={profile.own?.handle ?? null}
+        muUniverse={profile.own?.muUniverse ?? null}
+        onOpenActor={navigation.open}
+      />
+    </>
+  );
+}
+
+/** Buscador y acceso a «Editar perfil» (datos de la cuenta). */
+function ArcsialToolbar({
+  onOpenActor,
+  onEdit,
+}: {
+  readonly onOpenActor: (handle: string) => void;
+  readonly onEdit: () => void;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex-1">
+        <ActorSearch onOpenActor={onOpenActor} />
+      </div>
+      <button
+        type="button"
+        data-testid="profile-edit-btn"
+        onClick={onEdit}
+        className="btn-sentinel-sky-static text-[10px]"
+      >
+        <Edit className="h-3 w-3" />
+        Editar perfil
+      </button>
+    </div>
+  );
+}
+
+/** Arcsial (`/dashboard/social`): buscador, pestañas y perfil de actor. */
 const ProfileView: React.FC = () => {
   const { setSectionData } = useSovereignLayout();
-  const [tab, setTab] = useState<ArcsialTab>('wall');
+  const [tab, setTab] = useState<ArcsialTab>('feed');
+  const [editOpen, setEditOpen] = useState(false);
+  const profile = useOwnProfile();
+  const navigation = useActorNavigation();
 
   useEffect(() => {
-    setSectionData('Arcsial', 'Muro de la comunidad Archon');
+    setSectionData('Arcsial', 'Red social de la comunidad Archon');
   }, [setSectionData]);
 
   return (
-    <div data-testid="profile-view" className="flex flex-col gap-6 max-w-2xl mx-auto py-6">
-      <ArcsialTabBar active={tab} onSelect={setTab} />
-      {tab === 'wall' && <ArcsialWall />}
-      {tab === 'contacts' && <ProfileContactsTab />}
-      {tab === 'invitations' && <InvitationsInbox />}
+    <div data-testid="profile-view" className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
+      <ArcsialToolbar onOpenActor={navigation.open} onEdit={(): void => setEditOpen(true)} />
+      {navigation.viewed ? (
+        <ViewedActor handle={navigation.viewed} profile={profile} navigation={navigation} />
+      ) : (
+        <>
+          <ArcsialTabBar active={tab} onSelect={setTab} />
+          <TabPanel tab={tab} profile={profile} onOpenActor={navigation.open} />
+        </>
+      )}
+      <ProfileEditSlideOver isOpen={editOpen} onClose={(): void => setEditOpen(false)} />
     </div>
   );
 };

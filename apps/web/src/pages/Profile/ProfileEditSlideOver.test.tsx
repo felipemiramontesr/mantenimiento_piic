@@ -85,6 +85,23 @@ describe('ProfileEditSlideOver — contrato PATCH /auth/users/:id (FC 076 R6)', 
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('cerrado no renderiza nada; el botón de cierre y el clic en el fondo llaman a onClose', () => {
+    const onClose = vi.fn();
+    const { rerender } = render(<ProfileEditSlideOver isOpen={false} onClose={onClose} />);
+    expect(screen.queryByTestId('profile-edit-slideover')).toBeNull();
+    rerender(<ProfileEditSlideOver isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByTestId('profile-edit-close'));
+    fireEvent.click(screen.getByTestId('profile-edit-overlay'));
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('sin usuario en sesión abre con los campos vacíos', () => {
+    mockUseAuth.mockReturnValue({ currentUser: null, updateCurrentUser });
+    render(<ProfileEditSlideOver isOpen onClose={vi.fn()} />);
+    expect(screen.getByTestId('profile-edit-username')).toHaveValue('');
+    expect(screen.getByTestId('profile-edit-email')).toHaveValue('');
+  });
+
   it('an unrelated key on the backdrop does not call onClose', () => {
     const onClose = vi.fn();
     render(<ProfileEditSlideOver isOpen onClose={onClose} />);

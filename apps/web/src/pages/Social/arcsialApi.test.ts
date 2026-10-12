@@ -12,7 +12,6 @@ import {
   normalizeHandle,
   respondInvitation,
   sendInvitation,
-  updateOwnHandle,
 } from './arcsialApi';
 
 /** FC209 F3 — cliente web de Arcsial: rutas, cuerpos, extracción de la respuesta y mensajes. */
@@ -57,12 +56,10 @@ describe('lecturas', () => {
 });
 
 describe('escrituras', () => {
-  it('handle, invitación, respuestas y bloqueo van a su ruta', async () => {
-    await updateOwnHandle('ana_2');
+  it('invitación, respuestas y bloqueo van a su ruta', async () => {
     await sendInvitation('ana', 'UNIVERSE');
     await respondInvitation(77, 'accept');
     await blockUser(9);
-    expect(api.patch).toHaveBeenCalledWith('/social/profile/handle', { handle: 'ana_2' });
     expect(api.post).toHaveBeenCalledWith('/social/invitations', {
       recipientHandle: 'ana',
       inviteType: 'UNIVERSE',

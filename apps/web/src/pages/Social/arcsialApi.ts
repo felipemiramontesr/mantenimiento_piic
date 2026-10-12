@@ -81,11 +81,6 @@ export async function lookupHandle(handle: string): Promise<PublicProfile> {
   };
 }
 
-/** Cambia el handle propio. */
-export async function updateOwnHandle(handle: string): Promise<void> {
-  await api.patch('/social/profile/handle', { handle });
-}
-
 /** Bandeja: recibidas y enviadas. */
 export async function fetchInvitations(): Promise<Invitation[]> {
   const { data } = await api.get<{ data: Invitation[] }>('/social/invitations');
@@ -132,6 +127,21 @@ const ERROR_MESSAGES: Record<string, string> = {
   FORBIDDEN_INVITATION_SENDER: 'Solo quien la envió puede cancelarla.',
   INVITATION_NOT_FOUND: 'La invitación ya no existe.',
   CANNOT_BLOCK_SELF: 'No puedes bloquearte a ti mismo.',
+  // FC210 F3 — núcleo social V2.
+  INVALID_HANDLE_FORMAT: 'El handle solo admite minúsculas, números y guion bajo (3 a 30).',
+  HANDLE_RESERVED: 'Ese handle está reservado por el sistema.',
+  ACTOR_NOT_FOUND: 'No encontramos ese perfil.',
+  FORBIDDEN_NOT_UNIVERSE_MASTER: 'Solo el Master of Universe actúa a nombre de su Universo.',
+  PII_DETECTED_IN_POST: 'La publicación contiene datos sensibles (placa o VIN).',
+  INVALID_POST_CONTENT:
+    'El texto debe tener de 1 a 1000 caracteres y hasta 4 imágenes https (.jpg, .png o .webp).',
+  POST_NOT_FOUND: 'La publicación ya no existe.',
+  FORBIDDEN_POST_DELETE: 'Solo quien la redactó puede borrarla.',
+  CANNOT_FOLLOW_SELF: 'No puedes seguirte a ti mismo.',
+  ALREADY_FOLLOWING: 'Ya sigues a este perfil.',
+  INVALID_SEARCH_QUERY: 'Busca por nombre, no por correo.',
+  QUERY_TOO_SHORT: 'Escribe al menos 3 caracteres.',
+  RATE_LIMIT_EXCEEDED: 'Alcanzaste el límite de búsquedas por hora. Intenta más tarde.',
 };
 
 /** Mensaje en español para un error de Arcsial. */

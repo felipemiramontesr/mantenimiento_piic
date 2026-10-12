@@ -1,128 +1,18 @@
 import React, { useState } from 'react';
-import { AtSign, Ban, Globe, Pencil, UserPlus } from 'lucide-react';
+import { Ban, Globe, UserPlus } from 'lucide-react';
 import ArchonModal from '../../components/UI/ArchonModal';
-import {
-  blockUser,
-  Contact,
-  describeArcsialError,
-  HANDLE_PATTERN,
-  normalizeHandle,
-  updateOwnHandle,
-} from './arcsialApi';
+import { blockUser, Contact, describeArcsialError } from './arcsialApi';
 import useArcsialProfile, { ArcsialProfileState } from './useArcsialProfile';
 import AddContactModal from './AddContactModal';
 import InviteToUniverseModal from './InviteToUniverseModal';
+import ProfileSettingsForm from './ProfileSettingsForm';
 
 /**
- * FC209 F3 — perfil social: el @handle propio (editable: minúsculas, números y guion bajo, sin `@`),
- * los contactos vigentes con «Bloquear Usuario» (confirmación explícita: se retira el contacto y se
- * cancelan las invitaciones) y los bloqueados. Desde aquí se agrega un contacto y, si la sesión es MU,
- * se invita a su Universo.
+ * FC209 F3 / FC210 F3 — perfil social: el formulario del perfil propio (nombre, biografía, avatar,
+ * visibilidad en búsquedas y @handle), los contactos vigentes con «Bloquear Usuario» (confirmación
+ * explícita: se retira el contacto y se cancelan las invitaciones) y los bloqueados. Desde aquí se
+ * agrega un contacto y, si la sesión es MU, se invita a su Universo.
  */
-
-/** El handle actual con su botón de edición. */
-function HandleDisplay({
-  handle,
-  onEdit,
-}: {
-  readonly handle: string | undefined;
-  readonly onEdit: () => void;
-}): React.JSX.Element {
-  return (
-    <p
-      className="flex items-center gap-2 text-lg font-bold text-[#0f2a44]"
-      data-testid="own-handle"
-    >
-      <AtSign size={16} />
-      {handle ?? '—'}
-      <button
-        type="button"
-        onClick={onEdit}
-        aria-label="Editar handle"
-        data-testid="own-handle-edit"
-      >
-        <Pencil size={14} className="text-[#0f2a44]/40 hover:text-[#0f2a44]" />
-      </button>
-    </p>
-  );
-}
-
-/** Formulario del handle. */
-function HandleForm(props: {
-  readonly draft: string;
-  readonly error: string | null;
-  readonly onChange: (value: string) => void;
-  readonly onSave: () => void;
-  readonly onCancel: () => void;
-}): React.JSX.Element {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <input
-          value={props.draft}
-          onChange={(e): void => props.onChange(e.target.value)}
-          aria-label="Nuevo handle"
-          data-testid="own-handle-input"
-          className="archon-input"
-        />
-        <button
-          type="button"
-          onClick={props.onSave}
-          data-testid="own-handle-save"
-          className="btn-sentinel-emerald text-xs"
-        >
-          Guardar
-        </button>
-        <button
-          type="button"
-          onClick={props.onCancel}
-          className="text-xs font-bold text-[#0f2a44]/60"
-        >
-          Cancelar
-        </button>
-      </div>
-      {props.error && (
-        <p role="alert" data-testid="own-handle-error" className="text-sm font-medium text-red-500">
-          {props.error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** Edición del handle propio con validación local antes de guardar. */
-function HandleEditor({ state }: { readonly state: ArcsialProfileState }): React.JSX.Element {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const save = (value: string): void => {
-    const handle = normalizeHandle(value);
-    if (!HANDLE_PATTERN.test(handle)) {
-      setError(describeArcsialError({ response: { data: { code: 'VALIDATION_ERROR' } } }));
-      return;
-    }
-    updateOwnHandle(handle)
-      .then(() => {
-        setDraft(null);
-        setError(null);
-        state.reload();
-      })
-      .catch((err) => setError(describeArcsialError(err)));
-  };
-  return draft === null ? (
-    <HandleDisplay
-      handle={state.profile?.handle}
-      onEdit={(): void => setDraft(state.profile?.handle ?? '')}
-    />
-  ) : (
-    <HandleForm
-      draft={draft}
-      error={error}
-      onChange={setDraft}
-      onSave={(): void => save(draft)}
-      onCancel={(): void => setDraft(null)}
-    />
-  );
-}
 
 /** Confirmación explícita del bloqueo. */
 function BlockConfirm({
@@ -258,8 +148,67 @@ function SocialActions({
   );
 }
 
-/** Pestaña «Contactos» de Arcsial. */
-export default function ProfileContactsTab(): React.JSX.Element {
+/** Modales de invitación: agregar contacto y, para el MU, invitar a su Universo. */
+function InviteModals({
+  state,
+  open,
+  onClose,
+  onSent,
+}: {
+  readonly state: ArcsialProfileState;
+  readonly open: OpenModal;
+  readonly onClose: () => void;
+  readonly onSent: () => void;
+}): React.JSX.Element {
+  return (
+    <>
+      <AddContactModal isOpen={open === 'contact'} onClose={onClose} onSent={onSent} />
+      {state.profile?.muUniverse && (
+        <InviteToUniverseModal
+          isOpen={open === 'universe'}
+          universeLabel={state.profile.muUniverse.label}
+          contacts={state.contacts}
+          onClose={onClose}
+          onSent={onSent}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * Formulario del perfil propio (cuando ya cargó) y el motivo de un fallo de las lecturas. Al guardar
+ * recarga las lecturas y avisa al contenedor.
+ */
+function OwnProfileSection({
+  state,
+  onProfileSaved,
+}: {
+  readonly state: ArcsialProfileState;
+  readonly onProfileSaved: () => void;
+}): React.JSX.Element {
+  const onSaved = (): void => {
+    state.reload();
+    onProfileSaved();
+  };
+  return (
+    <>
+      {state.profile && <ProfileSettingsForm ownHandle={state.profile.handle} onSaved={onSaved} />}
+      {state.error && (
+        <p role="alert" className="text-sm font-medium text-red-500" data-testid="contacts-error">
+          {state.error}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** Pestaña «Contactos» de Arcsial; `onProfileSaved` avisa al contenedor de un cambio del perfil propio. */
+export default function ProfileContactsTab({
+  onProfileSaved,
+}: {
+  readonly onProfileSaved: () => void;
+}): React.JSX.Element {
   const state = useArcsialProfile();
   const [open, setOpen] = useState<OpenModal>(null);
   const [blockTarget, setBlockTarget] = useState<Contact | null>(null);
@@ -270,29 +219,11 @@ export default function ProfileContactsTab(): React.JSX.Element {
   };
   return (
     <section className="space-y-6" data-testid="profile-contacts-tab">
-      <HandleEditor state={state} />
-      {state.error && (
-        <p role="alert" className="text-sm font-medium text-red-500" data-testid="contacts-error">
-          {state.error}
-        </p>
-      )}
+      <OwnProfileSection state={state} onProfileSaved={onProfileSaved} />
       <SocialActions state={state} onOpen={setOpen} />
       <ContactsList contacts={state.contacts} onBlock={setBlockTarget} />
       <BlockedList state={state} />
-      <AddContactModal
-        isOpen={open === 'contact'}
-        onClose={(): void => setOpen(null)}
-        onSent={done}
-      />
-      {state.profile?.muUniverse && (
-        <InviteToUniverseModal
-          isOpen={open === 'universe'}
-          universeLabel={state.profile.muUniverse.label}
-          contacts={state.contacts}
-          onClose={(): void => setOpen(null)}
-          onSent={done}
-        />
-      )}
+      <InviteModals state={state} open={open} onClose={(): void => setOpen(null)} onSent={done} />
       <BlockConfirm
         key={blockTarget?.id ?? 'none'}
         target={blockTarget}

@@ -1,250 +1,156 @@
-/* eslint-disable */
-// @ts-nocheck
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
+import { render, renderWithRoute, screen, fireEvent, waitFor } from '../../test/testUtils';
+import { fetchOwnProfile } from '../Social/arcsialApi';
 import ProfileView from './ProfileView';
-import api from '../../api/client';
 
 /**
- * FC-9 SocialNetwork_Multiverso FaseA — ProfileView (muro social)
- *
- * AT-SOC9-A-WEB-1: renders profile-view container y post-create-form
- * AT-SOC9-A-WEB-2: muestra post-card-{id} cuando la API retorna posts
- * AT-SOC9-A-WEB-3: muestra profile-posts-empty cuando la lista está vacía
- * AT-SOC9-A-WEB-4: muestra profile-error cuando la API falla
+ * FC210 F3 — Arcsial sobre una sola ruta (`/dashboard/social`, la única del Arc itinerante): pestañas
+ * Feed, Muro Propio, Contactos e Invitaciones; buscador arriba; perfil de un actor con `?handle=`.
+ * El muro legado ya no se muestra (D10). Cada pieza tiene su propia prueba.
  */
 
-vi.mock('../../api/client');
-const mockGet = vi.mocked(api.get);
+vi.mock('../Social/arcsialApi', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../Social/arcsialApi')>()),
+  fetchOwnProfile: vi.fn(),
+}));
 
-const MOCK_POSTS = [
-  {
-    id: 1,
-    authorId: 2,
-    ownerId: 5,
-    contentText: 'Inspección completada sin novedades.',
-    imageUrls: [],
-    createdAt: '2026-06-01T10:00:00Z',
-    updatedAt: '2026-06-01T10:00:00Z',
-  },
-];
+type OpenActor = { onOpenActor: (handle: string) => void };
 
-describe('ProfileView — FC-9 SocialNetwork FaseA', () => {
-  beforeEach(() => vi.clearAllMocks());
+vi.mock('../Social/ActorSearch', () => ({
+  default: ({ onOpenActor }: OpenActor): React.JSX.Element => (
+    <button type="button" data-testid="stub-search" onClick={(): void => onOpenActor('ana')}>
+      buscar
+    </button>
+  ),
+}));
+vi.mock('../Social/FeedTab', () => ({
+  default: ({
+    muUniverse,
+    onOpenActor,
+  }: OpenActor & { muUniverse: { label: string } | null }): React.JSX.Element => (
+    <button type="button" data-testid="stub-feed" onClick={(): void => onOpenActor('fms_41')}>
+      feed:{muUniverse?.label ?? 'sin-universo'}
+    </button>
+  ),
+}));
+vi.mock('../Social/ActorView', () => ({
+  default: (props: OpenActor & { handle: string; ownHandle: string | null }): React.JSX.Element => (
+    <button type="button" data-testid="stub-actor" onClick={(): void => props.onOpenActor('luis')}>
+      actor:{props.handle}:propio:{props.ownHandle ?? 'cargando'}
+    </button>
+  ),
+}));
+vi.mock('../Social/ProfileContactsTab', () => ({
+  default: ({ onProfileSaved }: { onProfileSaved: () => void }): React.JSX.Element => (
+    <button type="button" data-testid="stub-contacts" onClick={onProfileSaved}>
+      contactos
+    </button>
+  ),
+}));
+vi.mock('../Social/InvitationsInbox', () => ({
+  default: (): React.JSX.Element => <div data-testid="stub-invitations" />,
+}));
+vi.mock('./ProfileEditSlideOver', () => ({
+  default: (props: { isOpen: boolean; onClose: () => void }): React.JSX.Element | null =>
+    props.isOpen ? (
+      <button type="button" data-testid="stub-edit" onClick={props.onClose}>
+        cerrar
+      </button>
+    ) : null,
+}));
 
-  it('AT-SOC9-A-WEB-1: renders container y post-create-form', async () => {
-    mockGet.mockResolvedValueOnce({ data: { posts: [] } });
+const MU = {
+  id: 3,
+  handle: 'mu_norte',
+  displayName: 'Mu',
+  avatarUrl: null,
+  muUniverse: { id: 41, label: 'Flota Norte' },
+};
+
+/** Una carga que nunca termina. */
+function pending(): Promise<never> {
+  return new Promise(() => {
+    /* sin resolver */
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(fetchOwnProfile).mockResolvedValue(MU);
+});
+
+describe('ProfileView — Arcsial', () => {
+  it('abre en el Feed, con el Universo del MU, y recorre las cuatro pestañas', async () => {
     render(<ProfileView />);
-    expect(screen.getByTestId('profile-view')).toBeInTheDocument();
-    expect(screen.getByTestId('post-create-form')).toBeInTheDocument();
+    expect(screen.getByTestId('layout-title')).toHaveTextContent('Arcsial');
+    expect(screen.getByTestId('arcsial-tab-feed')).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByText('feed:Flota Norte')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('arcsial-tab-wall'));
+    expect(screen.getByTestId('stub-actor')).toHaveTextContent('actor:mu_norte:propio:mu_norte');
+    fireEvent.click(screen.getByTestId('arcsial-tab-contacts'));
+    expect(screen.getByTestId('stub-contacts')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('arcsial-tab-invitations'));
+    expect(screen.getByTestId('stub-invitations')).toBeInTheDocument();
+    expect(screen.queryByTestId('stub-contacts')).toBeNull();
+    expect(screen.queryByText('Muro Social')).toBeNull();
   });
 
-  it('AT-SOC9-A-WEB-2: muestra post-card cuando la API retorna posts', async () => {
-    mockGet.mockResolvedValueOnce({ data: { posts: MOCK_POSTS } });
+  it('mientras carga el perfil propio: Feed sin Universo y Muro Propio en espera', async () => {
+    vi.mocked(fetchOwnProfile).mockReturnValue(pending());
     render(<ProfileView />);
-    await waitFor(() => {
-      expect(screen.getByTestId('post-card-1')).toBeInTheDocument();
-    });
-    expect(screen.getByText('Inspección completada sin novedades.')).toBeInTheDocument();
+    expect(screen.getByTestId('stub-feed')).toHaveTextContent('feed:sin-universo');
+    fireEvent.click(screen.getByTestId('arcsial-tab-wall'));
+    expect(screen.getByTestId('own-wall-loading')).toBeInTheDocument();
   });
 
-  it('AT-SOC9-A-WEB-3: muestra profile-posts-empty cuando lista vacía', async () => {
-    mockGet.mockResolvedValueOnce({ data: { posts: [] } });
+  it('si el perfil propio no carga, la pantalla sigue en pie', async () => {
+    vi.mocked(fetchOwnProfile).mockRejectedValue(new Error('red'));
     render(<ProfileView />);
-    await waitFor(() => {
-      expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(fetchOwnProfile).toHaveBeenCalled());
+    expect(screen.getByTestId('stub-feed')).toHaveTextContent('feed:sin-universo');
   });
 
-  it('AT-SOC9-A-WEB-4: muestra profile-error cuando la API falla', async () => {
-    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+  it('abrir un actor desde el buscador o el feed lo muestra en la misma ruta; «Volver» regresa', async () => {
     render(<ProfileView />);
-    await waitFor(() => {
-      expect(screen.getByTestId('profile-error')).toBeInTheDocument();
-    });
+    await screen.findByText('feed:Flota Norte');
+    fireEvent.click(screen.getByTestId('stub-search'));
+    expect(screen.getByTestId('stub-actor')).toHaveTextContent('actor:ana:propio:mu_norte');
+    expect(screen.queryByRole('tablist')).toBeNull();
+    fireEvent.click(screen.getByTestId('stub-actor'));
+    expect(screen.getByTestId('stub-actor')).toHaveTextContent('actor:luis:');
+    fireEvent.click(screen.getByTestId('actor-back'));
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('stub-feed'));
+    expect(screen.getByTestId('stub-actor')).toHaveTextContent('actor:fms_41:');
   });
 
-  // ── R4-C Fc162 — Sonar unc lines 34-39,42-43,46-47,66,75,88,101,163,166,176 ──
-  it('AT-SOC9-A-WEB-5: escribe y publica un post exitosamente (handleSubmit + createPost)', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockResolvedValueOnce({ data: {} });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    const textarea = screen.getByTestId('post-content-input');
-    fireEvent.change(textarea, { target: { value: 'Nueva actualización del taller' } });
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    await waitFor(() => {
-      expect(mockPost).toHaveBeenCalledWith('/social/posts', {
-        contentText: 'Nueva actualización del taller',
-        imageUrls: undefined,
-      });
-    });
-    expect(textarea.value).toBe('');
+  it('`?handle=` abre el perfil directo; antes de cargar el propio va sin handle propio', () => {
+    vi.mocked(fetchOwnProfile).mockReturnValue(pending());
+    renderWithRoute(<ProfileView />, '/dashboard/social?handle=ana');
+    expect(screen.getByTestId('stub-actor')).toHaveTextContent('actor:ana:propio:cargando');
   });
 
-  it('AT-SOC9-A-WEB-6: muestra post-create-error cuando createPost falla con un error de API', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockImplementation((url) => {
-      if (url === '/social/posts') {
-        return Promise.reject({ response: { data: { error: 'Fallo en el servidor' } } });
-      }
-      return Promise.resolve({ data: { success: false } });
-    });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    fireEvent.change(screen.getByTestId('post-content-input'), {
-      target: { value: 'Un intento que fallará' },
-    });
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('post-create-error')).toHaveTextContent('Fallo en el servidor');
-    });
+  it('un `?handle=` fuera del patrón se ignora y quedan las pestañas', () => {
+    renderWithRoute(<ProfileView />, '/dashboard/social?handle=ana%40piic.mx');
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
+    expect(screen.queryByTestId('stub-actor')).toBeNull();
   });
 
-  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc lines 197,204,205,208 ──
-
-  it('submitting the post form with empty/whitespace content does not call createPost', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
+  it('guardar el perfil en Contactos recarga el perfil propio', async () => {
     render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    fireEvent.change(screen.getByTestId('post-content-input'), { target: { value: '   ' } });
-    // Submit the <form> directly — bypasses the submit button's own
-    // disabled attribute, reaching NewPostForm's own onSubmit guard.
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    expect(mockPost).not.toHaveBeenCalledWith('/social/posts', expect.anything());
+    await screen.findByText('feed:Flota Norte');
+    fireEvent.click(screen.getByTestId('arcsial-tab-contacts'));
+    fireEvent.click(screen.getByTestId('stub-contacts'));
+    await waitFor(() => expect(fetchOwnProfile).toHaveBeenCalledTimes(2));
   });
 
-  it('falls back to "Error al publicar" when the API error has no response.data.error', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockImplementation((url) => {
-      if (url === '/social/posts') {
-        return Promise.reject({ response: { status: 500 } });
-      }
-      return Promise.resolve({ data: { success: false } });
-    });
+  it('«Editar perfil» abre y cierra el panel de la cuenta', () => {
     render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    fireEvent.change(screen.getByTestId('post-content-input'), {
-      target: { value: 'Sin detalle de error' },
-    });
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('post-create-error')).toHaveTextContent('Error al publicar');
-    });
-  });
-
-  it('falls back to "Error al publicar" when the rejection is not a response-shaped object', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockImplementation((url) => {
-      if (url === '/social/posts') {
-        return Promise.reject(new Error('network down'));
-      }
-      return Promise.resolve({ data: { success: false } });
-    });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    fireEvent.change(screen.getByTestId('post-content-input'), {
-      target: { value: 'Se cae la red' },
-    });
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('post-create-error')).toHaveTextContent('Error al publicar');
-    });
-  });
-
-  it('shows a friendly PII message when the API flags PII_DETECTED_IN_POST', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockImplementation((url) => {
-      if (url === '/social/posts') {
-        return Promise.reject({ response: { data: { error: 'PII_DETECTED_IN_POST' } } });
-      }
-      return Promise.resolve({ data: { success: false } });
-    });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    fireEvent.change(screen.getByTestId('post-content-input'), {
-      target: { value: 'Placa ABC-123' },
-    });
-    fireEvent.submit(screen.getByTestId('post-create-form'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('post-create-error')).toHaveTextContent(
-        'La publicación contiene datos sensibles (placa o VIN).'
-      );
-    });
-  });
-
-  it('AT-SOC9-A-WEB-7: el botón Actualizar vuelve a invocar refresh()', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
-    expect(mockGet).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByTestId('profile-refresh-btn'));
-    await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
-  });
-
-  it('AT-SOC9-A-WEB-8: el botón Editar perfil abre el slide-over y su botón cerrar lo cierra', async () => {
-    mockGet.mockResolvedValue({ data: { posts: [] } });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
-
+    expect(screen.queryByTestId('stub-edit')).toBeNull();
     fireEvent.click(screen.getByTestId('profile-edit-btn'));
-    expect(await screen.findByTestId('profile-edit-slideover')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('profile-edit-close'));
-    await waitFor(() => {
-      expect(screen.queryByTestId('profile-edit-slideover')).not.toBeInTheDocument();
-    });
-  });
-
-  it('AT-SOC9-A-WEB-9: reaccionar a un post invoca addReaction vía el ReactionBar', async () => {
-    mockGet.mockResolvedValueOnce({ data: { posts: MOCK_POSTS } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockResolvedValue({ data: {} });
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('post-card-1')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByTestId('reaction-btn-impecable'));
-
-    await waitFor(() => {
-      expect(mockPost).toHaveBeenCalledWith('/social/posts/1/reactions', { type: 'IMPECABLE' });
-    });
-  });
-
-  it('AT-SOC9-A-WEB-10: el dueño de un post ve el botón eliminar y al hacer clic invoca deletePost', async () => {
-    mockGet.mockResolvedValueOnce({ data: { posts: MOCK_POSTS } });
-    const mockPost = vi.mocked(api.post);
-    mockPost.mockResolvedValueOnce({
-      data: { success: true, token: 'tok', user: { id: 2, username: 'juan' } },
-    });
-    const mockDelete = vi.mocked(api.delete);
-    mockDelete.mockResolvedValueOnce({ data: {} });
-
-    render(<ProfileView />);
-    await waitFor(() => expect(screen.getByTestId('post-delete-1')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByTestId('post-delete-1'));
-
-    await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('/social/posts/1');
-    });
+    fireEvent.click(screen.getByTestId('stub-edit'));
+    expect(screen.queryByTestId('stub-edit')).toBeNull();
   });
 });
