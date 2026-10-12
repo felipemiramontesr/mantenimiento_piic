@@ -8,6 +8,7 @@ import { NOT_FOUND_TENANT } from './cosmology.queries';
 import { UniverseMutationError } from './universeLabel';
 import { invalidateUniverseCapabilities } from './universeCapabilities.service';
 import { resolveUniqueHandle } from '../utils/ownerHandle';
+import { createActorForNewUniverse } from './arcsialActors.service';
 
 /**
  * FC160 F1 — orchestration for cosmology mutability endpoints (I2 zero-SQL,
@@ -277,6 +278,8 @@ async function runCreateUniverseTransaction(
       handle,
       connection
     );
+    // FC210 F2 — actor UNIVERSE en la misma TX; handle inválido, reservado o tomado ⇒ ROLLBACK.
+    await createActorForNewUniverse({ id: tenantId, handle, label }, connection);
     await CosmologyRepository.seedSuperclusterBlueprint(
       tenantId,
       types.universeTypeId,

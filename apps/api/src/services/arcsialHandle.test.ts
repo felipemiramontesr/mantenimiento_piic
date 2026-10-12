@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { displayNameFor, handleCandidates, HANDLE_PATTERN } from './arcsialHandle';
+import {
+  displayNameFor,
+  handleCandidates,
+  HANDLE_PATTERN,
+  isReservedHandle,
+  normalizeTenantHandle,
+  RESERVED_HANDLES,
+} from './arcsialHandle';
 
 /** FC209 (R 540/542_AN) — reglas puras del @handle. */
 
@@ -44,4 +51,27 @@ describe('HANDLE_PATTERN', () => {
       expect(HANDLE_PATTERN.test(handle)).toBe(false);
     }
   );
+});
+
+describe('FC210 — nombres reservados y handle de Universo', () => {
+  it('la lista reservada es cerrada: exactamente 17 nombres, todos dentro del patrón', () => {
+    expect(RESERVED_HANDLES.size).toBe(17);
+    RESERVED_HANDLES.forEach((handle) => expect(HANDLE_PATTERN.test(handle)).toBe(true));
+  });
+
+  it.each(['archon', 'admin', 'sat', 'hacienda', 'null', 'moderator'])('%s es reservado', (h) => {
+    expect(isReservedHandle(h)).toBe(true);
+  });
+
+  it.each(['arc_abcdef01', 'archon_mx', 'satelite'])('%s no es reservado', (h) => {
+    expect(isReservedHandle(h)).toBe(false);
+  });
+
+  it.each([
+    ['FMS-41AB3C', 'fms_41ab3c'],
+    ['UNV-1', 'unv_1'],
+    ['FMS-41AB3C-002', 'fms_41ab3c_002'],
+  ])('normalizeTenantHandle(%s) → %s', (raw, expected) => {
+    expect(normalizeTenantHandle(raw)).toBe(expected);
+  });
 });

@@ -123,27 +123,3 @@ export async function listBlocks(userId: number, executor: Executor = db): Promi
   );
   return rows as BlockEntry[];
 }
-
-/** Handle actual del usuario, o null si aún no tiene perfil. */
-export async function findHandleByUserId(
-  userId: number,
-  executor: Executor = db
-): Promise<string | null> {
-  const [rows] = await executor.execute<RowDataPacket[]>(
-    'SELECT handle FROM arcsial_profiles WHERE user_id = ?',
-    [userId]
-  );
-  return rows.length > 0 ? (rows[0].handle as string) : null;
-}
-
-/** Cambia el handle propio; un handle de otro usuario sale como ER_DUP_ENTRY. */
-export async function updateHandle(
-  userId: number,
-  handle: string,
-  executor: Executor = db
-): Promise<void> {
-  await executor.execute<ResultSetHeader>(
-    'UPDATE arcsial_profiles SET handle = ? WHERE user_id = ?',
-    [handle, userId]
-  );
-}

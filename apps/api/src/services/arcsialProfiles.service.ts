@@ -1,13 +1,14 @@
 import { PoolConnection } from 'mysql2/promise';
 import * as ProfilesRepository from './arcsialProfiles.repository';
 import { isBlockedEitherWay } from './arcsialRelations.repository';
-import { displayNameFor, handleCandidates } from './arcsialHandle';
-import { recordAuditLog } from './auditService';
+import { insertUserActor } from './arcsialActors.repository';
+import { displayNameFor, handleCandidates, isReservedHandle } from './arcsialHandle';
 import type { ArcsialProfile, BlockEntry, ContactEntry } from './arcsialProfiles.repository';
 
 /**
- * FC209 F2 — perfiles de Arcsial: alta atómica en el registro (R 540/542_AN), cambio del handle propio
- * y búsqueda por handle exacto con 404 opaco (sin handle o con bloqueo en cualquier sentido).
+ * FC209 F2 — perfiles de Arcsial: alta atómica en el registro (R 540/542_AN) y búsqueda por handle
+ * exacto con 404 opaco (sin handle o con bloqueo en cualquier sentido). FC210 F2: el alta crea también
+ * el actor USER en la misma TX; el cambio de handle vive en `arcsialActorHandle.service.ts`.
  */
 
 export interface ArcsialError {
@@ -29,17 +30,23 @@ export function isDuplicateEntry(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === 'ER_DUP_ENTRY';
 }
 
-/** Intenta un candidato: devuelve el handle si entró, `null` si ya estaba tomado. */
+/**
+ * Intenta un candidato: devuelve el handle si entró, `null` si es reservado o ya estaba tomado. El
+ * actor va primero: `arcsial_actors` es el espacio único de handles (personas y universos).
+ */
 async function tryHandle(
   profile: { userId: number; fullName: string; handle: string },
   connection: PoolConnection
 ): Promise<string | null> {
+  if (isReservedHandle(profile.handle)) return null;
   try {
-    const displayName = displayNameFor(profile.fullName, profile.handle);
-    await ProfilesRepository.insertProfile(
-      { userId: profile.userId, handle: profile.handle, displayName },
-      connection
-    );
+    const row = {
+      userId: profile.userId,
+      handle: profile.handle,
+      displayName: displayNameFor(profile.fullName, profile.handle),
+    };
+    await insertUserActor(row, connection);
+    await ProfilesRepository.insertProfile(row, connection);
     return profile.handle;
   } catch (error) {
     if (isDuplicateEntry(error)) return null;
@@ -48,9 +55,9 @@ async function tryHandle(
 }
 
 /**
- * Crea el perfil del usuario recién insertado, en SU transacción: `arc_` + 8 hex del uuid, y ante
- * un handle tomado 12, 16 y 26, uno tras otro. Si todos chocan (o no hay uuid) lanza: la TX del
- * registro revierte.
+ * Crea el actor USER y el perfil del usuario recién insertado, en SU transacción: `arc_` + 8 hex del
+ * uuid, y ante un handle reservado o tomado 12, 16 y 26, uno tras otro (R 564_AN). Si todos fallan
+ * (o no hay uuid) lanza: la TX del registro revierte.
  */
 export async function createProfileForNewUser(
   userId: number,
@@ -120,36 +127,4 @@ export async function listOwnContacts(
 /** GET /v1/social/blocks (FC209 F3) — a quién bloqueó el usuario. */
 export async function listOwnBlocks(userId: number): Promise<{ ok: true; blocks: BlockEntry[] }> {
   return { ok: true, blocks: await ProfilesRepository.listBlocks(userId) };
-}
-
-const HANDLE_TAKEN: ArcsialError = {
-  ok: false,
-  status: 409,
-  code: 'HANDLE_ALREADY_TAKEN',
-  message: 'Ese handle ya está en uso',
-};
-
-/** PATCH /v1/social/profile/handle — patrón validado en la ruta; único o 409; queda en auditoría. */
-export async function changeOwnHandle(
-  userId: number,
-  handle: string
-): Promise<{ ok: true; handle: string } | ArcsialError> {
-  const previous = await ProfilesRepository.findHandleByUserId(userId);
-  if (previous === null) return USER_NOT_FOUND;
-  try {
-    await ProfilesRepository.updateHandle(userId, handle);
-  } catch (error) {
-    if (isDuplicateEntry(error)) return HANDLE_TAKEN;
-    throw error;
-  }
-  await recordAuditLog({
-    entity_type: 'user',
-    entity_id: String(userId),
-    action: 'UPDATE',
-    snapshot_before: { handle: previous },
-    snapshot_after: { event: 'CHANGE_ARCIAL_HANDLE', handle },
-    reason: 'CHANGE_ARCIAL_HANDLE — el usuario cambia su @handle de Arcsial (FC209 F2)',
-    user_id: userId,
-  });
-  return { ok: true, handle };
 }

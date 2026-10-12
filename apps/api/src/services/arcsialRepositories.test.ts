@@ -37,13 +37,11 @@ describe('arcsialProfiles.repository', () => {
     expect(call().params).toEqual([5]);
   });
 
-  it('insertProfile y updateHandle escriben con parámetros', async () => {
-    rows([], []);
+  it('insertProfile escribe con parámetros', async () => {
+    rows([]);
     await Profiles.insertProfile({ userId: 5, handle: 'ana', displayName: 'Ana' }, conn);
-    await Profiles.updateHandle(5, 'ana2', conn);
     expect(call(0).sql).toContain('INSERT INTO arcsial_profiles (user_id, handle, display_name)');
     expect(call(0).params).toEqual([5, 'ana', 'Ana']);
-    expect(call(1).params).toEqual(['ana2', 5]);
   });
 
   it('findProfileByHandle: igualdad exacta (sin LIKE) y null sin fila', async () => {
@@ -53,12 +51,6 @@ describe('arcsialProfiles.repository', () => {
     expect(await Profiles.findProfileByHandle('nadie', conn)).toBeNull();
     expect(call().sql).toContain('WHERE handle = ?');
     expect(call().sql).not.toMatch(/LIKE|email/i);
-  });
-
-  it('findHandleByUserId: handle o null', async () => {
-    rows([{ handle: 'ana' }], []);
-    expect(await Profiles.findHandleByUserId(5, conn)).toBe('ana');
-    expect(await Profiles.findHandleByUserId(6, conn)).toBeNull();
   });
 
   it('FC209 F3: perfil propio y Universo del MU, o null', async () => {

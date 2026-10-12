@@ -47,6 +47,7 @@ import onboardingRoutes from './routes/onboarding';
 import securityRoutes from './routes/security';
 import socialRoutes from './routes/social';
 import arcsialRoutes from './routes/arcsial';
+import arcsialActorRoutes from './routes/arcsialActors';
 import universeContextPlugin from './plugins/universeContext';
 import {
   logSecurityEvent,
@@ -244,6 +245,7 @@ function registerV1Routes(fastify: FastifyInstance): void {
   fastify.register(recallsInternalRoutes, { prefix: '/v1' });
   fastify.register(socialRoutes, { prefix: '/v1' });
   fastify.register(arcsialRoutes, { prefix: '/v1' }); // FC209 F2 — contactos e invitaciones
+  fastify.register(arcsialActorRoutes, { prefix: '/v1' }); // FC210 F2 — actores, muro, feed y búsqueda
 }
 
 /**

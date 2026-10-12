@@ -8,6 +8,40 @@ export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
 /** Longitudes del tramo hex del uuid: 'arc_' + 8, y ante colisión 12, 16 y 26 (≤ 30 en total). */
 export const HANDLE_HEX_LENGTHS = [8, 12, 16, 26] as const;
 
+/**
+ * FC210 (R 562_AN) — los 17 nombres reservados del sistema, lista cerrada: ningún actor puede tomarlos.
+ * La migración 186 aborta si alguno ya estaba en uso.
+ */
+export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
+  'archon',
+  'admin',
+  'administrator',
+  'root',
+  'soporte',
+  'support',
+  'sistema',
+  'system',
+  'arcsial',
+  'universe',
+  'sat',
+  'hacienda',
+  'api',
+  'auth',
+  'null',
+  'undefined',
+  'moderator',
+]);
+
+/** ¿Es uno de los 17 nombres reservados? */
+export function isReservedHandle(handle: string): boolean {
+  return RESERVED_HANDLES.has(handle);
+}
+
+/** FC210 — handle de actor de un Universo: `tenants.handle` en minúsculas y con guion bajo. */
+export function normalizeTenantHandle(tenantHandle: string): string {
+  return tenantHandle.toLowerCase().replaceAll('-', '_');
+}
+
 const DISPLAY_NAME_MAX = 100;
 
 /** Candidatos `arc_<hex>` en orden, desde el uuid sin guiones (REPLACE(uuid, '-', '')). */

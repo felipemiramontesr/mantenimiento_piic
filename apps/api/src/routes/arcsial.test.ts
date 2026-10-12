@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import buildApp from '../index';
 import {
-  changeOwnHandle,
   getOwnProfile,
   listOwnBlocks,
   listOwnContacts,
@@ -26,7 +25,6 @@ vi.mock('../services/db', () => ({
 vi.mock('../services/arcsialProfiles.service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/arcsialProfiles.service')>()),
   lookupByHandle: vi.fn(),
-  changeOwnHandle: vi.fn(),
   getOwnProfile: vi.fn(),
   listOwnContacts: vi.fn(),
   listOwnBlocks: vi.fn(),
@@ -59,7 +57,7 @@ describe('FC209 F2 — rutas de Arcsial', () => {
 
   /** Atajo de inyección con la sesión de prueba. */
   async function call(
-    method: 'GET' | 'POST' | 'PATCH',
+    method: 'GET' | 'POST',
     url: string,
     payload?: object
   ): Promise<{ statusCode: number; json: () => Record<string, unknown> }> {
@@ -117,16 +115,6 @@ describe('FC209 F2 — rutas de Arcsial', () => {
     expect(listOwnBlocks).toHaveBeenCalledWith(3);
     vi.mocked(getOwnProfile).mockResolvedValue(NOT_FOUND);
     expect((await call('GET', '/v1/social/profile')).statusCode).toBe(404);
-  });
-
-  it('PATCH handle: valida y delega', async () => {
-    expect((await call('PATCH', '/v1/social/profile/handle', { handle: 'a@b' })).statusCode).toBe(
-      400
-    );
-    vi.mocked(changeOwnHandle).mockResolvedValue({ ok: true, handle: 'ana_2' });
-    const res = await call('PATCH', '/v1/social/profile/handle', { handle: 'Ana_2' });
-    expect(res.statusCode).toBe(200);
-    expect(changeOwnHandle).toHaveBeenCalledWith(3, 'ana_2');
   });
 
   it('POST invitación: 201 con el token; tipo o handle inválidos ⇒ 400', async () => {

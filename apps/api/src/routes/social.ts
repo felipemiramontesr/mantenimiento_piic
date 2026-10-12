@@ -18,7 +18,8 @@ function hasAdminAccess(permissions: string[]): boolean {
 const PLATE_REGEX = /\b[A-Z]{2,3}[-\s]?\d{3,4}[-\s]?[A-Z]{0,2}\b/i;
 const VIN_REGEX = /\b[A-HJ-NPR-Z0-9]{17}\b/;
 
-function containsPII(text: string): boolean {
+/** FC210 F2 reutiliza este filtro para `arcsial_posts` (R 556_AN): placas y VIN. */
+export function containsPII(text: string): boolean {
   return PLATE_REGEX.test(text) || VIN_REGEX.test(text);
 }
 

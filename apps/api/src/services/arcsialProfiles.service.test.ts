@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PoolConnection } from 'mysql2/promise';
 import * as Profiles from './arcsialProfiles.repository';
 import { isBlockedEitherWay } from './arcsialRelations.repository';
-import { recordAuditLog } from './auditService';
+import { isReservedHandle } from './arcsialHandle';
+import { insertUserActor } from './arcsialActors.repository';
 import {
-  changeOwnHandle,
   createProfileForNewUser,
   getOwnProfile,
   isDuplicateEntry,
@@ -13,21 +13,23 @@ import {
   lookupByHandle,
 } from './arcsialProfiles.service';
 
-/** FC209 F2 — alta del perfil en el registro, búsqueda con 404 opaco y cambio del handle propio. */
+/** FC209 F2 / FC210 F2 — alta del actor y del perfil en el registro, y búsqueda con 404 opaco. */
 
 vi.mock('./arcsialProfiles.repository', () => ({
   findUserUuid: vi.fn(),
   insertProfile: vi.fn(),
   findProfileByHandle: vi.fn(),
-  findHandleByUserId: vi.fn(),
-  updateHandle: vi.fn(),
   findProfileByUserId: vi.fn(),
   findMuUniverse: vi.fn(),
   listContacts: vi.fn(),
   listBlocks: vi.fn(),
 }));
 vi.mock('./arcsialRelations.repository', () => ({ isBlockedEitherWay: vi.fn() }));
-vi.mock('./auditService', () => ({ recordAuditLog: vi.fn() }));
+vi.mock('./arcsialActors.repository', () => ({ insertUserActor: vi.fn() }));
+vi.mock('./arcsialHandle', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./arcsialHandle')>();
+  return { ...original, isReservedHandle: vi.fn(original.isReservedHandle) };
+});
 
 const conn = {} as PoolConnection;
 const DUP = Object.assign(new Error('dup'), { code: 'ER_DUP_ENTRY' });
@@ -40,12 +42,27 @@ beforeEach(() => {
 });
 
 describe('createProfileForNewUser', () => {
-  it('toma arc_ + 8 hex y el nombre completo', async () => {
+  it('toma arc_ + 8 hex y el nombre completo; el actor USER entra antes que el perfil', async () => {
     expect(await createProfileForNewUser(5, 'Ana Pérez', conn)).toBe('arc_abcdef01');
-    expect(Profiles.insertProfile).toHaveBeenCalledWith(
-      { userId: 5, handle: 'arc_abcdef01', displayName: 'Ana Pérez' },
-      conn
+    const row = { userId: 5, handle: 'arc_abcdef01', displayName: 'Ana Pérez' };
+    expect(insertUserActor).toHaveBeenCalledWith(row, conn);
+    expect(Profiles.insertProfile).toHaveBeenCalledWith(row, conn);
+    expect(vi.mocked(insertUserActor).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(Profiles.insertProfile).mock.invocationCallOrder[0]
     );
+  });
+
+  it('FC210: un candidato reservado se salta igual que uno tomado, sin tocar la base', async () => {
+    vi.mocked(isReservedHandle).mockReturnValueOnce(true);
+    expect(await createProfileForNewUser(5, 'Ana', conn)).toBe('arc_abcdef012345');
+    expect(insertUserActor).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(insertUserActor).mock.calls[0][0].handle).toBe('arc_abcdef012345');
+  });
+
+  it('FC210: un handle que ya tiene otro actor (p. ej. un Universo) pasa al siguiente', async () => {
+    vi.mocked(insertUserActor).mockRejectedValueOnce(DUP);
+    expect(await createProfileForNewUser(5, 'Ana', conn)).toBe('arc_abcdef012345');
+    expect(Profiles.insertProfile).toHaveBeenCalledTimes(1);
   });
 
   it('ante handle tomado prueba 12, 16 y 26, en orden', async () => {
@@ -135,44 +152,5 @@ describe('FC209 F3 — lecturas propias', () => {
     expect(await listOwnBlocks(9)).toEqual({ ok: true, blocks: [] });
     expect(Profiles.listContacts).toHaveBeenCalledWith(9);
     expect(Profiles.listBlocks).toHaveBeenCalledWith(9);
-  });
-});
-
-describe('changeOwnHandle', () => {
-  it('sin perfil ⇒ 404', async () => {
-    vi.mocked(Profiles.findHandleByUserId).mockResolvedValue(null);
-    expect(await changeOwnHandle(5, 'ana')).toMatchObject({ status: 404 });
-    expect(Profiles.updateHandle).not.toHaveBeenCalled();
-  });
-
-  it('handle de otro ⇒ 409 HANDLE_ALREADY_TAKEN, sin auditoría', async () => {
-    vi.mocked(Profiles.findHandleByUserId).mockResolvedValue('arc_1');
-    vi.mocked(Profiles.updateHandle).mockRejectedValue(DUP);
-    expect(await changeOwnHandle(5, 'ana')).toMatchObject({
-      status: 409,
-      code: 'HANDLE_ALREADY_TAKEN',
-    });
-    expect(recordAuditLog).not.toHaveBeenCalled();
-  });
-
-  it('otro error de la base se propaga', async () => {
-    vi.mocked(Profiles.findHandleByUserId).mockResolvedValue('arc_1');
-    vi.mocked(Profiles.updateHandle).mockRejectedValue(new Error('down'));
-    await expect(changeOwnHandle(5, 'ana')).rejects.toThrow('down');
-  });
-
-  it('éxito: cambia y deja auditoría UPDATE con el antes y el después', async () => {
-    vi.mocked(Profiles.findHandleByUserId).mockResolvedValue('arc_1');
-    vi.mocked(Profiles.updateHandle).mockResolvedValue(undefined);
-    expect(await changeOwnHandle(5, 'ana')).toEqual({ ok: true, handle: 'ana' });
-    expect(Profiles.updateHandle).toHaveBeenCalledWith(5, 'ana');
-    expect(recordAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'UPDATE',
-        snapshot_before: { handle: 'arc_1' },
-        snapshot_after: { event: 'CHANGE_ARCIAL_HANDLE', handle: 'ana' },
-        user_id: 5,
-      })
-    );
   });
 });

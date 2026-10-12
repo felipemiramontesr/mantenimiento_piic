@@ -460,6 +460,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 900, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
     const res = await app.inject({
@@ -471,8 +472,12 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(900);
     expect(mockConnection.commit).toHaveBeenCalled();
-    // FC192: unicidad + mint + (FC204 F1b) consulta de handle + tenant + 2 seeds
-    expect(mockConnection.execute).toHaveBeenCalledTimes(6);
+    // FC192: unicidad + mint + (FC204 F1b) consulta de handle + tenant + (FC210 F2) actor + 2 seeds
+    expect(mockConnection.execute).toHaveBeenCalledTimes(7);
+    // FC210 F2 — el actor UNIVERSE nace en la misma TX, con el handle del tenant normalizado.
+    const [actorSql, actorParams] = mockConnection.execute.mock.calls[4] as [string, unknown[]];
+    expect(actorSql).toContain('INSERT INTO arcsial_actors');
+    expect(actorParams).toEqual([900, 'fms_nuevou', 'Nuevo Universo']);
     // FC204 F1b · Escenario 1 — el INSERT lleva un handle único y no vacío dentro de VARCHAR(20).
     const [handleSql, handleParams] = mockConnection.execute.mock.calls[2] as [string, unknown[]];
     expect(handleSql).toContain('FROM owners WHERE handle = ?');
@@ -492,6 +497,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([[{ id: 41 }]]) // resolveUniqueHandle: FMS-NUEVOU ya existe
       .mockResolvedValueOnce([[]]) // resolveUniqueHandle: candidato con sufijo libre
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
     const res = await app.inject({
@@ -535,6 +541,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 902, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
     const res = await app.inject({
@@ -585,6 +592,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 901, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockRejectedValueOnce(new Error('DB connection lost mid-seed')); // seedSuperclusterBlueprint
     const res = await app.inject({
       method: 'POST',
@@ -621,6 +629,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 950, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenantProfileFromBilling
@@ -644,7 +653,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.body).data.tenantId).toBe(950);
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(mockConnection.execute).toHaveBeenCalledTimes(13); // FC192: +1 consulta de unicidad; FC204 F1b: +1 de handle
+    expect(mockConnection.execute).toHaveBeenCalledTimes(14); // FC192: +1 consulta de unicidad; FC204 F1b: +1 de handle; FC210 F2: +1 actor
   });
 
   it('COSMOLOGY-LINK-FAILCLOSED-MUROLE: R_global MU role absent — 500 MU_ROLE_NOT_CONFIGURED, no TX opened (Cond.R-177 R3 Bravo)', async () => {
@@ -772,6 +781,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 951, affectedRows: 1 }]) // mintUniverseTenantId
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // seedClusterBlueprint
       .mockRejectedValueOnce(new Error('DB connection lost mid-link')); // insertTenantProfileFromBilling
@@ -1151,6 +1161,7 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       .mockResolvedValueOnce([{ insertId: 903, affectedRows: 1 }]) // mint
       .mockResolvedValueOnce([[]]) // FC204 F1b — resolveUniqueHandle (handle libre)
       .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // FC210 F2 — insertUniverseActor
       .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
     const res = await app.inject({

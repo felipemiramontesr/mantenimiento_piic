@@ -1,9 +1,8 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import requireSession from '../middleware/requireSession';
-import { HANDLE_PATTERN } from '../services/arcsialHandle';
+import { badRequest, callerId, handleSchema, sendResult } from './arcsialHttp';
 import {
-  changeOwnHandle,
   getOwnProfile,
   listOwnBlocks,
   listOwnContacts,
@@ -15,45 +14,17 @@ import type { ArcsialError } from '../services/arcsialProfiles.service';
 
 /**
  * FC209 F2 — API de Arcsial (contactos e invitaciones), toda bajo sesión. Clase BUILTIN (`/v1/social`):
- * no depende de ningún Supercúmulo. El handle se valida aquí: minúsculas, `[a-z0-9_]{3,30}`, sin `@`
- * (un correo jamás llega al servicio).
+ * no depende de ningún Supercúmulo. El handle se valida con `handleSchema` (`arcsialHttp.ts`). El cambio
+ * de handle (`PATCH /social/profile/handle`) vive desde FC210 F2 en `arcsialActors.ts`.
  */
 
-const handleSchema = z.string().trim().toLowerCase().regex(HANDLE_PATTERN);
 const lookupQuerySchema = z.object({ handle: handleSchema });
-const changeHandleBodySchema = z.object({ handle: handleSchema });
 const inviteBodySchema = z.object({
   recipientHandle: handleSchema,
   inviteType: z.enum(['CONTACT', 'UNIVERSE']),
 });
 const idParamSchema = z.object({ id: z.coerce.number().int().positive() });
 const userIdParamSchema = z.object({ userId: z.coerce.number().int().positive() });
-
-/** Id del usuario de la sesión (garantizado por `requireSession`). */
-function callerId(request: FastifyRequest): number {
-  return (request.user as { id: number }).id;
-}
-
-/** 400 uniforme para cualquier entrada inválida. */
-function badRequest(reply: FastifyReply): FastifyReply {
-  return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
-}
-
-/** Un rechazo del servicio con su código, o el éxito con el estado indicado. */
-function sendResult<T extends object>(
-  reply: FastifyReply,
-  result: ({ ok: true } & T) | ArcsialError,
-  okStatus = 200
-): FastifyReply {
-  if (!result.ok) {
-    return reply
-      .code(result.status)
-      .send({ success: false, code: result.code, message: result.message });
-  }
-  // `success` sustituye al `ok` interno del servicio, que no viaja en la respuesta.
-  const data = Object.fromEntries(Object.entries(result).filter(([key]) => key !== 'ok'));
-  return reply.code(okStatus).send({ success: true, ...data });
-}
 
 /** GET /social/users/lookup?handle= — handle exacto; inexistente o bloqueado ⇒ 404 opaco. */
 async function handleLookup(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
@@ -66,16 +37,6 @@ async function handleLookup(request: FastifyRequest, reply: FastifyReply): Promi
 function ownReadHandler(read: (userId: number) => Promise<({ ok: true } & object) | ArcsialError>) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> =>
     sendResult(reply, await read(callerId(request)));
-}
-
-/** PATCH /social/profile/handle. */
-async function handleChangeHandle(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<FastifyReply> {
-  const body = changeHandleBodySchema.safeParse(request.body);
-  if (!body.success) return badRequest(reply);
-  return sendResult(reply, await changeOwnHandle(callerId(request), body.data.handle));
 }
 
 /** POST /social/invitations — 201 con el token en claro solo para el emisor. */
@@ -129,7 +90,6 @@ export default function arcsialRoutes(
   fastify.get('/social/profile', ownReadHandler(getOwnProfile));
   fastify.get('/social/contacts', ownReadHandler(listOwnContacts));
   fastify.get('/social/blocks', ownReadHandler(listOwnBlocks));
-  fastify.patch('/social/profile/handle', handleChangeHandle);
   fastify.get('/social/invitations', handleList);
   fastify.post('/social/invitations', handleIssue);
   fastify.post('/social/invitations/:id/accept', handleAccept);
