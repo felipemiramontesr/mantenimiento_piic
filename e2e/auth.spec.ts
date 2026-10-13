@@ -37,15 +37,16 @@ test.describe('Archon Authentication Flow', () => {
     });
   });
 
-  test('should login successfully and navigate to dashboard', async ({ page }) => {
+  // FC211 F3 (D13) — el acceso lleva a Arcsial, no al Centro de Comando.
+  test('should login successfully and land on Arcsial', async ({ page }) => {
     await page.goto('/login');
 
     await page.getByPlaceholder('usuario o correo@empresa.com').fill('GrayMan');
     await page.getByPlaceholder('••••••••').fill('Archon2026!');
     await page.getByRole('button', { name: /Acceder al Sistema/i }).click();
 
-    await page.waitForURL('**/dashboard**', { timeout: 15_000 });
-    await expect(page.getByText('Centro de Comando')).toBeVisible({ timeout: 10_000 });
+    await page.waitForURL('**/dashboard/social**', { timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Arcsial' })).toBeVisible({ timeout: 10_000 });
   });
 
   test('should redirect unauthenticated users to login', async ({ page }) => {

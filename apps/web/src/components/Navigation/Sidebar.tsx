@@ -22,6 +22,7 @@ import {
 import { useNavigate, useLocation } from 'react-router';
 import type { SuperclusterCode } from '@mantenimiento/contracts';
 import usePermissions from '../../hooks/usePermissions';
+import { COMMAND_CENTER_PATH, COMMAND_CENTER_PERMISSION } from '../../constants/routes';
 import useCapabilities from '../../hooks/useCapabilities';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -397,7 +398,7 @@ interface NavEntryConfig {
 /** Alertas/Comando/Finanzas — extracted so `buildNavEntries` stays under budget. */
 function buildCoreNavEntries(
   pathname: string,
-  { hasAnyPermission, isSuperclusterActive }: PermCheckers,
+  { hasPermission, hasAnyPermission, isSuperclusterActive }: PermCheckers,
   alertsCount: number
 ): NavEntryConfig[] {
   return [
@@ -414,9 +415,10 @@ function buildCoreNavEntries(
       key: 'comando',
       icon: <LayoutDashboard size={20} />,
       label: 'Comando',
-      path: '/dashboard',
-      active: pathname === '/dashboard',
-      visible: true,
+      path: COMMAND_CENTER_PATH,
+      active: pathname === COMMAND_CENTER_PATH,
+      // FC211 F3 (R 582_AN): sin permiso de flota la ruta redirige a Arcsial; la entrada se oculta.
+      visible: hasPermission(COMMAND_CENTER_PERMISSION),
     },
     {
       key: 'finanzas',

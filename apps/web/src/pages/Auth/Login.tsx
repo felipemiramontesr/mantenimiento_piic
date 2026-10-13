@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
+import { ARCSIAL_HOME_PATH } from '../../constants/routes';
 import api from '../../api/client';
 import { isBotChallengeError, obtainBotChallengePayload } from '../../api/botChallenge';
 import serviceBackground from '../../assets/service-bg.png';
@@ -112,7 +113,7 @@ function handleLoginResponse(response: LoginApiResponse, handlers: LoginResponse
     });
   } else if (response.data.token && response.data.user) {
     handlers.login(response.data.token, response.data.user);
-    handlers.navigate('/dashboard');
+    handlers.navigate(ARCSIAL_HOME_PATH); // FC211 F3 (D13)
   } else {
     handlers.setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
   }
@@ -224,7 +225,7 @@ function useLoginForm(): LoginFormState {
   const setupFlow = useMfaSetupFlow(setPassword);
   const mfaChallenge = useMfaChallenge((token, user) => {
     login(token, user);
-    void navigate('/dashboard');
+    void navigate(ARCSIAL_HOME_PATH);
   });
 
   const handleLogin = makeHandleLogin(

@@ -85,7 +85,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
   });
 
-  it('handles successful login and redirects to /dashboard', async () => {
+  it('handles successful login and redirects to Arcsial (FC211 F3 · D13)', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: {
         token: 'mock-jwt-token',
@@ -110,7 +110,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.getByRole('button', { name: /autenticando archon/i })).toBeDisabled();
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard/social');
     });
   });
 
@@ -141,7 +141,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       '/auth/login',
       expect.objectContaining({ website_url: 'http://spam' })
     );
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/social'));
   });
 
   it('shows a protocol error when the server response has no token', async () => {
@@ -163,7 +163,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
         )
       ).toBeInTheDocument();
     });
-    expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+    expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard/social');
   });
 
   it('displays generic error on 401 Unauthorized', async () => {
@@ -238,7 +238,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
       expect(await screen.findByTestId('mfa-mandatory-setup')).toBeInTheDocument();
       expect(screen.queryByPlaceholderText('usuario o correo@empresa.com')).not.toBeInTheDocument();
-      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard/social');
       await waitFor(() => expect(screen.getByTestId('mfa-scan-step')).toBeInTheDocument());
     });
 
@@ -294,7 +294,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
       expect(await screen.findByTestId('mfa-just-activated-banner')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('••••••••')).toHaveValue('');
-      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard/social');
     });
   });
 
@@ -317,10 +317,10 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
       expect(await screen.findByTestId('mfa-mandatory-challenge')).toBeInTheDocument();
       expect(screen.queryByPlaceholderText('usuario o correo@empresa.com')).not.toBeInTheDocument();
-      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard/social');
     });
 
-    it('código válido: canjea por sesión completa y navega a /dashboard', async () => {
+    it('código válido: canjea por sesión completa y navega a Arcsial', async () => {
       (api.post as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
         if (url === '/auth/login') {
           return Promise.resolve({
@@ -344,7 +344,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       });
       fireEvent.click(screen.getByTestId('mfa-challenge-submit'));
 
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'));
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/social'));
       expect(api.post).toHaveBeenCalledWith('/auth/mfa/verify', {
         mfaToken: 'mfa-token-1',
         code: '123456',
@@ -373,7 +373,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
       expect(await screen.findByText('El código ingresado no es válido')).toBeInTheDocument();
       expect(screen.getByTestId('mfa-challenge-step')).toBeInTheDocument();
-      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard/social');
     });
 
     it('reto revocado/expirado en el backend: regresa al login con el banner de expiración visible', async () => {

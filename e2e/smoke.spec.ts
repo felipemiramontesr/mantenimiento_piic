@@ -59,7 +59,8 @@ test('should restore session via refresh after a hard reload', async ({ page }) 
   await page.reload();
 
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
-  await expect(page.getByText(/Centro de Comando/i)).toBeVisible({ timeout: 15_000 });
+  // FC211 F3 (D13) — el acceso lleva a Arcsial y una recarga conserva la ruta.
+  await expect(page.getByRole('heading', { name: 'Arcsial' })).toBeVisible({ timeout: 15_000 });
 });
 
 // FC130 F2/M2 (Cond.R-130-M2) — mismo botón/testid ya usado en e2e/auth.spec.ts

@@ -728,6 +728,35 @@ export default async function setupApiMocks(page: Page): Promise<void> {
     }
   );
 
+  // 🛰️ Arcsial (FC211 F3 — es el inicio tras el acceso): perfil propio y feed vacío.
+  await page.route(
+    (url) => isApi(url) && url.pathname.endsWith('/social/profile'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          id: 1,
+          handle: 'grayman',
+          displayName: 'GrayMan',
+          avatarUrl: null,
+          muUniverse: null,
+        }),
+      });
+    }
+  );
+  await page.route(
+    (url) => isApi(url) && url.pathname.endsWith('/social/feed'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, posts: [], nextBeforeId: null }),
+      });
+    }
+  );
+
   // 📍 Geolocation
   await page.route(
     (url) => isApi(url) && url.pathname.includes('/geolocation'),

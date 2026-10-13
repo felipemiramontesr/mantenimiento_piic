@@ -130,7 +130,8 @@ describe('Sidebar Component (Archon Core)', () => {
 
   // FC 082 F0c — el escenario "Cliente Externo (rol 9) solo ve Portal" murió
   // con el rol 9 y el NavItem Portal (084_AN §1a-1b). Un usuario sin permisos
-  // ve solo los items sin gate (Comando/Arcsial/Talleres) + logout.
+  // ve solo los items sin gate (Arcsial/Talleres) + logout. FC211 F3: «Comando» exige permiso de
+  // flota (`fleet:unit:view:any`); sin él la ruta redirige a Arcsial y la entrada se oculta.
   it('F0c-SB-1: usuario sin permisos ve solo items sin gate (sin Portal ni CRM)', () => {
     usePermissionsMock.mockReturnValue({
       hasPermission: (): boolean => false,
@@ -148,7 +149,7 @@ describe('Sidebar Component (Archon Core)', () => {
 
     expect(screen.queryByText('Portal')).toBeNull();
     expect(screen.queryByText('CRM')).toBeNull();
-    expect(screen.getByText('Comando')).toBeDefined();
+    expect(screen.queryByText('Comando')).toBeNull();
     expect(screen.getByText('Arcsial')).toBeDefined();
     expect(screen.getByText('Talleres')).toBeDefined();
     expect(screen.queryByText('Unidades')).toBeNull();

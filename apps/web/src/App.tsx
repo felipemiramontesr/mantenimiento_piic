@@ -34,6 +34,7 @@ import { UserProvider } from './context/UserContext';
 import PwaUpdateBanner from './pwa/PwaUpdateBanner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ArchonErrorBoundary from './components/Common/ArchonErrorBoundary';
+import { ARCSIAL_HOME_PATH } from './constants/routes';
 import './index.css';
 
 /**
@@ -123,7 +124,7 @@ function AuthenticatedRoutes(): React.ReactElement {
         <Route path="/dashboard" element={DASHBOARD_ELEMENT}>
           {DashboardChildRoutes()}
         </Route>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to={ARCSIAL_HOME_PATH} replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>

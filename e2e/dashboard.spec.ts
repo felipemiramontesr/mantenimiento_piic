@@ -11,7 +11,9 @@ test.describe('Dashboard Navigation', () => {
     await loginAs(page);
   });
 
-  test('should render the Centro de Comando (Home Dashboard)', async ({ page }) => {
+  // FC211 F3 (D13) — el inicio es Arcsial; el Centro de Comando se abre desde el menú.
+  test('should render the Centro de Comando from the sidebar', async ({ page }) => {
+    await page.getByTestId('nav-item-comando').click();
     await expect(page.getByText('Centro de Comando')).toBeVisible({ timeout: 10_000 });
   });
 

@@ -21,17 +21,18 @@ const givenActive = (...active: string[]): void => {
   });
 };
 
-/** Destino del rebote: expone el `state` recibido. */
-const Comando = (): React.JSX.Element => {
+/** Destino del rebote (Arcsial, FC211 F3): expone el `state` recibido. */
+const Arcsial = (): React.JSX.Element => {
   const location = useLocation();
-  return <div data-testid="comando">{JSON.stringify(location.state)}</div>;
+  return <div data-testid="arcsial">{JSON.stringify(location.state)}</div>;
 };
 
 const renderAt = (path: string): void => {
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/dashboard" element={<Comando />} />
+        <Route path="/dashboard" element={<div data-testid="comando" />} />
+        <Route path="/dashboard/social" element={<Arcsial />} />
         <Route
           path="/dashboard/maintenance"
           element={
@@ -56,15 +57,16 @@ describe('CapabilityRoute (FC193 F3)', () => {
     renderAt('/dashboard/maintenance');
 
     expect(screen.getByTestId('modulo')).toBeInTheDocument();
-    expect(screen.queryByTestId('comando')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('arcsial')).not.toBeInTheDocument();
   });
 
-  it('Supercúmulo inactivo ⇒ rebota a /dashboard con el aviso en el estado de navegación', () => {
+  it('Supercúmulo inactivo ⇒ rebota a Arcsial (no al Comando) con el aviso en el estado de navegación', () => {
     givenActive('RASTREO');
 
     renderAt('/dashboard/maintenance');
 
     expect(screen.queryByTestId('modulo')).not.toBeInTheDocument();
-    expect(screen.getByTestId('comando')).toHaveTextContent('{"capabilityNotice":"MANTENIMIENTO"}');
+    expect(screen.getByTestId('arcsial')).toHaveTextContent('{"capabilityNotice":"MANTENIMIENTO"}');
+    expect(screen.queryByTestId('comando')).not.toBeInTheDocument();
   });
 });

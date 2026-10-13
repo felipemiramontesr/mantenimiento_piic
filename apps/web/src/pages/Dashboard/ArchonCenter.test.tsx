@@ -1,5 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Route, Routes } from 'react-router';
 import { render, screen, act, fireEvent } from '../../test/testUtils';
 import { FleetContext } from '../../context/FleetContext';
 import ArchonCenter from './ArchonCenter';
@@ -17,7 +18,7 @@ vi.mock('react-router', async (): Promise<unknown> => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-// FC207 F3 — el tablero de flota exige `fleet:unit:view:any`; por defecto el usuario lo tiene.
+// FC207 F3 / FC211 F3 — el tablero exige `fleet:unit:view:any`; por defecto el usuario lo tiene.
 const grantedPermissions = vi.hoisted(() => ({ list: ['fleet:unit:view:any'] as string[] }));
 vi.mock('../../hooks/usePermissions', async (): Promise<unknown> => {
   const actual = await vi.importActual<typeof import('../../hooks/usePermissions')>(
@@ -52,14 +53,21 @@ describe('ArchonCenter Component (Apex Standard)', () => {
     });
   };
 
-  it('FC207 F3 (F-OBS2): sin permiso de flota muestra la bienvenida y lleva a Arcsial', async () => {
+  it('FC211 F3 (T2 fila 5): sin permiso de flota no hay tablero ni bienvenida; redirige a Arcsial', async () => {
     grantedPermissions.list = [];
-    await renderModule();
-    expect(screen.getByTestId('cosmonaut-welcome')).toHaveTextContent('Bienvenido a Archon');
+    await act(async () => {
+      render(
+        <Routes>
+          <Route path="/" element={<ArchonCenter />} />
+          <Route path="/dashboard/social" element={<div data-testid="arcsial-home" />} />
+        </Routes>
+      );
+    });
+    expect(screen.getByTestId('arcsial-home')).toBeInTheDocument();
+    expect(screen.queryByTestId('cosmonaut-welcome')).toBeNull();
+    expect(screen.queryByText('Bienvenido a Archon')).toBeNull();
     expect(screen.queryByText(/Fuerza Operativa/i)).toBeNull();
     expect(screen.queryByText('Vehículos de Flota')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Ir a Arcsial/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/social');
   });
 
   it('renders branding name and command titles', async () => {

@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import {
-  ArrowRight,
-  Gauge,
-  ShieldCheck,
-  Navigation,
-  ShieldAlert,
-  Sparkles,
-  Users,
-} from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router';
+import { ArrowRight, Gauge, ShieldCheck, Navigation, ShieldAlert, Users } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import usePermissions from '../../hooks/usePermissions';
+import { ARCSIAL_HOME_PATH, COMMAND_CENTER_PERMISSION } from '../../constants/routes';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 import CategoryAnalyticsCard from '../../components/Dashboard/CategoryAnalyticsCard';
@@ -212,39 +205,12 @@ function FleetCommandGrid({ onNavigate }: NavigateProps): React.ReactElement {
   );
 }
 
-/** Bienvenida del cosmonauta sin permisos de flota: sin peticiones de flota ni de personal, con
- *  acceso directo a Arcsial (FC207 F3 · F-OBS2). */
-function CosmonautWelcome({ onNavigate }: NavigateProps): React.ReactElement {
-  return (
-    <section className="archon-workspace-chassis" data-testid="cosmonaut-welcome">
-      <div className="archon-axial-container">
-        <div className="card-archon-sovereign max-w-xl mx-auto text-center">
-          <div className="card-sovereign-header">
-            <Sparkles size={20} className="text-pinnacle-navy" />
-            <span className="card-sovereign-title">Bienvenido a Archon</span>
-          </div>
-          <p className="text-pinnacle-navy/70 py-6">
-            Tu cuenta todavía no opera la flota de un Universo. Mientras tanto, la red Arcsial está
-            abierta para ti.
-          </p>
-          <button
-            type="button"
-            className="btn-archon-primary"
-            onClick={(): void => onNavigate('/dashboard/social')}
-          >
-            Ir a Arcsial <ArrowRight size={12} className="ml-2" />
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /**
  * 🔱 Archon Component: ArchonCenter
  * Implementation: Sovereign Command Center View (V.78.100.87)
  * Objective: High-density predictive analytics and fleet health orchestration.
- * FC207 F3 (F-OBS2): sin `fleet:unit:view:any` muestra la bienvenida del cosmonauta.
+ * FC211 F3 (D13 · R 582_AN): sin `fleet:unit:view:any` (Ω lo cumple por su comodín) no hay tablero
+ * que mostrar: la visita se redirige a Arcsial. La pantalla de bienvenida de FC207 F3 se retiró.
  */
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
@@ -260,13 +226,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     void navigate(path);
   };
 
+  if (!hasPermission(COMMAND_CENTER_PERMISSION)) return <Navigate to={ARCSIAL_HOME_PATH} replace />;
+
   return (
     <div className="animate-in fade-in duration-700">
-      {hasPermission('fleet:unit:view:any') ? (
-        <FleetCommandGrid onNavigate={handleNavigate} />
-      ) : (
-        <CosmonautWelcome onNavigate={handleNavigate} />
-      )}
+      <FleetCommandGrid onNavigate={handleNavigate} />
 
       <AccessControlSlideOver
         isOpen={isAccessControlOpen}

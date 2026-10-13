@@ -13,9 +13,10 @@ import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import { ArchonDoctorProvider } from '../../context/ArchonDoctorContext';
 import usePushNotifications from '../../hooks/usePushNotifications';
 import usePermissions from '../../hooks/usePermissions';
+import { ARCSIAL_HOME_PATH } from '../../constants/routes';
 
 /** FC182 F2 — the one destination an itinerant Arc has (`ProfileView`/Arcsial). */
-const ITINERANT_ALLOWED_PATH = '/dashboard/social';
+const ITINERANT_ALLOWED_PATH = ARCSIAL_HOME_PATH;
 
 /** Client-side belt to Cond.R-182 R1's server-side suspenders: the backend already 403s any
  *  tenant-scoped endpoint for a `tenantId: null` token (`requirePermission()` + Arc's minimal

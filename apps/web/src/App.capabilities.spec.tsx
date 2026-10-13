@@ -31,6 +31,7 @@ const { stub } = vi.hoisted(() => ({
   },
 }));
 vi.mock('./pages/Dashboard/ArchonCenter', () => stub('comando'));
+vi.mock('./pages/Profile/ProfileView', () => stub('arcsial'));
 vi.mock('./pages/Dashboard/FleetModule', () => stub('fleet'));
 vi.mock('./pages/Dashboard/FleetUnitNode', () => stub('fleet-node'));
 vi.mock('./pages/Dashboard/MaintenanceModule', () => stub('maintenance'));
@@ -84,15 +85,16 @@ describe('App — guards de capacidad en el árbol real de rutas (FC193 F3)', ()
     ['/dashboard/maintenance', 'maintenance'],
     ['/dashboard/financial', 'financial'],
   ])(
-    '%s con el Supercúmulo INACTIVO (Scenario 2) ⇒ rebota al Comando, el módulo no carga',
+    '%s con el Supercúmulo INACTIVO (Scenario 2) ⇒ rebota a Arcsial (FC211 F3), el módulo no carga',
     (path, module) => {
       givenCapabilities([]);
 
       visit(path);
 
-      expect(screen.getByTestId('comando')).toBeInTheDocument();
+      expect(screen.getByTestId('arcsial')).toBeInTheDocument();
+      expect(screen.queryByTestId('comando')).not.toBeInTheDocument();
       expect(screen.queryByTestId(module)).not.toBeInTheDocument();
-      expect(window.location.pathname).toBe('/dashboard');
+      expect(window.location.pathname).toBe('/dashboard/social');
     }
   );
 
@@ -103,11 +105,20 @@ describe('App — guards de capacidad en el árbol real de rutas (FC193 F3)', ()
     expect(screen.getByTestId('alerts')).toBeInTheDocument();
   });
 
+  it('FC211 F3 (D13) — la raíz `/` lleva a Arcsial, no al Comando', () => {
+    givenCapabilities([]);
+
+    visit('/');
+
+    expect(screen.getByTestId('arcsial')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/dashboard/social');
+  });
+
   it('el detalle de mantenimiento (nodo hijo) también está guardado', () => {
     givenCapabilities(['FINANZAS']);
 
     visit('/dashboard/maintenance/abc');
 
-    expect(screen.getByTestId('comando')).toBeInTheDocument();
+    expect(screen.getByTestId('arcsial')).toBeInTheDocument();
   });
 });
