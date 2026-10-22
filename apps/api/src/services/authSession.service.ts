@@ -75,18 +75,38 @@ export function mapUserResponse(user: RowDataPacket): MappedUser {
   };
 }
 
-/** Decrypt-and-compare fallback when username lookup misses — username may be an email. */
-export async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
-  const candidates = await SessionRepository.findAllActiveUsers();
+/** Full row of the first candidate whose decrypted email equals `email`, or null. */
+async function findByDecryptedEmail(
+  candidates: RowDataPacket[],
+  email: string
+): Promise<RowDataPacket | null> {
   const found = candidates.find((u) => {
     try {
-      return EncryptionService.decrypt(u.email) === username;
+      return EncryptionService.decrypt(u.email) === email;
     } catch {
       return false;
     }
   });
   if (!found) return null;
   return SessionRepository.findUserWithRoleAndDepartmentById(found.id as number);
+}
+
+/** Decrypt-and-compare lookup among ACTIVE users — the public signup's duplicate check. */
+export async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
+  return findByDecryptedEmail(await SessionRepository.findAllActiveUsers(), username);
+}
+
+/** FC212 F1 (T1) — the login's email lookup: among ALL accounts, active or not, so a quarantined
+ *  account keeps its 403 after a valid password. The signup's `findUserByEmail` stays active-only. */
+export async function findUserByEmailForLogin(email: string): Promise<RowDataPacket | null> {
+  return findByDecryptedEmail(await SessionRepository.findAllUserEmails(), email);
+}
+
+/** FC212 F1 (T1) — exactly one lookup: an identifier with `@` is an email and is searched only by
+ *  email (never retried as a username); without `@` it is searched only by username. */
+async function findLoginAccount(identifier: string): Promise<RowDataPacket | null> {
+  if (identifier.includes('@')) return findUserByEmailForLogin(identifier);
+  return SessionRepository.findUserWithRoleAndDepartmentByUsername(identifier);
 }
 
 /** FC195 D-Ω1 — `/login` nunca emite sesión completa: o falla, o pide el reto (`MFA_REQUIRED`), o
@@ -155,8 +175,7 @@ export async function login(
   password: string,
   beforePasswordCheck?: BeforePasswordCheck
 ): Promise<LoginResult> {
-  let user = await SessionRepository.findUserWithRoleAndDepartmentByUsername(username);
-  user ??= await findUserByEmail(username);
+  const user = await findLoginAccount(username);
   const verdict = await beforePasswordCheck?.(user ? Number(user.id) : null);
   if (verdict) {
     return { ok: false, status: 400, errorCode: verdict };

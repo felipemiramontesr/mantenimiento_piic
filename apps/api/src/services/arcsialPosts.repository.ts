@@ -83,6 +83,11 @@ function toPost(row: RowDataPacket): ArcsialPost {
   };
 }
 
+/** Forma en que se guardan las direcciones: JSON del arreglo, o NULL si no hay ninguna. */
+function imageUrlsJson(imageUrls: string[]): string | null {
+  return imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
+}
+
 /** Inserta la publicación y devuelve su id. */
 export async function insertPost(post: NewPost, executor: Executor = db): Promise<number> {
   const [result] = await executor.execute<ResultSetHeader>(
@@ -92,11 +97,44 @@ export async function insertPost(post: NewPost, executor: Executor = db): Promis
       post.authorActorId,
       post.authorUserId,
       post.contentText,
-      post.imageUrls.length > 0 ? JSON.stringify(post.imageUrls) : null,
+      imageUrlsJson(post.imageUrls),
       post.visibility,
     ]
   );
   return result.insertId;
+}
+
+/** FC212 F1 (T2) — bloquea la fila del actor autor hasta el fin de la transacción: dos publicaciones
+ *  simultáneas del mismo actor se serializan y la segunda ya ve a la primera. */
+export async function lockAuthorActor(actorId: number, executor: Executor): Promise<void> {
+  await executor.execute<RowDataPacket[]>('SELECT id FROM arcsial_actors WHERE id = ? FOR UPDATE', [
+    actorId,
+  ]);
+}
+
+/** FC212 F1 (T2) — ¿el actor ya publicó, dentro de la ventana, el mismo texto con las mismas
+ *  direcciones y la misma visibilidad? Comparación binaria: mayúsculas y acentos cuentan. */
+export async function hasRecentTwin(
+  post: NewPost,
+  windowSeconds: number,
+  executor: Executor
+): Promise<boolean> {
+  const [rows] = await executor.execute<RowDataPacket[]>(
+    `SELECT 1 FROM arcsial_posts p
+     WHERE p.author_actor_id = ? AND p.visibility = ?
+       AND BINARY p.content_text = BINARY ?
+       AND BINARY p.image_urls_json <=> BINARY ?
+       AND p.created_at >= NOW() - INTERVAL ? SECOND
+     LIMIT 1`,
+    [
+      post.authorActorId,
+      post.visibility,
+      post.contentText,
+      imageUrlsJson(post.imageUrls),
+      windowSeconds,
+    ]
+  );
+  return rows.length > 0;
 }
 
 /** Quién redactó la publicación y quién es el MU del Universo que la firma (si lo hay), o null. */

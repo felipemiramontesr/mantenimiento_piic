@@ -2,7 +2,12 @@ import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } f
 import { z } from 'zod';
 import requireSession from '../middleware/requireSession';
 import { badRequest, callerId, handleSchema, sendResult } from './arcsialHttp';
-import { getActor, searchActors, updateActorProfile } from '../services/arcsialActors.service';
+import {
+  getActor,
+  getOwnActorCard,
+  searchActors,
+  updateActorProfile,
+} from '../services/arcsialActors.service';
 import changeActorHandle from '../services/arcsialActorHandle.service';
 import { followActor, unfollowActor } from '../services/arcsialFollows.service';
 import { createPost, deletePost, listFeed, listWall } from '../services/arcsialPosts.service';
@@ -78,6 +83,11 @@ async function handleWall(request: FastifyRequest, reply: FastifyReply): Promise
   const cursor = cursorQuerySchema.safeParse(request.query);
   if (handle === null || !cursor.success) return badRequest(reply);
   return sendResult(reply, await listWall(callerId(request), handle, cursor.data));
+}
+
+/** FC212 F1 — GET /social/actors/me: nombre, handle y avatar del actor propio, para el menú. */
+async function handleOwnActor(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  return sendResult(reply, await getOwnActorCard(callerId(request)));
 }
 
 /** GET /social/feed — feed de la sesión, paginado por cursor. */
@@ -175,6 +185,8 @@ export default function arcsialActorRoutes(
   done: (err?: Error) => void
 ): void {
   fastify.addHook('onRequest', requireSession);
+  // Ruta estática: Fastify la prefiere a `/:handle`, y «me» no cumple el patrón de handle (3–30).
+  fastify.get('/social/actors/me', handleOwnActor);
   fastify.get('/social/actors/:handle', actorHandler(getActor));
   fastify.get('/social/actors/:handle/posts', handleWall);
   fastify.post('/social/actors/:handle/follow', actorHandler(followActor, 201));

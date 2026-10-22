@@ -6,6 +6,7 @@ import {
   ACTOR_NOT_FOUND,
   NOT_UNIVERSE_MASTER,
   findVisibleActor,
+  inActorTransaction,
   isActorOwner,
   resolveActingActor,
 } from './arcsialActors.service';
@@ -13,6 +14,7 @@ import type { ArcsialError } from './arcsialProfiles.service';
 import type { ActorType, ArcsialActor } from './arcsialActors.repository';
 import type {
   ArcsialPost,
+  NewPost,
   PostCursor,
   PostVisibility,
   WallAccess,
@@ -41,6 +43,16 @@ const INVALID_POST_CONTENT: ArcsialError = {
   status: 400,
   code: 'INVALID_POST_CONTENT',
   message: 'El texto debe tener de 1 a 1000 caracteres y hasta 4 imágenes https',
+};
+
+/** FC212 F1 (T2) — ventana en la que una publicación idéntica del mismo actor se rechaza. */
+const DUPLICATE_WINDOW_SECONDS = 5;
+
+const DUPLICATE_POST: ArcsialError = {
+  ok: false,
+  status: 409,
+  code: 'DUPLICATE_POST',
+  message: 'Ya has enviado esta publicación recientemente',
 };
 
 const POST_NOT_FOUND: ArcsialError = {
@@ -86,6 +98,18 @@ function isValidContent(text: string, imageUrls: string[]): boolean {
   return lengthOk && imageUrls.length <= POST_IMAGES_MAX && imageUrls.every(isAllowedImageUrl);
 }
 
+/** FC212 F1 (T2) — en una transacción que bloquea al actor autor: si ya hay una gemela reciente
+ *  no inserta y responde null; si no, inserta y responde el id. */
+async function insertUnlessTwin(post: NewPost): Promise<number | null> {
+  let id: number | null = null;
+  await inActorTransaction(async (connection) => {
+    await PostsRepository.lockAuthorActor(post.authorActorId, connection);
+    if (await PostsRepository.hasRecentTwin(post, DUPLICATE_WINDOW_SECONDS, connection)) return;
+    id = await PostsRepository.insertPost(post, connection);
+  });
+  return id;
+}
+
 /** POST de publicación — en el muro propio, o en el del Universo si la sesión es su MU. */
 export async function createPost(
   userId: number,
@@ -97,13 +121,14 @@ export async function createPost(
   const imageUrls = input.imageUrls ?? [];
   if (containsPII(contentText)) return PII_DETECTED;
   if (!isValidContent(contentText, imageUrls)) return INVALID_POST_CONTENT;
-  const id = await PostsRepository.insertPost({
+  const id = await insertUnlessTwin({
     authorActorId: actor.id,
     authorUserId: userId,
     contentText,
     imageUrls,
     visibility: input.visibility ?? 'PUBLIC',
   });
+  if (id === null) return DUPLICATE_POST;
   return { ok: true, id, author: actor.actorType };
 }
 

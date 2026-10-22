@@ -175,6 +175,30 @@ describe('arcsialPosts.repository', () => {
     expect(call(0).sql).not.toContain('social_posts');
   });
 
+  it('FC212 F1 — lockAuthorActor bloquea la fila del actor con FOR UPDATE', async () => {
+    rows([{ id: 7 }]);
+    await Posts.lockAuthorActor(7, conn);
+    expect(call(0).sql).toBe('SELECT id FROM arcsial_actors WHERE id = ? FOR UPDATE');
+    expect(call(0).params).toEqual([7]);
+  });
+
+  it('FC212 F1 — hasRecentTwin compara en binario actor, visibilidad, texto, imágenes y ventana', async () => {
+    rows([{ 1: 1 }], []);
+    const base = { authorActorId: 7, authorUserId: 5, contentText: 'Hola', visibility: 'CONTACTS' };
+    const images = ['https://cdn.example/a.png'];
+    expect(
+      await Posts.hasRecentTwin({ ...base, imageUrls: images } as Posts.NewPost, 5, conn)
+    ).toBe(true);
+    expect(await Posts.hasRecentTwin({ ...base, imageUrls: [] } as Posts.NewPost, 5, conn)).toBe(
+      false
+    );
+    expect(call(0).params).toEqual([7, 'CONTACTS', 'Hola', JSON.stringify(images), 5]);
+    expect(call(1).params[3]).toBeNull();
+    expect(call(0).sql).toContain('BINARY p.content_text = BINARY ?');
+    expect(call(0).sql).toContain('BINARY p.image_urls_json <=> BINARY ?');
+    expect(call(0).sql).toContain('p.created_at >= NOW() - INTERVAL ? SECOND');
+  });
+
   it('findPostOwnership y deletePost', async () => {
     rows([{ authorUserId: 5, muUserId: null }], [], []);
     expect(await Posts.findPostOwnership(90, conn)).toEqual({ authorUserId: 5, muUserId: null });

@@ -20,6 +20,8 @@ vi.mock('./authSession.repository', () => ({
   findUserWithRoleAndDepartmentByUsername: vi.fn(),
   findActiveUserWithRoleAndDepartmentById: vi.fn(),
   findAllActiveUsers: vi.fn(),
+  findAllUserEmails: vi.fn(),
+  findUserWithRoleAndDepartmentById: vi.fn(),
 }));
 vi.mock('@node-rs/argon2', () => ({ verify: vi.fn() }));
 vi.mock('./encryption', () => ({
@@ -352,4 +354,89 @@ describe('FC199 F3 — gancho beforePasswordCheck de login() (reto adaptativo)',
       expect(argon2Verify).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('FC212 F1 (T1) — un identificador con @ se busca SOLO por correo; sin @, SOLO por usuario', () => {
+  const ANA = {
+    ...ARC_ITINERANT_ROW,
+    id: 30,
+    username: 'ana@correo.com',
+    email: 'enc_ana@correo.com',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthContext(null);
+    givenMuAnywhere(false);
+    givenCredentials(TOTP_OK);
+  });
+
+  /** Prepara la vía que corresponde a A: E decide si la cuenta existe y C si está activa. */
+  function givenAccount(byEmail: boolean, exists: boolean, active: boolean): void {
+    const row = { ...ANA, is_active: active ? 1 : 0 };
+    (SessionRepository.findAllUserEmails as Mock).mockResolvedValue(
+      exists
+        ? [{ id: 30, email: 'enc_ana@correo.com' }]
+        : [{ id: 31, email: 'enc_otra@correo.com' }]
+    );
+    (SessionRepository.findUserWithRoleAndDepartmentById as Mock).mockResolvedValue(row);
+    (SessionRepository.findUserWithRoleAndDepartmentByUsername as Mock).mockResolvedValue(
+      !byEmail && exists ? row : null
+    );
+  }
+
+  /** Código de efecto de T1 (la columna A no cambia el efecto, solo la vía de búsqueda). */
+  function t1Effect(exists: boolean, password: boolean, active: boolean): string {
+    if (!exists) return 'L3';
+    if (!password) return 'L4';
+    return active ? 'MFA_REQUIRED' : 'ACCOUNT_PENDING_ACTIVATION';
+  }
+
+  // Fórmula: OK ⟺ E ∧ P ∧ C — las 16 filas de T1 (A, E, P, C) con su código de efecto.
+  const BOOLS = [true, false];
+  const ROWS = BOOLS.flatMap((a) =>
+    BOOLS.flatMap((e) =>
+      BOOLS.flatMap((pw) => BOOLS.map((c) => ({ a, e, pw, c, effect: t1Effect(e, pw, c) })))
+    )
+  );
+
+  it.each(ROWS)('A=$a E=$e P=$pw C=$c → $effect', async ({ a, e, pw, c, effect }) => {
+    givenAccount(a, e, c);
+    (argon2Verify as Mock).mockResolvedValue(pw);
+
+    const result = await login(a ? 'ana@correo.com' : 'ana', 'pw');
+
+    expect(result.errorCode).toBe(effect);
+    if (a) {
+      expect(SessionRepository.findUserWithRoleAndDepartmentByUsername).not.toHaveBeenCalled();
+    } else {
+      expect(SessionRepository.findAllUserEmails).not.toHaveBeenCalled();
+    }
+  });
+
+  it('QA-12: el correo viejo que quedó como usuario ya no entra a la cuenta (L3)', async () => {
+    (SessionRepository.findAllUserEmails as Mock).mockResolvedValue([
+      { id: 40, email: 'enc_qa+arc2@correo.com' },
+    ]);
+    (SessionRepository.findUserWithRoleAndDepartmentByUsername as Mock).mockResolvedValue({
+      ...ANA,
+      id: 40,
+      username: 'qa+arc@correo.com',
+    });
+    (argon2Verify as Mock).mockResolvedValue(true);
+
+    const result = await login('qa+arc@correo.com', 'pw');
+
+    expect(result).toEqual({ ok: false, status: 401, errorCode: 'L3' });
+    expect(SessionRepository.findUserWithRoleAndDepartmentByUsername).not.toHaveBeenCalled();
+  });
+
+  it('una cuenta sin correo registrado no coincide con nada (L3)', async () => {
+    (SessionRepository.findAllUserEmails as Mock).mockResolvedValue([{ id: 50, email: null }]);
+    (argon2Verify as Mock).mockResolvedValue(true);
+
+    const result = await login('ana@correo.com', 'pw');
+
+    expect(result).toEqual({ ok: false, status: 401, errorCode: 'L3' });
+  });
 });

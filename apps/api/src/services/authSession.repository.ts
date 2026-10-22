@@ -15,7 +15,7 @@ const USER_WITH_ROLE_AND_DEPARTMENT_SELECT = `SELECT u.*, (CASE WHEN u.role_id =
      FROM users u
      LEFT JOIN common_catalogs cat ON u.department_id = cat.id`;
 
-/** All active users, unfiltered by identity — used by findUserByEmail's decrypt-and-compare fallback. */
+/** All active users, unfiltered by identity — findUserByEmail's decrypt-and-compare (public signup). */
 export async function findAllActiveUsers(executor: Executor = db): Promise<RowDataPacket[]> {
   const [rows] = await executor.execute<RowDataPacket[]>(
     'SELECT * FROM users WHERE is_active = 1',
@@ -24,7 +24,17 @@ export async function findAllActiveUsers(executor: Executor = db): Promise<RowDa
   return rows;
 }
 
-/** User row (+role_name/department_name) by exact username — /login's primary lookup. */
+/** FC212 F1 — id and encrypted email of EVERY account, active or not: the login's email lookup must
+ *  still find a quarantined account so it gets its 403 instead of L3. */
+export async function findAllUserEmails(executor: Executor = db): Promise<RowDataPacket[]> {
+  const [rows] = await executor.execute<RowDataPacket[]>(
+    'SELECT id, email FROM users WHERE email IS NOT NULL',
+    []
+  );
+  return rows;
+}
+
+/** User row (+role_name/department_name) by exact username — /login's lookup when there is no `@`. */
 export async function findUserWithRoleAndDepartmentByUsername(
   username: string,
   executor: Executor = db
@@ -36,7 +46,7 @@ export async function findUserWithRoleAndDepartmentByUsername(
   return rows.length > 0 ? rows[0] : null;
 }
 
-/** User row (+role_name/department_name) by id, no is_active filter — findUserByEmail fallback + /me. */
+/** User row (+role_name/department_name) by id, no is_active filter — email lookups + /me. */
 export async function findUserWithRoleAndDepartmentById(
   id: number,
   executor: Executor = db

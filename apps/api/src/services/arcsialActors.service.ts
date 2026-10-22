@@ -110,6 +110,27 @@ export async function getActor(
   return { ok: true, ...(await buildActorView(callerId, actor)) };
 }
 
+/** FC212 F1 — lo que el menú necesita del actor propio: nunca el correo ni el usuario de acceso. */
+export interface OwnActorCard {
+  readonly handle: string;
+  readonly displayName: string;
+  readonly avatarUrl: string | null;
+}
+
+/** GET /v1/social/actors/me — el actor USER de la sesión (`a.user_id`, que un Universo no tiene). */
+export async function getOwnActorCard(
+  callerId: number
+): Promise<({ ok: true } & OwnActorCard) | ArcsialError> {
+  const actor = await ActorsRepository.findActorByUserId(callerId);
+  if (!actor) return ACTOR_NOT_FOUND;
+  return {
+    ok: true,
+    handle: actor.handle,
+    displayName: actor.displayName,
+    avatarUrl: actor.avatarUrl,
+  };
+}
+
 /** GET /v1/social/users/search — tarjetas públicas, sin contactos en común (R 551_AN). */
 export async function searchActors(
   callerId: number,

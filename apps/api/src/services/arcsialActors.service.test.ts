@@ -9,6 +9,7 @@ import {
   createActorForNewUniverse,
   findVisibleActor,
   getActor,
+  getOwnActorCard,
   inActorTransaction,
   isActorOwner,
   resolveActingActor,
@@ -114,6 +115,24 @@ describe('findVisibleActor', () => {
     vi.mocked(isBlockedEitherWay).mockResolvedValue(true);
     expect(await findVisibleActor(5, 'fms_41')).toEqual(UNIVERSE_ACTOR);
     expect(isBlockedEitherWay).not.toHaveBeenCalled();
+  });
+});
+
+describe('FC212 F1 — getOwnActorCard', () => {
+  it('nombre, handle y avatar del actor USER de la sesión; sin correo ni usuario de acceso', async () => {
+    vi.mocked(Actors.findActorByUserId).mockResolvedValue(USER_ACTOR);
+    expect(await getOwnActorCard(5)).toEqual({
+      ok: true,
+      handle: USER_ACTOR.handle,
+      displayName: USER_ACTOR.displayName,
+      avatarUrl: USER_ACTOR.avatarUrl,
+    });
+    expect(Actors.findActorByUserId).toHaveBeenCalledWith(5);
+  });
+
+  it('sin actor ⇒ 404 ACTOR_NOT_FOUND', async () => {
+    vi.mocked(Actors.findActorByUserId).mockResolvedValue(null);
+    expect(await getOwnActorCard(5)).toMatchObject({ status: 404, code: 'ACTOR_NOT_FOUND' });
   });
 });
 

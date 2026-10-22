@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as Actors from './arcsialActors.repository';
 import * as Posts from './arcsialPosts.repository';
+import db from './db';
 import { isFollowing } from './arcsialFollows.repository';
 import { areContacts, isBlockedEitherWay } from './arcsialRelations.repository';
 import {
@@ -27,6 +28,8 @@ vi.mock('./arcsialActors.repository', () => ({
 }));
 vi.mock('./arcsialPosts.repository', () => ({
   insertPost: vi.fn(),
+  lockAuthorActor: vi.fn(),
+  hasRecentTwin: vi.fn(),
   findPostOwnership: vi.fn(),
   deletePost: vi.fn(),
   listWallPosts: vi.fn(),
@@ -48,6 +51,14 @@ const UNIVERSE_ACTOR = {
 } as ArcsialActor;
 const IMAGE = 'https://cdn.example/foto.png';
 
+/** Conexión simulada de la transacción que bloquea al actor autor (FC212 F1). */
+const connection = {
+  beginTransaction: vi.fn(),
+  commit: vi.fn(),
+  rollback: vi.fn(),
+  release: vi.fn(),
+};
+
 /** Publicaciones de relleno con ids descendentes desde `first`. */
 function posts(count: number, first = 100): ArcsialPost[] {
   return Array.from({ length: count }, (_, i) => ({ id: first - i } as ArcsialPost));
@@ -59,6 +70,8 @@ beforeEach(() => {
   vi.mocked(Actors.findActorByTenantId).mockResolvedValue(UNIVERSE_ACTOR);
   vi.mocked(Actors.findActorByHandle).mockResolvedValue(USER_ACTOR);
   vi.mocked(Posts.insertPost).mockResolvedValue(90);
+  vi.mocked(Posts.hasRecentTwin).mockResolvedValue(false);
+  vi.mocked(db.getConnection).mockResolvedValue(connection as never);
   vi.mocked(Posts.listWallPosts).mockResolvedValue([]);
   vi.mocked(Posts.listFeedPosts).mockResolvedValue([]);
   vi.mocked(isFollowing).mockResolvedValue(false);
@@ -73,13 +86,16 @@ describe('createPost', () => {
       id: 90,
       author: 'USER',
     });
-    expect(Posts.insertPost).toHaveBeenCalledWith({
-      authorActorId: 7,
-      authorUserId: 5,
-      contentText: 'Hola',
-      imageUrls: [],
-      visibility: 'PUBLIC',
-    });
+    expect(Posts.insertPost).toHaveBeenCalledWith(
+      {
+        authorActorId: 7,
+        authorUserId: 5,
+        contentText: 'Hola',
+        imageUrls: [],
+        visibility: 'PUBLIC',
+      },
+      connection
+    );
   });
 
   it('fila 2 — a nombre del Universo por su MU: firma el actor UNIVERSE, redacta la persona', async () => {
@@ -90,13 +106,16 @@ describe('createPost', () => {
       asUniverseTenantId: 41,
     };
     expect(await createPost(3, input)).toEqual({ ok: true, id: 90, author: 'UNIVERSE' });
-    expect(Posts.insertPost).toHaveBeenCalledWith({
-      authorActorId: 8,
-      authorUserId: 3,
-      contentText: 'Aviso',
-      imageUrls: [IMAGE],
-      visibility: 'FOLLOWERS',
-    });
+    expect(Posts.insertPost).toHaveBeenCalledWith(
+      {
+        authorActorId: 8,
+        authorUserId: 3,
+        contentText: 'Aviso',
+        imageUrls: [IMAGE],
+        visibility: 'FOLLOWERS',
+      },
+      connection
+    );
   });
 
   it('fila 3 — a nombre de un Universo sin ser su MU ⇒ 403, antes que PII o longitud', async () => {
@@ -148,6 +167,49 @@ describe('createPost', () => {
     const imageUrls = ['a.jpg', 'b.JPEG', 'c.png', 'd.webp'].map((f) => `https://cdn.example/${f}`);
     const result = await createPost(5, { contentText: 'x'.repeat(POST_TEXT_MAX), imageUrls });
     expect(result).toMatchObject({ ok: true });
+  });
+});
+
+describe('FC212 F1 (T2) — publicación gemela del mismo actor en 5 s', () => {
+  it('bloquea al actor autor, busca la gemela en la misma transacción y, sin gemela, inserta', async () => {
+    await createPost(5, { contentText: 'Hola', visibility: 'CONTACTS' });
+    const post = {
+      authorActorId: 7,
+      authorUserId: 5,
+      contentText: 'Hola',
+      imageUrls: [],
+      visibility: 'CONTACTS',
+    };
+    expect(Posts.lockAuthorActor).toHaveBeenCalledWith(7, connection);
+    expect(Posts.hasRecentTwin).toHaveBeenCalledWith(post, 5, connection);
+    expect(connection.commit).toHaveBeenCalled();
+    expect(connection.release).toHaveBeenCalled();
+  });
+
+  it('con gemela reciente ⇒ 409 DUPLICATE_POST y no inserta', async () => {
+    vi.mocked(Posts.hasRecentTwin).mockResolvedValue(true);
+    expect(await createPost(5, { contentText: 'Hola' })).toEqual({
+      ok: false,
+      status: 409,
+      code: 'DUPLICATE_POST',
+      message: 'Ya has enviado esta publicación recientemente',
+    });
+    expect(Posts.insertPost).not.toHaveBeenCalled();
+    expect(connection.commit).toHaveBeenCalled();
+  });
+
+  it('si la inserción falla, la transacción se revierte y el error sube', async () => {
+    vi.mocked(Posts.insertPost).mockRejectedValue(new Error('db caída'));
+    await expect(createPost(5, { contentText: 'Hola' })).rejects.toThrow('db caída');
+    expect(connection.rollback).toHaveBeenCalled();
+    expect(connection.release).toHaveBeenCalled();
+  });
+
+  it('el rechazo por contenido sigue antes del candado: no abre transacción', async () => {
+    expect(await createPost(5, { contentText: '' })).toMatchObject({
+      code: 'INVALID_POST_CONTENT',
+    });
+    expect(db.getConnection).not.toHaveBeenCalled();
   });
 });
 

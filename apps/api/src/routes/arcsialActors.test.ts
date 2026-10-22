@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import buildApp from '../index';
-import { getActor, searchActors, updateActorProfile } from '../services/arcsialActors.service';
+import {
+  getActor,
+  getOwnActorCard,
+  searchActors,
+  updateActorProfile,
+} from '../services/arcsialActors.service';
 import changeActorHandle from '../services/arcsialActorHandle.service';
 import { followActor, unfollowActor } from '../services/arcsialFollows.service';
 import { createPost, deletePost, listFeed, listWall } from '../services/arcsialPosts.service';
@@ -20,6 +25,7 @@ vi.mock('../services/db', () => ({
 vi.mock('../services/arcsialActors.service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/arcsialActors.service')>()),
   getActor: vi.fn(),
+  getOwnActorCard: vi.fn(),
   searchActors: vi.fn(),
   updateActorProfile: vi.fn(),
 }));
@@ -88,6 +94,19 @@ describe('FC210 F2 — rutas del núcleo social de Arcsial', () => {
     const missing = await call('GET', '/v1/social/actors/nadie');
     expect(missing.statusCode).toBe(404);
     expect(missing.json()).toMatchObject({ success: false, code: 'ACTOR_NOT_FOUND' });
+  });
+
+  it('FC212 F1 — GET /social/actors/me: tarjeta del actor propio, sin pasar por /:handle', async () => {
+    const card = { handle: 'ana', displayName: 'Ana', avatarUrl: null };
+    vi.mocked(getOwnActorCard).mockResolvedValueOnce({ ok: true, ...card });
+    const res = await call('GET', '/v1/social/actors/me');
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ success: true, ...card });
+    expect(getOwnActorCard).toHaveBeenCalledWith(3);
+    expect(getActor).not.toHaveBeenCalled();
+    vi.mocked(getOwnActorCard).mockResolvedValueOnce(NOT_FOUND);
+    expect((await call('GET', '/v1/social/actors/me')).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/v1/social/actors/me' })).statusCode).toBe(401);
   });
 
   it.each(['ab', 'a.b', 'ana%40piic.mx'])('handle de ruta inválido (%s) ⇒ 400', async (handle) => {
