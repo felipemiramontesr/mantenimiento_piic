@@ -29,4 +29,16 @@ describe('ArchonLogo', () => {
     const { container } = render(<ArchonLogo isCollapsed size={80} />);
     expect(container.querySelector('svg')?.getAttribute('width')).toBe('80');
   });
+
+  it('FC219 F2 (S1077): colapsado, el hexágono es la única marca y lleva nombre accesible', () => {
+    render(<ArchonLogo isCollapsed />);
+    expect(screen.getByRole('img', { name: 'ArchonCore' })).toBeInTheDocument();
+  });
+
+  it('FC219 F2 (S1077): expandido, los dos SVG son decorativos porque el texto ya nombra la marca', () => {
+    const { container } = render(<ArchonLogo isCollapsed={false} />);
+    const svgs = Array.from(container.querySelectorAll('svg'));
+    expect(svgs.map((svg) => svg.getAttribute('aria-hidden'))).toEqual(['true', 'true']);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
 });

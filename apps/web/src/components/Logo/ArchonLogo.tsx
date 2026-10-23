@@ -27,6 +27,9 @@ const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
+      role="img"
+      aria-label={isCollapsed ? 'ArchonCore' : undefined}
+      aria-hidden={isCollapsed ? undefined : true}
     >
       <path
         d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
@@ -49,6 +52,7 @@ const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
           height="15"
           viewBox="0 0 100 100"
           className="ml-1 self-baseline translate-y-[3px]"
+          aria-hidden="true"
         >
           <path
             d="M50 5L89.5 27.5V72.5L50 95L10.5 72.5V27.5L50 5Z"

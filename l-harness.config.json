@@ -2,7 +2,7 @@
   "versioning": {
     "scheme": "semver",
     "codeVersion": null,
-    "semver": "78.103.305",
+    "semver": "78.103.306",
     "packageSync": true,
     "tagPrefix": {
       "lEpoch": "code/",

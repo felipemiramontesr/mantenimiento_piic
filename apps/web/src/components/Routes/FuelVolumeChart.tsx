@@ -20,6 +20,90 @@ interface FuelVolumeChartProps {
   color: string;
 }
 
+/** Anillo SVG del nivel (radio 40 en un viewBox de 100: margen contra recortes en alta densidad). */
+function FuelRing({
+  color,
+  currentLevel,
+}: {
+  color: string;
+  currentLevel: number;
+}): React.JSX.Element {
+  // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (currentLevel / 100) * circumference;
+  // FC219 F2 (S1077) — decorativo: el porcentaje se lee en el texto de al lado.
+  return (
+    <svg width="80" height="80" className="-rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+      {/* Background Track */}
+      <circle
+        cx="50"
+        cy="50"
+        r={radius}
+        fill="transparent"
+        stroke="#0f2a44"
+        strokeWidth="8"
+        strokeOpacity="0.1"
+      />
+      {/* Progress Segment (Motion Restored) */}
+      <motion.circle
+        cx="50"
+        cy="50"
+        r={radius}
+        fill="transparent"
+        stroke={color}
+        strokeWidth="8"
+        strokeDasharray={circumference}
+        initial={{ strokeDashoffset: circumference }}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 1.5, ease: 'easeOut' }}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+interface FuelLegendProps {
+  currentLevel: number;
+  totalCapacity: number;
+  remainingLiters: number;
+}
+
+/** Leyenda lateral: porcentaje, capacidad total y espacio libre. */
+function FuelLegend({
+  currentLevel,
+  totalCapacity,
+  remainingLiters,
+}: FuelLegendProps): React.JSX.Element {
+  // 📋 ANALYTICAL LEGEND (SIDE-ALIGNED)
+  return (
+    <div className="flex flex-col justify-center gap-3 flex-1">
+      <div className="space-y-1">
+        <p className="text-archon-xs font-black opacity-30 text-[#0f2a44] uppercase tracking-widest">
+          Estado de Carga
+        </p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-lg font-black text-[#0f2a44]">{currentLevel}%</span>
+          <span className="text-archon-xs font-bold opacity-40 text-[#0f2a44]">VOL</span>
+        </div>
+      </div>
+
+      <div className="h-px bg-[#0f2a44]/10 w-full" />
+
+      <div className="grid grid-cols-1 gap-1.5">
+        <div className="flex items-center justify-between text-archon-base">
+          <span className="font-bold opacity-50 text-[#0f2a44]">Total Tanque:</span>
+          <span className="font-black text-[#0f2a44]">{totalCapacity}L</span>
+        </div>
+        <div className="flex items-center justify-between text-archon-base">
+          <span className="font-bold opacity-50 text-[#0f2a44]">Espacio Libre:</span>
+          <span className="font-black text-[#0f2a44]">{remainingLiters}L</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   currentLevel,
   totalCapacity,
@@ -32,42 +116,12 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
-  // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (currentLevel / 100) * circumference;
-
   return (
     <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-8">
         {/* 🥧 CIRCULAR PIE CHART (SVG) - REFINED SCALE */}
         <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
-          <svg width="80" height="80" className="-rotate-90" viewBox="0 0 100 100">
-            {/* Background Track */}
-            <circle
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="transparent"
-              stroke="#0f2a44"
-              strokeWidth="8"
-              strokeOpacity="0.1"
-            />
-            {/* Progress Segment (Motion Restored) */}
-            <motion.circle
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="transparent"
-              stroke={color}
-              strokeWidth="8"
-              strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 1.5, ease: 'easeOut' }}
-              strokeLinecap="round"
-            />
-          </svg>
+          <FuelRing color={color} currentLevel={currentLevel} />
 
           {/* CENTER METRIC (FLOATING) */}
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
@@ -80,31 +134,11 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
           </div>
         </div>
 
-        {/* 📋 ANALYTICAL LEGEND (SIDE-ALIGNED) */}
-        <div className="flex flex-col justify-center gap-3 flex-1">
-          <div className="space-y-1">
-            <p className="text-archon-xs font-black opacity-30 text-[#0f2a44] uppercase tracking-widest">
-              Estado de Carga
-            </p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-black text-[#0f2a44]">{currentLevel}%</span>
-              <span className="text-archon-xs font-bold opacity-40 text-[#0f2a44]">VOL</span>
-            </div>
-          </div>
-
-          <div className="h-px bg-[#0f2a44]/10 w-full" />
-
-          <div className="grid grid-cols-1 gap-1.5">
-            <div className="flex items-center justify-between text-archon-base">
-              <span className="font-bold opacity-50 text-[#0f2a44]">Total Tanque:</span>
-              <span className="font-black text-[#0f2a44]">{totalCapacity}L</span>
-            </div>
-            <div className="flex items-center justify-between text-archon-base">
-              <span className="font-bold opacity-50 text-[#0f2a44]">Espacio Libre:</span>
-              <span className="font-black text-[#0f2a44]">{remainingLiters}L</span>
-            </div>
-          </div>
-        </div>
+        <FuelLegend
+          currentLevel={currentLevel}
+          totalCapacity={totalCapacity}
+          remainingLiters={remainingLiters}
+        />
       </div>
 
       {/* 📏 LINEAR PROGRESS (COMPLEMENTARY) */}

@@ -24,4 +24,9 @@ describe('PiicLogo', () => {
     const { container } = render(<PiicLogo className="footer-logo" />);
     expect(container.querySelector('.logo')?.className).toBe('logo footer-logo');
   });
+
+  it('FC219 F2 (S1077): el SVG es decorativo; el texto PIIC nombra la marca', () => {
+    const { container } = render(<PiicLogo />);
+    expect(container.querySelector('svg.logo-icon')?.getAttribute('aria-hidden')).toBe('true');
+  });
 });
