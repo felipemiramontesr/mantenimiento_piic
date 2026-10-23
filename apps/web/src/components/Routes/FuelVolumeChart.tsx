@@ -25,8 +25,8 @@ function FuelRing({
   color,
   currentLevel,
 }: {
-  color: string;
-  currentLevel: number;
+  readonly color: string;
+  readonly currentLevel: number;
 }): React.JSX.Element {
   // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
   const radius = 40;
@@ -64,9 +64,9 @@ function FuelRing({
 }
 
 interface FuelLegendProps {
-  currentLevel: number;
-  totalCapacity: number;
-  remainingLiters: number;
+  readonly currentLevel: number;
+  readonly totalCapacity: number;
+  readonly remainingLiters: number;
 }
 
 /** Leyenda lateral: porcentaje, capacidad total y espacio libre. */
