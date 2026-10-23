@@ -119,4 +119,80 @@ describe('PostComposer', () => {
     expect(screen.getByTestId('composer-text')).toHaveValue('Vendo ABC-1234');
     expect(onPosted).not.toHaveBeenCalled();
   });
+
+  describe('FC212 F2 (T2)', () => {
+    it('S: mientras viaja la publicación todo queda deshabilitado y un segundo clic no publica', async () => {
+      let finish: () => void = () => undefined;
+      vi.mocked(createPost).mockReturnValue(
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+      );
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      type('Una sola vez');
+      fireEvent.click(screen.getByTestId('composer-submit'));
+      expect(screen.getByTestId('composer-fields')).toBeDisabled();
+      expect(screen.getByTestId('composer-submit')).toHaveTextContent('Publicando…');
+      fireEvent.submit(screen.getByTestId('post-composer'));
+      expect(createPost).toHaveBeenCalledTimes(1);
+      finish();
+      await waitFor(() => expect(screen.getByTestId('composer-fields')).not.toBeDisabled());
+      expect(screen.getByTestId('composer-submit')).toHaveTextContent('Publicar');
+    });
+
+    it('U ⊤: una dirección pendiente válida viaja aunque no se pulse «Agregar» y el campo se limpia', async () => {
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      type('Con foto');
+      fireEvent.change(screen.getByTestId('composer-image-input'), {
+        target: { value: ' https://cdn.example/foto.webp ' },
+      });
+      fireEvent.click(screen.getByTestId('composer-submit'));
+      await waitFor(() => expect(onPosted).toHaveBeenCalledTimes(1));
+      expect(createPost).toHaveBeenCalledWith({
+        contentText: 'Con foto',
+        imageUrls: ['https://cdn.example/foto.webp'],
+        visibility: 'PUBLIC',
+      });
+      expect(screen.getByTestId('composer-image-input')).toHaveValue('');
+    });
+
+    it.each(['http://cdn.example/foto.png', 'https://cdn.example/documento.pdf'])(
+      'U ⊥: la dirección pendiente %s detiene el envío con el aviso y no sale del navegador',
+      (url) => {
+        render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+        type('Con foto');
+        fireEvent.change(screen.getByTestId('composer-image-input'), { target: { value: url } });
+        fireEvent.click(screen.getByTestId('composer-submit'));
+        expect(screen.getByTestId('composer-error')).toHaveTextContent('.jpg, .png o .webp');
+        expect(createPost).not.toHaveBeenCalled();
+        expect(screen.getByTestId('composer-text')).toHaveValue('Con foto');
+      }
+    );
+
+    it('Enter en el campo de imagen la agrega y no publica; otra tecla no hace nada', () => {
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      type('Texto listo');
+      const input = screen.getByTestId('composer-image-input');
+      fireEvent.change(input, { target: { value: 'https://cdn.example/a.jpg' } });
+      fireEvent.keyDown(input, { key: 'a' });
+      expect(screen.queryByTestId('composer-images')).toBeNull();
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(screen.getByTestId('composer-images').querySelectorAll('img')).toHaveLength(1);
+      expect(createPost).not.toHaveBeenCalled();
+    });
+
+    it('la lista de miniaturas no lleva viñetas del navegador', () => {
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      addImage('https://cdn.example/a.png');
+      expect(screen.getByTestId('composer-images')).toHaveClass('list-none');
+    });
+
+    it('409 DUPLICATE_POST muestra el aviso de publicación repetida', async () => {
+      vi.mocked(createPost).mockRejectedValue({ response: { data: { code: 'DUPLICATE_POST' } } });
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      type('Repetida');
+      fireEvent.click(screen.getByTestId('composer-submit'));
+      expect(await screen.findByTestId('composer-error')).toHaveTextContent('hace un momento');
+    });
+  });
 });

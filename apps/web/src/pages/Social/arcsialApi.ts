@@ -136,6 +136,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_POST_CONTENT:
     'El texto debe tener de 1 a 1000 caracteres y hasta 4 imágenes https (.jpg, .png o .webp).',
   POST_NOT_FOUND: 'La publicación ya no existe.',
+  DUPLICATE_POST: 'Ya enviaste esta publicación hace un momento.',
   FORBIDDEN_POST_DELETE: 'Solo quien la redactó puede borrarla.',
   CANNOT_FOLLOW_SELF: 'No puedes seguirte a ti mismo.',
   ALREADY_FOLLOWING: 'Ya sigues a este perfil.',

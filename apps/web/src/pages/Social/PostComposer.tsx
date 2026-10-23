@@ -3,7 +3,7 @@ import { ImagePlus, PlusCircle, X } from 'lucide-react';
 import { describeArcsialError } from './arcsialApi';
 import {
   createPost,
-  isHttpsUrl,
+  isAllowedImageUrl,
   POST_IMAGES_MAX,
   POST_TEXT_MAX,
   PostVisibility,
@@ -23,7 +23,7 @@ const VISIBILITY_OPTIONS: ReadonlyArray<{ value: PostVisibility; label: string }
   { value: 'CONTACTS', label: 'Solo contactos' },
 ];
 
-const IMAGE_URL_ERROR = 'La imagen debe ser una dirección https.';
+const IMAGE_URL_ERROR = 'La imagen debe ser una dirección https terminada en .jpg, .png o .webp.';
 
 interface ImageDraft {
   readonly urls: string[];
@@ -33,34 +33,52 @@ interface ImageDraft {
   readonly add: () => void;
   readonly remove: (url: string) => void;
   readonly clear: () => void;
+  /** FC212 F2 (T2) — las imágenes que viajan: las agregadas más la dirección pendiente si cumple
+   *  la regla U; null (con el aviso puesto) si la pendiente no la cumple. */
+  readonly resolve: () => string[] | null;
 }
 
-/** Lista de URL de imagen del borrador: solo https, sin repetidas, máximo 4. */
+/** Agrega `url` a la lista si no estaba. */
+function withUrl(urls: string[], url: string): string[] {
+  return urls.includes(url) ? urls : [...urls, url];
+}
+
+/** Lista de URL de imagen del borrador: regla U del servidor, sin repetidas, máximo 4. */
 function useImageDraft(): ImageDraft {
   const [urls, setUrls] = useState<string[]>([]);
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const accept = (url: string): boolean => {
+    setError(isAllowedImageUrl(url) ? null : IMAGE_URL_ERROR);
+    return isAllowedImageUrl(url);
+  };
   const add = (): void => {
     const url = input.trim();
-    if (!isHttpsUrl(url)) {
-      setError(IMAGE_URL_ERROR);
-      return;
-    }
-    setUrls((current) => (current.includes(url) ? current : [...current, url]));
+    if (!accept(url)) return;
+    setUrls((current) => withUrl(current, url));
+    setInput('');
+  };
+  const resolve = (): string[] | null => {
+    const pending = input.trim();
+    if (pending === '') return urls;
+    return accept(pending) ? withUrl(urls, pending) : null;
+  };
+  const remove = (url: string): void => setUrls((current) => current.filter((u) => u !== url));
+  const clear = (): void => {
+    setUrls([]);
     setInput('');
     setError(null);
   };
-  const remove = (url: string): void => setUrls((current) => current.filter((u) => u !== url));
-  return { urls, input, error, setInput, add, remove, clear: (): void => setUrls([]) };
+  return { urls, input, error, setInput, add, remove, clear, resolve };
 }
 
 /** Miniaturas de las imágenes agregadas, cada una con su botón para quitarla. */
 function ImagePreviews({ images }: { readonly images: ImageDraft }): React.JSX.Element | null {
   if (images.urls.length === 0) return null;
   return (
-    <ul className="flex flex-wrap gap-2" data-testid="composer-images">
+    <ul className="m-0 flex list-none flex-wrap gap-2 p-0" data-testid="composer-images">
       {images.urls.map((url, index) => (
-        <li key={url} className="relative">
+        <li key={url} className="relative list-none">
           <img
             src={url}
             alt={`Imagen ${index + 1} de la publicación`}
@@ -82,6 +100,15 @@ function ImagePreviews({ images }: { readonly images: ImageDraft }): React.JSX.E
   );
 }
 
+/** Enter en el campo de imagen la agrega y no envía el formulario (FC212 F2). */
+function addOnEnter(images: ImageDraft) {
+  return (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    images.add();
+  };
+}
+
 /** Campo para agregar una imagen por URL; se oculta al llegar al máximo. */
 function ImageUrlField({ images }: { readonly images: ImageDraft }): React.JSX.Element | null {
   if (images.urls.length >= POST_IMAGES_MAX) return null;
@@ -90,6 +117,7 @@ function ImageUrlField({ images }: { readonly images: ImageDraft }): React.JSX.E
       <input
         value={images.input}
         onChange={(e): void => images.setInput(e.target.value)}
+        onKeyDown={addOnEnter(images)}
         placeholder="https://… dirección de una imagen (opcional)"
         aria-label="Dirección de la imagen"
         data-testid="composer-image-input"
@@ -165,6 +193,8 @@ interface ComposerDraft {
   readonly universeId: number | null;
   readonly setUniverseId: (tenantId: number | null) => void;
   readonly error: string | null;
+  /** FC212 F2 (T2, S) — hay una publicación en tránsito: el formulario entero queda deshabilitado. */
+  readonly isSubmitting: boolean;
   readonly submit: (event: React.FormEvent) => void;
 }
 
@@ -174,6 +204,7 @@ function useComposerDraft(images: ImageDraft, onPosted: () => void): ComposerDra
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [universeId, setUniverseId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const published = (): void => {
     setText('');
     images.clear();
@@ -182,12 +213,17 @@ function useComposerDraft(images: ImageDraft, onPosted: () => void): ComposerDra
   };
   const submit = (event: React.FormEvent): void => {
     event.preventDefault();
+    const imageUrls = images.resolve();
+    if (isSubmitting || imageUrls === null) return;
     const authorship = universeId === null ? {} : { asUniverseTenantId: universeId };
-    createPost({ contentText: text.trim(), imageUrls: images.urls, visibility, ...authorship })
+    setIsSubmitting(true);
+    createPost({ contentText: text.trim(), imageUrls, visibility, ...authorship })
       .then(published)
-      .catch((err) => setError(describeArcsialError(err)));
+      .catch((err) => setError(describeArcsialError(err)))
+      .finally(() => setIsSubmitting(false));
   };
-  return { text, setText, visibility, setVisibility, universeId, setUniverseId, error, submit };
+  const state = { text, visibility, universeId, error, isSubmitting };
+  return { ...state, setText, setVisibility, setUniverseId, submit };
 }
 
 /** Campo de texto de la publicación. */
@@ -210,9 +246,11 @@ function ComposerText({ draft }: { readonly draft: ComposerDraft }): React.JSX.E
 function ComposerFooter({
   text,
   error,
+  isSubmitting,
 }: {
   readonly text: string;
   readonly error: string | null;
+  readonly isSubmitting: boolean;
 }): React.JSX.Element {
   return (
     <>
@@ -231,7 +269,7 @@ function ComposerFooter({
           data-testid="composer-submit"
           className="btn-sentinel-sky text-xs disabled:opacity-50"
         >
-          <PlusCircle size={14} /> Publicar
+          <PlusCircle size={14} /> {isSubmitting ? 'Publicando…' : 'Publicar'}
         </button>
       </div>
     </>
@@ -257,20 +295,32 @@ export default function PostComposer({
       data-testid="post-composer"
       className="card-archon-sovereign space-y-3 bg-white p-6 [--card-accent:#0f2a44]"
     >
-      <ComposerText draft={draft} />
-      <ImagePreviews images={images} />
-      <ImageUrlField images={images} />
-      <div className="flex flex-wrap gap-3">
-        <VisibilitySelect value={draft.visibility} onChange={draft.setVisibility} />
-        {muUniverse && (
-          <AuthorshipSelect
-            muUniverse={muUniverse}
-            universeId={draft.universeId}
-            onUniverse={draft.setUniverseId}
-          />
-        )}
-      </div>
-      <ComposerFooter text={draft.text} error={draft.error ?? images.error} />
+      {/* FC212 F2 — un fieldset deshabilitado apaga cada uno de sus controles mientras se publica. */}
+      <fieldset
+        disabled={draft.isSubmitting}
+        aria-busy={draft.isSubmitting}
+        data-testid="composer-fields"
+        className="m-0 min-w-0 space-y-3 border-0 p-0"
+      >
+        <ComposerText draft={draft} />
+        <ImagePreviews images={images} />
+        <ImageUrlField images={images} />
+        <div className="flex flex-wrap gap-3">
+          <VisibilitySelect value={draft.visibility} onChange={draft.setVisibility} />
+          {muUniverse && (
+            <AuthorshipSelect
+              muUniverse={muUniverse}
+              universeId={draft.universeId}
+              onUniverse={draft.setUniverseId}
+            />
+          )}
+        </div>
+        <ComposerFooter
+          text={draft.text}
+          error={draft.error ?? images.error}
+          isSubmitting={draft.isSubmitting}
+        />
+      </fieldset>
     </form>
   );
 }

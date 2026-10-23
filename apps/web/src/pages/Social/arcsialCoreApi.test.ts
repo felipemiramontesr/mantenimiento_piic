@@ -7,8 +7,10 @@ import {
   describeElapsed,
   fetchActor,
   fetchFeed,
+  fetchOwnActorCard,
   fetchWall,
   followActor,
+  isAllowedImageUrl,
   isHttpsUrl,
   searchActors,
   unfollowActor,
@@ -27,6 +29,18 @@ beforeEach(() => {
 });
 
 describe('lecturas', () => {
+  it('FC212 F2 — actor propio: /social/actors/me, solo handle, nombre visible y avatar', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, handle: 'ana', displayName: 'Ana', avatarUrl: null, email: 'x' },
+    });
+    expect(await fetchOwnActorCard()).toEqual({
+      handle: 'ana',
+      displayName: 'Ana',
+      avatarUrl: null,
+    });
+    expect(api.get).toHaveBeenCalledWith('/social/actors/me');
+  });
+
   it('actor por handle', async () => {
     const actor = { id: 7, handle: 'ana', displayName: 'Ana' };
     vi.mocked(api.get).mockResolvedValue({ data: actor });
@@ -118,5 +132,20 @@ describe('utilidades', () => {
     ['ALREADY_FOLLOWING', 'Ya sigues'],
   ])('mensaje en español para %s', (code, text) => {
     expect(describeArcsialError({ response: { data: { code } } })).toContain(text);
+  });
+});
+
+describe('FC212 F2 — regla U de imágenes', () => {
+  it.each([
+    ['https://cdn.example/a.jpg', true],
+    ['https://cdn.example/a.JPEG', true],
+    ['https://cdn.example/a.png', true],
+    ['https://cdn.example/a.webp', true],
+    ['http://cdn.example/a.png', false],
+    ['https://cdn.example/a.gif', false],
+    ['https://cdn.example/a b.png', false],
+    [`https://cdn.example/${'x'.repeat(2048)}.png`, false],
+  ])('isAllowedImageUrl(%s) = %s', (url, expected) => {
+    expect(isAllowedImageUrl(url)).toBe(expected);
   });
 });

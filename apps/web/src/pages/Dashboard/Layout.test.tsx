@@ -83,7 +83,9 @@ describe('DashboardLayout (composition smoke)', () => {
     );
 
     expect(screen.getByTestId('outlet-child')).toBeInTheDocument();
-    expect(screen.getByText('Soberano')).toBeInTheDocument();
+    // FC212 F2 (QA-3) — la cabecera ya no muestra el usuario de acceso; sin sesión con id, «Archonauta».
+    expect(screen.getByText('Archonauta')).toBeInTheDocument();
+    expect(screen.queryByText('Soberano')).not.toBeInTheDocument();
   });
 
   it('FC193 F3 — muestra el aviso amable cuando CapabilityRoute rebotó al Comando (state.capabilityNotice)', () => {

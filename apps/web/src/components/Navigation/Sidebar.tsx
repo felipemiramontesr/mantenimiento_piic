@@ -28,6 +28,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import api from '../../api/client';
 import useAlertsCount from '../../hooks/useAlertsCount';
+import useOwnDisplayName from '../../hooks/useOwnDisplayName';
 
 /**
  * 🔱 Archon Component: Sidebar
@@ -333,7 +334,8 @@ function SidebarAvatarButton({
 interface SidebarProfileHeaderProps {
   readonly isCollapsed: boolean;
   readonly fullImageUrl: string | null;
-  readonly username: string;
+  /** FC212 F2 — nombre visible de Arcsial (o «Archonauta»); nunca el usuario de acceso ni el correo. */
+  readonly displayName: string;
   readonly onProfileClick: () => void;
   readonly firstFocusableRef: React.RefObject<HTMLButtonElement>;
 }
@@ -342,7 +344,7 @@ interface SidebarProfileHeaderProps {
 function SidebarProfileHeader({
   isCollapsed,
   fullImageUrl,
-  username,
+  displayName,
   onProfileClick,
   firstFocusableRef,
 }: SidebarProfileHeaderProps): React.ReactElement {
@@ -369,7 +371,7 @@ function SidebarProfileHeader({
     `}
       >
         <span className="font-black text-sm tracking-tighter text-white uppercase truncate">
-          {username}
+          {displayName}
         </span>
       </div>
     </header>
@@ -703,6 +705,8 @@ function SidebarSystemSettingsButton({
 
 interface SidebarFooterProps {
   readonly isCollapsed: boolean;
+  /** FC212 F2 (T3, C) — solo si la pantalla de Configuración tiene algo para la sesión. */
+  readonly showSystemSettings: boolean;
   readonly onLogout: () => void;
   readonly onSystemSettings: () => void;
   readonly isSystemSettingsActive: boolean;
@@ -714,17 +718,20 @@ interface SidebarFooterProps {
  *  `Sidebar` under budget. */
 function SidebarFooter({
   isCollapsed,
+  showSystemSettings,
   onLogout,
   onSystemSettings,
   isSystemSettingsActive,
 }: SidebarFooterProps): React.ReactElement {
   return (
     <footer className="shrink-0 flex flex-col items-center justify-center pt-3 px-3 gap-2 border-t border-white/5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <SidebarSystemSettingsButton
-        isCollapsed={isCollapsed}
-        isActive={isSystemSettingsActive}
-        onNavigate={onSystemSettings}
-      />
+      {showSystemSettings && (
+        <SidebarSystemSettingsButton
+          isCollapsed={isCollapsed}
+          isActive={isSystemSettingsActive}
+          onNavigate={onSystemSettings}
+        />
+      )}
       <button
         type="button"
         onClick={onLogout}
@@ -754,6 +761,17 @@ function SidebarFooter({
   );
 }
 
+/** FC212 F2 (T3, C) — «Configuración» solo cuando `SystemSettingsModule` muestra al menos una
+ *  sección: Ω, o la sesión ve unidades (propias o de cualquiera). Si no, sería un «Sin acceso». */
+function canSeeSystemSettings({
+  hasPermission,
+  isOmegaStrict,
+}: Pick<PermCheckers, 'hasPermission' | 'isOmegaStrict'>): boolean {
+  return (
+    isOmegaStrict() || hasPermission('fleet:unit:view:any') || hasPermission('fleet:unit:view:own')
+  );
+}
+
 /** `<aside>` shell className — extracted so `Sidebar` stays under budget. */
 function asideClassName(isMobileMenuOpen: boolean): string {
   return `
@@ -778,7 +796,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
 
-  const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
+  const displayName = useOwnDisplayName(currentUser?.id);
 
   const navigateAndCloseMobile = (path: string): void => {
     void navigate(path);
@@ -799,8 +817,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
         <SidebarProfileHeader
           isCollapsed={isCollapsed}
-          fullImageUrl={fullImageUrl}
-          username={currentUser?.username || 'Soberano'}
+          fullImageUrl={resolveImageUrl(currentUser?.imageUrl)}
+          displayName={displayName}
           onProfileClick={(): void => navigateAndCloseMobile('/dashboard/settings')}
           firstFocusableRef={firstFocusableRef}
         />
@@ -818,6 +836,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
         <SidebarFooter
           isCollapsed={isCollapsed}
+          showSystemSettings={canSeeSystemSettings({ hasPermission, isOmegaStrict })}
           onLogout={logout}
           onSystemSettings={(): void => navigateAndCloseMobile('/dashboard/system-settings')}
           isSystemSettingsActive={location.pathname.startsWith('/dashboard/system-settings')}

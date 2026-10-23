@@ -11,6 +11,11 @@ const setIsMobileMenuOpenMock = vi.hoisted(() => vi.fn());
 const useSovereignLayoutMock = vi.hoisted(() => vi.fn());
 const mockLocation = vi.hoisted(() => ({ pathname: '/dashboard/fleet' }));
 const useAlertsCountMock = vi.hoisted(() => vi.fn());
+const useOwnDisplayNameMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../hooks/useOwnDisplayName', () => ({
+  default: useOwnDisplayNameMock,
+}));
 
 vi.mock('../../hooks/useAlertsCount', () => ({
   default: useAlertsCountMock,
@@ -66,6 +71,7 @@ describe('Sidebar Component (Archon Core)', () => {
     useAuthMock.mockReturnValue(defaultAuth);
     useSovereignLayoutMock.mockReturnValue(defaultLayout);
     useAlertsCountMock.mockReturnValue({ count: 0, isLoading: false });
+    useOwnDisplayNameMock.mockReturnValue('Soberano');
   });
 
   it('renders all navigation items properly and avoids redundancy', () => {
@@ -377,17 +383,41 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
   });
 
-  it('renders Soberano fallback when currentUser has no username', () => {
+  it('FC212 F2 (QA-3): la cabecera muestra el nombre visible de Arcsial, nunca el usuario de acceso', () => {
     useAuthMock.mockReturnValue({
-      currentUser: { username: null, imageUrl: null },
+      currentUser: { id: '7', username: 'ana@correo.com', imageUrl: null },
       logout: logoutMock,
+    });
+    useOwnDisplayNameMock.mockReturnValue('Ana Visible');
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(useOwnDisplayNameMock).toHaveBeenCalledWith('7');
+    expect(screen.getByText('Ana Visible')).toBeInTheDocument();
+    expect(screen.queryByText('ana@correo.com')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['Ω', { omega: true, any: false, own: false }, true],
+    ['fleet:unit:view:any', { omega: false, any: true, own: false }, true],
+    ['fleet:unit:view:own', { omega: false, any: false, own: true }, true],
+    ['ninguna', { omega: false, any: false, own: false }, false],
+  ])('FC212 F2 (T3): Configuración con %s → visible=%s', (_label, grants, visible) => {
+    usePermissionsMock.mockReturnValue({
+      ...defaultPermissions,
+      isOmegaStrict: (): boolean => grants.omega,
+      hasPermission: (p: string): boolean =>
+        (p === 'fleet:unit:view:any' && grants.any) || (p === 'fleet:unit:view:own' && grants.own),
     });
     render(
       <BrowserRouter>
         <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
-    expect(screen.getByText('Soberano')).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-item-system-settings') !== null).toBe(visible);
+    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
   it('resolveImageUrl uses empty string when api.defaults.baseURL is not set', () => {

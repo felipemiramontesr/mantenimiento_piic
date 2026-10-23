@@ -130,6 +130,32 @@ export function isHttpsUrl(url: string): boolean {
   return url.startsWith('https://') && url.length > 'https://'.length && !/\s/.test(url);
 }
 
+const IMAGE_URL_MAX = 2048;
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+
+/** FC212 F2 (regla U) — la misma que aplica el servidor a cada imagen de una publicación: https,
+ *  sin espacios, hasta 2048 caracteres y terminada en .jpg, .jpeg, .png o .webp. */
+export function isAllowedImageUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return (
+    isHttpsUrl(url) &&
+    url.length <= IMAGE_URL_MAX &&
+    IMAGE_EXTENSIONS.some((extension) => lower.endsWith(extension))
+  );
+}
+
+export interface OwnActorCard {
+  readonly handle: string;
+  readonly displayName: string;
+  readonly avatarUrl: string | null;
+}
+
+/** FC212 F2 — nombre visible, handle y avatar del actor propio; nunca el correo. */
+export async function fetchOwnActorCard(): Promise<OwnActorCard> {
+  const { data } = await api.get<OwnActorCard>('/social/actors/me');
+  return { handle: data.handle, displayName: data.displayName, avatarUrl: data.avatarUrl };
+}
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
