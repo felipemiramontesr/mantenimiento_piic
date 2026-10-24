@@ -342,6 +342,8 @@ jobs:
         run: bun scripts/checkDeadExports.ts
       - name: Regla 24 — R-MIGRATION-NAMING (FC197 F3 — bloqueante, también en pre-commit)
         run: bun scripts/checkMigrationNaming.ts
+      - name: FC220 — Gobernanza de cadena de suministro (pisos del lock, Dependabot, auditoría diaria, SHA)
+        run: bun scripts/checkSupplyChainGovernance.ts
       - name: Gate 2 — Diff-Scoped Quality (FC094 F1 Dual-Gate — DG2, bloqueante en CI, no solo local)
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then

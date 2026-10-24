@@ -1,0 +1,32 @@
+# FC220 F2 (D37) — Dependabot: actualizaciones de dependencias agrupadas y semanales.
+#
+# El monorepo usa Bun con `bun.lock` de texto (Bun >= 1.1.39): el ecosistema es `bun`, no `npm`
+# (con `npm` Dependabot no actualizaría `bun.lock` y sus PR romperían el `--frozen-lockfile` del CI).
+# Una sola entrada en la raíz cubre los workspaces declarados en el package.json raíz:
+# apps/api, apps/web y packages/contracts.
+#
+# Los PR pasan por el mismo CI de producto (pruebas, Security Audit, Sonar) y se integran bajo
+# Protocolo L; Dependabot nunca fusiona por su cuenta. Las actualizaciones de seguridad se activan
+# en Settings → Code security → "Dependabot security updates" (ajuste del repositorio).
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Mexico_City
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      production-patches:
+        dependency-type: production
+        update-types:
+          - patch
