@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+bun scripts/checkBunVersion.ts
 bun run protocol:verify
 bunx lint-staged
 bun scripts/checkDiffQuality.ts
