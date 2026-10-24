@@ -16,7 +16,7 @@ const RFC_REGEX = /^[A-Z&Ñ]{3,4}\d{6}[A-V1-9][A-Z\d]{2}$/;
 
 const publicSignupBodySchema = z.object({
   fullName: z.string().min(1).max(255),
-  email: z.string().email().max(100),
+  email: z.email().max(100),
   password: z.string().min(8).max(255),
   rfc: z.string().regex(RFC_REGEX, 'RFC inválido'),
   razonSocial: z.string().min(1).max(255),

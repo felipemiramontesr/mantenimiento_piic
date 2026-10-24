@@ -12,6 +12,7 @@ import {
   CatalogMappingError,
   type FinanceUser,
 } from '../services/finance.service';
+import requiredMessage from '../utils/zodRequired';
 
 export { computePeriod };
 
@@ -85,11 +86,11 @@ const CSV_HEADER =
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const createTransactionSchema = z.object({
-  unitId: z.string({ required_error: 'unitId es requerido' }).min(1).max(50),
-  category: z.enum(FINANCE_CATEGORY_ENUM, { required_error: 'category es requerido' }),
+  unitId: z.string(requiredMessage('unitId es requerido')).min(1).max(50),
+  category: z.enum(FINANCE_CATEGORY_ENUM, requiredMessage('category es requerido')),
   amount: z
-    .number({ required_error: 'amount es requerido' })
-    .positive({ message: 'El monto debe ser mayor a 0' }),
+    .number(requiredMessage('amount es requerido'))
+    .positive({ error: 'El monto debe ser mayor a 0' }),
   vendor: z.string().max(150).optional().nullable(),
   invoiceRef: z.string().max(80).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),

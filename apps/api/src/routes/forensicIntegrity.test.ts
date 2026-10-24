@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 import { getEntityAuditHistory, recordAuditLog } from '../services/auditService';
 import runMigration073 from '../services/runMigration073';
 
@@ -302,6 +303,24 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
         payload: { data: { unknownField: 123 }, reason: 'No Valid Changes' },
       });
       expect(response.statusCode).toBe(404);
+    });
+
+    it('FC220 F1: un PATCH parcial no arrastra los valores por omisión del alta (zod 4)', async () => {
+      const update = vi.spyOn(FleetService, 'updateUnit').mockResolvedValueOnce(true);
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/UNIT-1',
+        headers: authHeader(),
+        payload: { data: { colorId: 3 }, reason: 'Solo el color' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(update).toHaveBeenCalledWith(
+        'UNIT-1',
+        { colorId: 3 },
+        'Solo el color',
+        expect.anything()
+      );
+      update.mockRestore();
     });
 
     it('should return 400 when reason is missing on delete', async () => {

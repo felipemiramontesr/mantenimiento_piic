@@ -5,6 +5,7 @@ import db from '../services/db';
 import { outboundFetch } from '../services/outboundFetch';
 import requirePermission from '../middleware/requirePermission';
 import requireSession from '../middleware/requireSession';
+import requiredMessage from '../utils/zodRequired';
 
 const NHTSA_BASE = 'https://api.nhtsa.gov/recalls/recallsByVehicle';
 const NHTSA_TIMEOUT_MS = 8_000;
@@ -36,7 +37,7 @@ const importSchema = z.object({
   campaignNumber: z.string().min(1, 'campaignNumber es requerido'),
   make: z.string().min(1, 'make es requerido'),
   model: z.string().min(1, 'model es requerido'),
-  year: z.number({ required_error: 'year es requerido' }).int().min(1990).max(2100),
+  year: z.number(requiredMessage('year es requerido')).int().min(1990).max(2100),
   description: z.string().optional(),
   publishedDate: z
     .string()
@@ -59,7 +60,7 @@ function registerNhtsaSearchRoute(fastify: FastifyInstance): void {
     async (request, reply) => {
       const parsed = searchSchema.safeParse(request.query);
       if (!parsed.success) {
-        return reply.code(400).send({ error: parsed.error.errors[0].message });
+        return reply.code(400).send({ error: parsed.error.issues[0].message });
       }
       const { make, model, year } = parsed.data;
 
@@ -98,7 +99,7 @@ function registerNhtsaImportRoute(fastify: FastifyInstance): void {
     async (request, reply) => {
       const parsed = importSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ error: parsed.error.errors[0].message });
+        return reply.code(400).send({ error: parsed.error.issues[0].message });
       }
       const { campaignNumber, make, model, year, description, publishedDate } = parsed.data;
 

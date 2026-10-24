@@ -6,6 +6,7 @@ import requirePermission from '../middleware/requirePermission';
 import { RECALL_STATUS_ENUM } from '../constants/recalls';
 import { resolveRequestOwnerScope as resolveOwnerScope } from '../services/ownerScopeResolver';
 import requireSession from '../middleware/requireSession';
+import requiredMessage from '../utils/zodRequired';
 
 const verifyUnitAccess = async (unitId: string, ownerScope: number[] | null): Promise<boolean> => {
   if (ownerScope === null) return true;
@@ -18,11 +19,11 @@ const verifyUnitAccess = async (unitId: string, ownerScope: number[] | null): Pr
 };
 
 const addRecallSchema = z.object({
-  recallId: z.number({ required_error: 'recallId es requerido' }).int().positive(),
+  recallId: z.number(requiredMessage('recallId es requerido')).int().positive(),
 });
 
 const updateRecallSchema = z.object({
-  status: z.enum(RECALL_STATUS_ENUM, { required_error: 'status es requerido' }),
+  status: z.enum(RECALL_STATUS_ENUM, requiredMessage('status es requerido')),
   workOrderId: z.number().int().positive().optional(),
 });
 
@@ -96,7 +97,9 @@ function registerLinkUnitRecallRoute(fastify: FastifyInstance): void {
       const { unitId } = request.params as { unitId: string };
       const parse = addRecallSchema.safeParse(request.body);
       if (!parse.success) {
-        return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
+        return reply
+          .code(400)
+          .send({ error: 'Validation failed', details: z.formatError(parse.error) });
       }
       const { recallId } = parse.data;
       try {
@@ -133,7 +136,9 @@ function registerUpdateUnitRecallRoute(fastify: FastifyInstance): void {
       const { unitId, recallId } = request.params as { unitId: string; recallId: string };
       const parse = updateRecallSchema.safeParse(request.body);
       if (!parse.success) {
-        return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
+        return reply
+          .code(400)
+          .send({ error: 'Validation failed', details: z.formatError(parse.error) });
       }
       const { status, workOrderId } = parse.data;
       const resolvedAt = status === 'COMPLETED' ? new Date().toISOString().slice(0, 10) : null;

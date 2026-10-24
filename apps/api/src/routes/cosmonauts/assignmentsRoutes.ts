@@ -107,7 +107,7 @@ async function handleCreateArc(
   if (!parsed.success) {
     return reply
       .code(400)
-      .send({ success: false, code: 'VALIDATION_ERROR', errors: parsed.error.flatten() });
+      .send({ success: false, code: 'VALIDATION_ERROR', errors: z.flattenError(parsed.error) });
   }
   const { userId, tenantId, cosmonaut_type: cosmonautType } = parsed.data;
 
@@ -165,7 +165,7 @@ async function handleAssignRole(
   if (!parsed.success) {
     return reply
       .code(400)
-      .send({ success: false, code: 'VALIDATION_ERROR', errors: parsed.error.flatten() });
+      .send({ success: false, code: 'VALIDATION_ERROR', errors: z.flattenError(parsed.error) });
   }
   const { roleId, tenantId } = parsed.data;
 

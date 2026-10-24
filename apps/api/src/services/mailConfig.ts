@@ -40,7 +40,7 @@ export type MailConfig = SmtpMailConfig | MemoryMailConfig | DisabledMailConfig;
 const DEFAULT_FROM_NAME = 'Archon ERP';
 const IMPLICIT_TLS_PORT = 465;
 const MAX_TCP_PORT = 65535;
-const emailSchema = z.string().email();
+const emailSchema = z.email();
 
 interface RawSmtpValues {
   readonly host: string;

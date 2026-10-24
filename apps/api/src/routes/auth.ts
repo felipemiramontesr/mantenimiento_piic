@@ -407,7 +407,7 @@ async function handlePatchUser(
   const { id } = request.params as { id: string };
   const body = userUpdateSchema.safeParse(request.body);
   if (!body.success) {
-    return reply.code(400).send({ error: 'U1', details: body.error.format() });
+    return reply.code(400).send({ error: 'U1', details: z.formatError(body.error) });
   }
   const { data: updates, reason } = body.data;
   // `permissions: string[]` no opcional aquí (a diferencia de ScopedUser base):
@@ -466,7 +466,9 @@ async function handleDeleteUser(
   const parse = deleteUserBodySchema.safeParse(request.body);
   const userId = z.coerce.number().int().positive().safeParse(id);
   if (!parse.success || !userId.success) {
-    return reply.code(400).send({ error: 'D1', details: parse.error?.format() });
+    return reply
+      .code(400)
+      .send({ error: 'D1', details: parse.error ? z.formatError(parse.error) : undefined });
   }
   const { reason, confirmUniverseName } = parse.data;
   // FC204 F3 (T1) — ¬T ∨ ¬U → 400: el usuario pertenece a un Universo y Ω escribió su nombre exacto.

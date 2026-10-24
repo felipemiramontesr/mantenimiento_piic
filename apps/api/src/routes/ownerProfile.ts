@@ -336,7 +336,7 @@ async function handlePatchMyProfile(
   if (!parsed.success) {
     return reply
       .code(400)
-      .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
+      .send({ success: false, code: 'VALIDATION_ERROR', details: z.formatError(parsed.error) });
   }
   const caller = request.user as { id: number; permissions: string[] };
   const ownerIds = await getCallerOwnerIds(caller.id);
@@ -360,7 +360,7 @@ async function handlePatchOwnerProfile(
   if (!parsed.success) {
     return reply
       .code(400)
-      .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
+      .send({ success: false, code: 'VALIDATION_ERROR', details: z.formatError(parsed.error) });
   }
   const { ownerId } = request.params as { ownerId: string };
   const caller = request.user as { id: number; permissions: string[] };

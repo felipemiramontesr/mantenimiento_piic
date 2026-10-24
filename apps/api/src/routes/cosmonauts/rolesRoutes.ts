@@ -64,7 +64,7 @@ async function authorizeAndValidateRoleCreate(
   if (!parsed.success) {
     await reply
       .code(400)
-      .send({ success: false, code: 'VALIDATION_ERROR', errors: parsed.error.flatten() });
+      .send({ success: false, code: 'VALIDATION_ERROR', errors: z.flattenError(parsed.error) });
     return null;
   }
   const payload = parsed.data;

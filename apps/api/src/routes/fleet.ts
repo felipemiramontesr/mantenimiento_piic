@@ -6,6 +6,7 @@ import requirePermission from '../middleware/requirePermission';
 import db from '../services/db';
 import { resolveRequestOwnerScope as resolveOwnerScope } from '../services/ownerScopeResolver';
 import requireSession from '../middleware/requireSession';
+import requiredMessage from '../utils/zodRequired';
 
 /**
  * 🔱 Archon Fleet Routes — Plan Omega
@@ -16,7 +17,15 @@ import requireSession from '../middleware/requireSession';
 // ============================================================================
 // ZOD SCHEMAS: CONTRACT DEFINITION
 // ============================================================================
-const createFleetSchema = z.object({
+const FLEET_STATUS_VALUES = ['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'] as const;
+
+/**
+ * FC220 F1 — campos de la unidad SIN valores por omisión: base de la edición parcial. En zod 4 un
+ * `.default()` también se aplica dentro de `.partial()`; si la edición heredara los del alta, un PATCH
+ * parcial sobrescribiría odómetro, combustible, estado, lectura de servicio y costos con sus valores
+ * por omisión. Los valores por omisión viven solo en `createFleetSchema`.
+ */
+const fleetUnitFieldsSchema = z.object({
   assetTypeId: z.number().int(),
   id: z.string().min(2).max(50),
   placas: z.string().max(20).optional().nullable(),
@@ -41,8 +50,8 @@ const createFleetSchema = z.object({
   terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.number().min(0).optional(),
   fuelTankCapacity: z.number().min(0),
-  odometer: z.number().min(0).default(0),
-  initialFuelLevel: z.number().min(0).max(100).default(100),
+  odometer: z.number().min(0),
+  initialFuelLevel: z.number().min(0).max(100),
   lastFuelLevel: z.number().min(0).max(100).optional(),
   maintenanceCenterId: z.number().int().optional().nullable(),
   protocolStartDate: z.string().optional().nullable(),
@@ -50,21 +59,19 @@ const createFleetSchema = z.object({
   circulationCardNumber: z.string().max(100).optional(),
   lastEnvironmentalVerification: z.string().optional().nullable(),
   lastMechanicalVerification: z.string().optional().nullable(),
-  status: z
-    .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
-    .default('Disponible'),
+  status: z.enum(FLEET_STATUS_VALUES),
   colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence
   maintIntervalDays: z
-    .number({ required_error: 'maintIntervalDays is required' })
+    .number(requiredMessage('maintIntervalDays is required'))
     .int()
-    .min(1, { message: 'maintIntervalDays must be greater than 0' }),
+    .min(1, { error: 'maintIntervalDays must be greater than 0' }),
   maintIntervalKm: z
-    .number({ required_error: 'maintIntervalKm is required' })
-    .min(1, { message: 'maintIntervalKm must be greater than 0' }),
+    .number(requiredMessage('maintIntervalKm is required'))
+    .min(1, { error: 'maintIntervalKm must be greater than 0' }),
   lastServiceDate: z.string().optional().nullable(),
-  lastServiceReading: z.number().optional().default(0),
+  lastServiceReading: z.number().optional(),
   dailyUsageAvg: z.number().min(0).optional().nullable(),
   // 🔱 Sovereign Asset Management
   ownerId: z.number().int().optional().nullable(),
@@ -74,8 +81,18 @@ const createFleetSchema = z.object({
   insuranceExpiryDate: z.string().optional().nullable(),
   insuranceCompanyId: z.number().int().optional().nullable(),
   environmentalHologram: z.string().max(10).optional().nullable(),
-  monthlyLeasePayment: z.number().min(0).default(0),
-  insuranceCost: z.number().min(0).optional().nullable().default(0),
+  monthlyLeasePayment: z.number().min(0),
+  insuranceCost: z.number().min(0).optional().nullable(),
+});
+
+/** Alta de unidad: los mismos campos, con los valores por omisión del alta. */
+const createFleetSchema = fleetUnitFieldsSchema.extend({
+  odometer: fleetUnitFieldsSchema.shape.odometer.default(0),
+  initialFuelLevel: fleetUnitFieldsSchema.shape.initialFuelLevel.default(100),
+  status: fleetUnitFieldsSchema.shape.status.default('Disponible'),
+  lastServiceReading: z.number().default(0),
+  monthlyLeasePayment: fleetUnitFieldsSchema.shape.monthlyLeasePayment.default(0),
+  insuranceCost: z.number().min(0).nullable().default(0),
 });
 
 const numericFleetKeys = new Set<string>([
@@ -123,7 +140,7 @@ const updateFleetSchema = z.preprocess((raw) => {
       })
       .map(([k, v]) => [k, numericFleetKeys.has(k) && typeof v === 'string' ? Number(v) : v])
   );
-}, createFleetSchema.partial());
+}, fleetUnitFieldsSchema.partial());
 
 /**
  * Owner-Scoped Fleet Access (F1-A).
@@ -188,7 +205,9 @@ async function handleCreateFleetUnit(
 ): Promise<FastifyReply> {
   const parse = createFleetSchema.safeParse(request.body);
   if (!parse.success) {
-    return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
+    return reply
+      .code(400)
+      .send({ error: 'Validation failed', details: z.formatError(parse.error) });
   }
 
   try {
@@ -243,7 +262,9 @@ async function handleUpdateFleetUnit(
 
   const parse = schema.safeParse(request.body);
   if (!parse.success) {
-    return reply.code(400).send({ error: 'Invalid update format', details: parse.error.format() });
+    return reply
+      .code(400)
+      .send({ error: 'Invalid update format', details: z.formatError(parse.error) });
   }
 
   const { data, reason } = parse.data;

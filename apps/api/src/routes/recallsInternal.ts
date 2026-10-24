@@ -69,7 +69,7 @@ export default function recallsInternalRoutes(
     async (request: FastifyRequest, reply) => {
       const parsed = patternsQuerySchema.safeParse(request.query);
       if (!parsed.success) {
-        return reply.code(400).send({ error: parsed.error.errors[0].message });
+        return reply.code(400).send({ error: parsed.error.issues[0].message });
       }
       const { make, model, year } = parsed.data;
       const { permissions } = request.user as { id: number; permissions?: string[] };

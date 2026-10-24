@@ -38,7 +38,7 @@ const cursorQuerySchema = z.object({
 const searchQuerySchema = z.object({ name: z.string() });
 const handleBodySchema = z.object({ handle: handleSchema });
 const universeBodySchema = z.object({ asUniverseTenantId: tenantIdSchema.optional() });
-const httpsUrlSchema = z.string().url().startsWith('https://').max(AVATAR_URL_MAX);
+const httpsUrlSchema = z.url().startsWith('https://').max(AVATAR_URL_MAX);
 const postBodySchema = z.object({
   contentText: z.string(),
   imageUrls: z.array(z.string()).optional(),
@@ -47,14 +47,13 @@ const postBodySchema = z.object({
 });
 const postIdParamSchema = z.object({ id: z.coerce.number().int().positive() });
 const profileBodySchema = z
-  .object({
+  .strictObject({
     displayName: z.string().trim().min(1).max(100).optional(),
     bio: z.string().trim().max(BIO_MAX).nullable().optional(),
     avatarUrl: httpsUrlSchema.nullable().optional(),
     isSearchable: z.boolean().optional(),
     asUniverseTenantId: tenantIdSchema.optional(),
   })
-  .strict()
   .refine((body) => PROFILE_FIELDS.some((field) => body[field] !== undefined));
 
 type RateLimitCheck = ReturnType<FastifyInstance['createRateLimit']>;

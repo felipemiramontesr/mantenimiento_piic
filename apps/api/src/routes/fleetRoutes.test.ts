@@ -124,7 +124,8 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body).message).toContain('Expected number, received string');
+      // FC220 F1 — zod 4 redacta el mismo rechazo como «Invalid input: expected number, received string».
+      expect(JSON.parse(response.body).message).toContain('expected number, received string');
     });
 
     it('should return 400 on service error', async (): Promise<void> => {

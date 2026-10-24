@@ -54,7 +54,7 @@ const finishRouteSchema = z.object({
   fuelAmount: z.number().min(0).optional(),
   fuelTicketImage: z
     .string()
-    .max(15 * 1024 * 1024, { message: 'Image size exceeds maximum limit' })
+    .max(15 * 1024 * 1024, { error: 'Image size exceeds maximum limit' })
     .optional(),
   additivesCheck: z.boolean().optional(),
   tirePressureJson: z.string().optional(),
@@ -73,7 +73,7 @@ const addCheckpointSchema = z.object({
   sequence: z.number().int().min(1).max(255),
   name: z.string().min(1).max(150),
   neighborhoodId: z.number().int().positive().optional(),
-  eta: z.string().datetime().optional(),
+  eta: z.iso.datetime().optional(),
 });
 
 const deleteRouteSchema = z.object({ reason: z.string().min(5) });

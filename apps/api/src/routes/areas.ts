@@ -73,7 +73,9 @@ function registerCreateOwnerAreaRoute(fastify: FastifyInstance): void {
     const schema = z.object({ name: z.string().min(1).max(100) });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: 'VALIDATION_ERROR', details: parsed.error.format() });
+      return reply
+        .code(400)
+        .send({ error: 'VALIDATION_ERROR', details: z.formatError(parsed.error) });
     }
     const { id } = request.params as { id: string };
     const caller = request.user as { id: number; permissions: string[] };
@@ -120,7 +122,9 @@ function registerUpdateOwnerAreaRoute(fastify: FastifyInstance): void {
     const schema = z.object({ name: z.string().min(1).max(100) });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: 'VALIDATION_ERROR', details: parsed.error.format() });
+      return reply
+        .code(400)
+        .send({ error: 'VALIDATION_ERROR', details: z.formatError(parsed.error) });
     }
     const { id, areaId } = request.params as { id: string; areaId: string };
     const caller = request.user as { id: number; permissions: string[] };

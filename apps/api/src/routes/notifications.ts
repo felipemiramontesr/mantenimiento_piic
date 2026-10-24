@@ -132,7 +132,7 @@ export async function handleRegisterPushToken(
       return reply.code(400).send({
         success: false,
         code: 'VALIDATION_ERROR',
-        message: error.errors[0].message,
+        message: error.issues[0].message,
       });
     }
     return reply.code(500).send({
@@ -169,7 +169,7 @@ export async function handleUnregisterPushToken(
       return reply.code(400).send({
         success: false,
         code: 'VALIDATION_ERROR',
-        message: error.errors[0].message,
+        message: error.issues[0].message,
       });
     }
     return reply.code(500).send({

@@ -15,7 +15,7 @@ const initSchema = z.object({
 
 const updateTaskSchema = z.object({
   status: z.enum(['pending', 'completed', 'DEFERRED_FINANCIAL', 'N_A_STRUCTURAL']),
-  evidenceUrls: z.array(z.string().url()).optional(),
+  evidenceUrls: z.array(z.url()).optional(),
   evidenceNotes: z.string().max(1000).optional(),
 });
 

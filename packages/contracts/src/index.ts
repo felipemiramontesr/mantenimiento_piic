@@ -15,7 +15,7 @@ export const userUpdateSchema = z.object({
   data: z.object({
     fullName: z.string().optional(),
     department: z.string().optional(),
-    email: z.string().email().optional(),
+    email: z.email().optional(),
     password: z.string().min(8).optional(),
     roleId: z.number().int().optional(),
     profilePictureUrl: z.string().optional(),
@@ -31,7 +31,7 @@ export const userUpdateSchema = z.object({
 
 /** PUT /v1/routes/:uuid — fleetRoutes.ts (R5: handleCorrectActiveMission) */
 export const routeUpdateSchema = z.object({
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   reason: z.string().min(5),
 });
 
