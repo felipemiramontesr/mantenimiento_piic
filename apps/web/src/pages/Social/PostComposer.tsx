@@ -218,7 +218,7 @@ function useComposerDraft(images: ImageDraft, onPosted: () => void): ComposerDra
   const submit = (event: React.FormEvent): void => {
     event.preventDefault();
     // Un envío que sale del campo de imagen (el «Ir» del teclado del celular) la agrega, no publica.
-    if (document.activeElement?.getAttribute('data-testid') === IMAGE_INPUT_TESTID) {
+    if ((document.activeElement as HTMLElement | null)?.dataset.testid === IMAGE_INPUT_TESTID) {
       images.add();
       return;
     }
