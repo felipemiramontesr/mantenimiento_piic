@@ -6,12 +6,16 @@
  *   T2  · Dependabot con ecosistema `bun` y grupos; auditoría diaria con horario, disparo manual,
  *         permiso `issues: write` acotado y paso del Issue `security` bajo `if: failure()`; y toda
  *         directiva `uses:` fijada por SHA de 40 caracteres.
+ *   FC221 F2 · `packageManager` con Bun exacto ≥ piso, `bun.lock` en formato 3, workflows con
+ *         `bun-version-file` (sin `bun-version:` fijo), guardia `checkBunVersion` en el pre-commit y
+ *         Dependabot sin saltos mayores (`ignore` por `update-types`, sin `versions`).
  * Funciones puras exportadas para pruebas. CLI: `bun scripts/checkSupplyChainGovernance.ts`
  * (exit 0 = conforme · exit 1 = hallazgos). Corre en el CI junto a los demás gates.
  * Procedimiento: docs/security/dependency-triage.md
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { declaredBunVersion } from './checkBunVersion';
 
 /** Pisos de seguridad vigentes (FC220 F1: GHSA-mrhx-c7xc-m3w5 y GHSA-xjj6-f33q-929c). */
 export const SECURITY_FLOORS: Readonly<Record<string, string>> = {
@@ -91,6 +95,57 @@ export function checkPinnedActions(workflows: Readonly<Record<string, string>>):
   );
 }
 
+/** Piso de Bun: la primera versión que escribe y lee `bun.lock` en formato 3 (FC221 F1). */
+export const BUN_FLOOR = '1.4.4';
+
+/** T2 (P) — `packageManager` declara una versión exacta de Bun que alcanza el piso. */
+export function checkPackageManager(packageJson: string, floor = BUN_FLOOR): string[] {
+  const declared = declaredBunVersion(packageJson);
+  if (declared === null) return ['package.json: falta «"packageManager": "bun@x.y.z"»'];
+  if (compareVersions(declared, floor) < 0) {
+    return [`package.json: packageManager declara bun@${declared}, por debajo del piso ${floor}`];
+  }
+  return [];
+}
+
+/** T2 (L) — `bun.lock` en el formato 3 que leen Bun 1.4 y Dependabot. */
+export function checkLockFormat(lock: string): string[] {
+  return lock.includes('"lockfileVersion": 3,') ? [] : ['bun.lock: falta «"lockfileVersion": 3»'];
+}
+
+/** T2 (C) — paridad del CI: ningún workflow fija Bun a mano; todos leen `packageManager`. */
+export function checkBunVersionSource(workflows: Readonly<Record<string, string>>): string[] {
+  return Object.entries(workflows).flatMap(([file, text]) => {
+    const lines = text.split('\n').map((line, index) => ({ line: line.trim(), number: index + 1 }));
+    const pinned = lines
+      .filter(({ line }) => line.startsWith('bun-version:'))
+      .map(({ line, number }) => `${file}:${number} fija Bun a mano: ${line}`);
+    const usesSetupBun = lines.some(({ line }) => line.includes('oven-sh/setup-bun@'));
+    const readsPackageJson = text.includes("bun-version-file: 'package.json'");
+    const unsourced =
+      usesSetupBun && !readsPackageJson
+        ? [`${file}: setup-bun sin «bun-version-file: 'package.json'»`]
+        : [];
+    return [...pinned, ...unsourced];
+  });
+}
+
+/** T2 (H) — la guardia local de paridad de Bun corre en el pre-commit. */
+export function checkPreCommitGuard(hook: string): string[] {
+  return missing(hook, '.husky/pre-commit', ['bun scripts/checkBunVersion.ts']);
+}
+
+/** T2 (I) — Dependabot ignora los saltos mayores solo por `update-types`, sin `versions`. */
+export function checkMajorIgnore(text: string): string[] {
+  const findings = missing(text, 'dependabot.yml', ['ignore:', 'version-update:semver-major']);
+  return text.split('\n').some((line) => line.trim().startsWith('versions:'))
+    ? [
+        ...findings,
+        'dependabot.yml: «versions:» en ignore también silenciaría parches de seguridad',
+      ]
+    : findings;
+}
+
 /** Lee el repositorio y corre todas las comprobaciones. */
 export function checkRepository(root: string): string[] {
   const read = (path: string): string => readFileSync(join(root, path), 'utf8');
@@ -100,11 +155,18 @@ export function checkRepository(root: string): string[] {
       .filter((file) => file.endsWith('.yml'))
       .map((file) => [file, readFileSync(join(workflowDir, file), 'utf8')])
   );
+  const lock = read('bun.lock');
+  const dependabot = read('.github/dependabot.yml');
   return [
-    ...checkLockFloors(read('bun.lock')),
-    ...checkDependabot(read('.github/dependabot.yml')),
+    ...checkLockFloors(lock),
+    ...checkLockFormat(lock),
+    ...checkDependabot(dependabot),
+    ...checkMajorIgnore(dependabot),
     ...checkAuditCron(read('.github/workflows/dependency-audit-cron.yml')),
     ...checkPinnedActions(workflows),
+    ...checkBunVersionSource(workflows),
+    ...checkPackageManager(read('package.json')),
+    ...checkPreCommitGuard(read('.husky/pre-commit')),
   ];
 }
 
@@ -116,7 +178,7 @@ if (import.meta.main) {
     process.exitCode = 1;
   } else {
     console.log(
-      '[OK] Gobernanza de cadena de suministro — pisos del lock, Dependabot, auditoría diaria y SHA fijados.'
+      '[OK] Gobernanza de cadena de suministro — pisos y formato del lock, Dependabot sin mayores, auditoría diaria, SHA fijados y paridad de Bun.'
     );
   }
 }

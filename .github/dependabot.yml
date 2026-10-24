@@ -20,6 +20,13 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    # FC221 F2 — sin saltos de versión mayor en las actualizaciones rutinarias: un mayor se decide con
+    # su propio FC (como zod 3 → 4). Solo `update-types`, sin `versions`, para no tocar las
+    # actualizaciones de seguridad de Dependabot ni la auditoría diaria.
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
     groups:
       dev-dependencies:
         dependency-type: development

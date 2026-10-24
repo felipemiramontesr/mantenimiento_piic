@@ -3,9 +3,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   checkAuditCron,
+  checkBunVersionSource,
   checkDependabot,
   checkLockFloors,
+  checkLockFormat,
+  checkMajorIgnore,
+  checkPackageManager,
   checkPinnedActions,
+  checkPreCommitGuard,
   checkRepository,
   compareVersions,
   resolvedVersions,
@@ -99,8 +104,61 @@ describe('T2 · acciones fijadas por SHA', () => {
   });
 });
 
+describe('FC221 F2 · paridad de Bun y Dependabot sin mayores', () => {
+  it.each([
+    ['{"packageManager":"bun@1.4.4"}', []],
+    ['{"packageManager":"bun@1.5.0"}', []],
+    [
+      '{"packageManager":"bun@1.3.14"}',
+      ['package.json: packageManager declara bun@1.3.14, por debajo del piso 1.4.4'],
+    ],
+    ['{}', ['package.json: falta «"packageManager": "bun@x.y.z"»']],
+  ])('checkPackageManager(%s)', (json, expected) => {
+    expect(checkPackageManager(json)).toEqual(expected);
+  });
+
+  it('el lock en formato 3 pasa; en otro formato es un hallazgo', () => {
+    expect(checkLockFormat('{\n  "lockfileVersion": 3,\n')).toEqual([]);
+    expect(checkLockFormat('{\n  "lockfileVersion": 1,\n')).toEqual([
+      'bun.lock: falta «"lockfileVersion": 3»',
+    ]);
+  });
+
+  it('setup-bun con bun-version-file pasa; Bun fijo o sin fuente es un hallazgo', () => {
+    const ok = `      - uses: oven-sh/setup-bun@${SHA}\n        with:\n          bun-version-file: 'package.json'`;
+    const pinned = `      - uses: oven-sh/setup-bun@${SHA}\n        with:\n          bun-version: 1.3.14`;
+    expect(checkBunVersionSource({ 'ok.yml': ok, 'sin-bun.yml': 'jobs:' })).toEqual([]);
+    expect(checkBunVersionSource({ 'bad.yml': pinned })).toEqual([
+      'bad.yml:3 fija Bun a mano: bun-version: 1.3.14',
+      "bad.yml: setup-bun sin «bun-version-file: 'package.json'»",
+    ]);
+  });
+
+  it('el pre-commit sin la guardia de Bun es un hallazgo', () => {
+    expect(checkPreCommitGuard('bun scripts/checkBunVersion.ts\nbun run protocol:verify')).toEqual(
+      []
+    );
+    expect(checkPreCommitGuard('bun run protocol:verify')).toEqual([
+      '.husky/pre-commit: falta «bun scripts/checkBunVersion.ts»',
+    ]);
+  });
+
+  it('ignore por update-types pasa; sin ignore o con versions es un hallazgo', () => {
+    const ignore =
+      "ignore:\n  - dependency-name: '*'\n    update-types:\n      - version-update:semver-major";
+    expect(checkMajorIgnore(ignore)).toEqual([]);
+    expect(checkMajorIgnore('groups:')).toEqual([
+      'dependabot.yml: falta «ignore:»',
+      'dependabot.yml: falta «version-update:semver-major»',
+    ]);
+    expect(checkMajorIgnore(`${ignore}\n    versions: ['>=5']`)).toEqual([
+      'dependabot.yml: «versions:» en ignore también silenciaría parches de seguridad',
+    ]);
+  });
+});
+
 describe('el repositorio completo', () => {
-  it('cumple la gobernanza de FC220', () => {
+  it('cumple la gobernanza de FC220 y FC221', () => {
     expect(checkRepository(ROOT)).toEqual([]);
   });
 });
