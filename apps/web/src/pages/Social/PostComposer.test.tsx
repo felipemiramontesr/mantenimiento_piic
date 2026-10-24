@@ -35,7 +35,9 @@ beforeEach(() => {
 describe('PostComposer', () => {
   it('sin texto no se puede publicar; con texto publica en lo personal y como PUBLIC', async () => {
     render(<PostComposer muUniverse={null} onPosted={onPosted} />);
-    expect(screen.getByTestId('composer-submit')).toBeDisabled();
+    expect(screen.getByTestId('composer-submit')).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.submit(screen.getByTestId('post-composer'));
+    expect(createPost).not.toHaveBeenCalled();
     expect(screen.queryByTestId('composer-authorship')).toBeNull();
     type('  Hola Arcsial  ');
     expect(screen.getByTestId('composer-count')).toHaveTextContent('16 / 1000');
@@ -177,6 +179,17 @@ describe('PostComposer', () => {
       fireEvent.keyDown(input, { key: 'a' });
       expect(screen.queryByTestId('composer-images')).toBeNull();
       fireEvent.keyDown(input, { key: 'Enter' });
+      expect(screen.getByTestId('composer-images').querySelectorAll('img')).toHaveLength(1);
+      expect(createPost).not.toHaveBeenCalled();
+    });
+
+    it('celular (teclado Samsung): el «Ir» sin texto escrito llega al envío y agrega la imagen', () => {
+      render(<PostComposer muUniverse={null} onPosted={onPosted} />);
+      expect(screen.getByTestId('composer-image-input')).toHaveAttribute('enterkeyhint', 'done');
+      const input = screen.getByTestId('composer-image-input');
+      fireEvent.change(input, { target: { value: 'https://cdn.example/c.webp' } });
+      input.focus();
+      fireEvent.submit(screen.getByTestId('post-composer'));
       expect(screen.getByTestId('composer-images').querySelectorAll('img')).toHaveLength(1);
       expect(createPost).not.toHaveBeenCalled();
     });

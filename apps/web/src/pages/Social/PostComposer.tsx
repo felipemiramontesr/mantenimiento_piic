@@ -23,6 +23,8 @@ const VISIBILITY_OPTIONS: ReadonlyArray<{ value: PostVisibility; label: string }
   { value: 'CONTACTS', label: 'Solo contactos' },
 ];
 
+const IMAGE_INPUT_TESTID = 'composer-image-input';
+
 const IMAGE_URL_ERROR = 'La imagen debe ser una dirección https terminada en .jpg, .png o .webp.';
 
 interface ImageDraft {
@@ -54,7 +56,7 @@ function useImageDraft(): ImageDraft {
   };
   const add = (): void => {
     const url = input.trim();
-    if (!accept(url)) return;
+    if (url === '' || !accept(url)) return;
     setUrls((current) => withUrl(current, url));
     setInput('');
   };
@@ -100,7 +102,8 @@ function ImagePreviews({ images }: { readonly images: ImageDraft }): React.JSX.E
   );
 }
 
-/** Enter en el campo de imagen la agrega y no envía el formulario (FC212 F2). */
+/** Enter en el campo de imagen la agrega y no envía el formulario (FC212 F2). Hay teclados de
+ *  celular (Samsung) que no informan la tecla: para ellos está la vía del envío en `submit`. */
 function addOnEnter(images: ImageDraft) {
   return (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key !== 'Enter') return;
@@ -118,9 +121,10 @@ function ImageUrlField({ images }: { readonly images: ImageDraft }): React.JSX.E
         value={images.input}
         onChange={(e): void => images.setInput(e.target.value)}
         onKeyDown={addOnEnter(images)}
+        enterKeyHint="done"
         placeholder="https://… dirección de una imagen (opcional)"
         aria-label="Dirección de la imagen"
-        data-testid="composer-image-input"
+        data-testid={IMAGE_INPUT_TESTID}
         className="archon-input flex-1"
       />
       <button
@@ -213,6 +217,12 @@ function useComposerDraft(images: ImageDraft, onPosted: () => void): ComposerDra
   };
   const submit = (event: React.FormEvent): void => {
     event.preventDefault();
+    // Un envío que sale del campo de imagen (el «Ir» del teclado del celular) la agrega, no publica.
+    if (document.activeElement?.getAttribute('data-testid') === IMAGE_INPUT_TESTID) {
+      images.add();
+      return;
+    }
+    if (!text.trim()) return;
     const imageUrls = images.resolve();
     if (isSubmitting || imageUrls === null) return;
     const authorship = universeId === null ? {} : { asUniverseTenantId: universeId };
@@ -263,11 +273,15 @@ function ComposerFooter({
         <span className="text-xs text-[#0f2a44]/40" data-testid="composer-count">
           {text.length} / {POST_TEXT_MAX}
         </span>
+        {/* Sin texto se ve inactivo pero no se desactiva: así el «Ir» de cualquier teclado llega a
+            `submit`, que agrega la imagen pendiente o no hace nada (FC212 F2). */}
         <button
           type="submit"
-          disabled={!text.trim()}
+          aria-disabled={!text.trim()}
           data-testid="composer-submit"
-          className="btn-sentinel-sky text-xs disabled:opacity-50"
+          className={`btn-sentinel-sky text-xs disabled:opacity-50 ${
+            text.trim() ? '' : 'opacity-50'
+          }`}
         >
           <PlusCircle size={14} /> {isSubmitting ? 'Publicando…' : 'Publicar'}
         </button>
