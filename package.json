@@ -1,6 +1,6 @@
 {
   "name": "mantenimiento-piic",
-  "version": "78.103.315",
+  "version": "78.103.316",
   "packageManager": "bun@1.4.4",
   "engines": {
     "node": ">=24.0.0"

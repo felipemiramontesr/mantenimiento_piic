@@ -31,9 +31,12 @@
 # futuro VPS Linux — mismo YAML. Prerrequisitos del runner: Git for
 # Windows (provee bash+openssl) · C:\xampp\mysql\bin en el PATH del
 # sistema (provee mysql/mysqldump) · su IP pública whitelisteada en
-# Hostinger Remote MySQL. SEGURIDAD: el repo DEBE permanecer privado —
-# un self-hosted runner en repo público permite a forks ejecutar código
-# en la máquina host.
+# Hostinger Remote MySQL. SEGURIDAD: un self-hosted runner en repo público
+# puede ejecutar código ajeno en la máquina host. FC222 F2 (D40): el repo es
+# público por decisión de Ω hasta que pase a privado; la mitigación es que
+# este workflow solo se dispara por workflow_dispatch (nunca push ni PR de
+# forks), corre bajo `production-db` con revisión de Ω, y el runner queda
+# apagado salvo por orden de Ω. Detalle: docs/security/supply-chain.md.
 # ============================================================
 
 name: 🏛️ DB Migrations (PROD)

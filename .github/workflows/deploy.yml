@@ -305,6 +305,14 @@ jobs:
       ]
     if: always()
     runs-on: ubuntu-24.04
+    # FC222 F2 (D39) — permisos propios del job: lectura del repo y de los artefactos de esta
+    # corrida, y de lo que necesita la fila Dependabot (alertas, PR y sus checks). Nada de escritura.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      checks: read
+      vulnerability-alerts: read
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
@@ -367,6 +375,7 @@ jobs:
           A06_EXIT: ${{ steps.owasp_scripts.outputs.a06 }}
           A04_EXIT: ${{ steps.owasp_scripts.outputs.a04 }}
           A08_EXIT: ${{ steps.owasp_scripts.outputs.a08 }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: bun scripts/generateCertificationDashboard.ts all-results >> "$GITHUB_STEP_SUMMARY"
 
   hostinger-deployment:

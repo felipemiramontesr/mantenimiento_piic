@@ -13,6 +13,13 @@
  * dependientes + exit codes de A03/A06) e imprime el markdown a stdout
  * (consumido por deploy.yml vía `>> $GITHUB_STEP_SUMMARY`). Exit 1 si
  * GlobalCertificationPass ≡ ⊥ — bloquea `hostinger-deployment` (needs:).
+ *
+ * FC222 F2 (D39) — fila `Dependabot Security & Supply Chain`: lee por la API de GitHub las
+ * alertas abiertas de Dependabot (`vulnerability-alerts: read`) y sus PR abiertos
+ * (`pull-requests: read`, `checks: read`). Una alerta abierta de cualquier severidad la pone en
+ * FAILED el mismo día; un PR de Dependabot en fallo o en conflicto solo la tumba pasados 7 días.
+ * Sin lectura posible queda NO VERIFICADO, que también bloquea (fail-closed). La vista previa de
+ * Hostinger no entra en ningún predicado (R-PREVIEW-OUT-OF-GATE).
  */
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -45,6 +52,18 @@ export interface OwaspCategoryEntry {
 
 export type OwaspCoverageMap = Record<string, OwaspCategoryEntry>;
 
+export interface DependabotPr {
+  number: number;
+  ageDays: number;
+  failing: boolean;
+}
+
+/** Señal leída de GitHub; null cuando no se pudo leer (token, permiso o red). */
+export interface DependabotSignal {
+  openAlerts: number;
+  prs: DependabotPr[];
+}
+
 export interface DashboardInput {
   backend: PlatformSignal;
   frontend: PlatformSignal;
@@ -52,6 +71,7 @@ export interface DashboardInput {
   tsc: { errors: number; warnings: number };
   e2e: PlatformStatus;
   sonar: PlatformStatus;
+  dependabot: DependabotSignal | null;
   coverageMap: OwaspCoverageMap;
   junitSuites: JunitSuiteMaps;
   scriptResults: Record<string, boolean>;
@@ -158,6 +178,41 @@ export function computeOwaspResults(
 }
 
 // ---------------------------------------------------------------------------
+// FC222 F2 · T2 (S) — fila Dependabot: alerta abierta ⇒ FAILED el mismo día; PR en fallo o
+// conflicto ⇒ FAILED solo con más de DEPENDABOT_PR_SLA_DAYS días.
+// ---------------------------------------------------------------------------
+
+export const DEPENDABOT_PR_SLA_DAYS = 7;
+
+const FAILING_CONCLUSIONS = new Set(['failure', 'timed_out', 'action_required', 'startup_failure']);
+
+/** Días completos transcurridos desde `createdAt` hasta `now`. */
+export function ageInDays(createdAt: string, now: Date): number {
+  return Math.floor((now.getTime() - new Date(createdAt).getTime()) / 86_400_000);
+}
+
+/** Un PR falla si GitHub lo marca en conflicto (`dirty`) o algún check terminó en fallo. */
+export function isFailingPr(
+  mergeableState: string | null,
+  conclusions: (string | null)[]
+): boolean {
+  return (
+    mergeableState === 'dirty' || conclusions.some((c) => c !== null && FAILING_CONCLUSIONS.has(c))
+  );
+}
+
+/** PR de Dependabot en fallo o conflicto que ya rebasaron el plazo de 7 días. */
+export function overdueFailingPrs(signal: DependabotSignal): DependabotPr[] {
+  return signal.prs.filter((pr) => pr.failing && pr.ageDays > DEPENDABOT_PR_SLA_DAYS);
+}
+
+/** Estado de la fila Dependabot: sin alertas abiertas ni PR vencidos ⇒ PASSED; sin lectura ⇒ NO VERIFICADO. */
+export function computeDependabotStatus(signal: DependabotSignal | null): PlatformStatus {
+  if (signal === null) return 'NO VERIFICADO';
+  return signal.openAlerts === 0 && overdueFailingPrs(signal).length === 0 ? 'PASSED' : 'FAILED';
+}
+
+// ---------------------------------------------------------------------------
 // T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VERIFICADO)
 // ---------------------------------------------------------------------------
 
@@ -167,6 +222,7 @@ export function computeGlobalCertificationPass(
   db: PlatformStatus,
   e2e: PlatformStatus,
   sonar: PlatformStatus,
+  dependabot: PlatformStatus,
   owaspResults: Record<string, CategoryStatus>
 ): boolean {
   const backendOk = backend.total > 0 && backend.passed === backend.total;
@@ -174,8 +230,9 @@ export function computeGlobalCertificationPass(
   const dbOk = db === 'PASSED';
   const e2eOk = e2e === 'PASSED';
   const sonarOk = sonar === 'PASSED';
+  const dependabotOk = dependabot === 'PASSED';
   const owaspOk = Object.values(owaspResults).every((s) => s === 'PASSED');
-  return backendOk && frontendOk && dbOk && e2eOk && sonarOk && owaspOk;
+  return backendOk && frontendOk && dbOk && e2eOk && sonarOk && dependabotOk && owaspOk;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,64 +250,78 @@ function integrityPct(signal: PlatformSignal): number {
   return Math.round((signal.passed / signal.total) * 100);
 }
 
-export function generateCertificationDashboard(input: DashboardInput): string {
-  const owaspResults = computeOwaspResults(
-    input.coverageMap,
-    input.junitSuites,
-    input.scriptResults
-  );
-  const globalPass = computeGlobalCertificationPass(
+/** GlobalCertificationPass sobre el input completo (lo usan el generador y el CLI). */
+export function computeDashboardPass(input: DashboardInput): boolean {
+  return computeGlobalCertificationPass(
     input.backend,
     input.frontend,
     input.db,
     input.e2e,
     input.sonar,
-    owaspResults
+    computeDependabotStatus(input.dependabot),
+    computeOwaspResults(input.coverageMap, input.junitSuites, input.scriptResults)
   );
+}
 
-  const lines: string[] = [];
-  lines.push('### 🔱 ARCHON CERTIFICATION DASHBOARD');
-  lines.push('');
-  lines.push('| Módulo | Estado | Tests Pasados | Integridad |');
-  lines.push('| :--- | :---: | :---: | :---: |');
-  lines.push(
-    `| 🛡️ Backend API | ${
-      input.backend.passed === input.backend.total ? '✅ PASSED' : '❌ FAILED'
-    } | ${input.backend.passed} / ${input.backend.total} | ${integrityPct(input.backend)}% |`
-  );
-  lines.push(
-    `| 🎨 Frontend Web | ${
-      input.frontend.passed === input.frontend.total ? '✅ PASSED' : '❌ FAILED'
-    } | ${input.frontend.passed} / ${input.frontend.total} | ${integrityPct(input.frontend)}% |`
-  );
-  lines.push(
-    `| 🏷️ Static Type Checking | ${input.tsc.errors === 0 ? '✅ PASSED' : '❌ FAILED'} | ${
-      input.tsc.errors
-    } Errors / ${input.tsc.warnings} Warnings | ${input.tsc.errors === 0 ? 100 : 0}% |`
-  );
-  lines.push(`| 🗄️ Database (SQL) | ${statusEmoji(input.db)} | — | — |`);
-  lines.push(`| 🧪 E2E (Playwright) | ${statusEmoji(input.e2e)} | — | — |`);
-  lines.push(`| 🔍 SonarQube Quality Gate | ${statusEmoji(input.sonar)} | — | — |`);
+function dependabotDetail(signal: DependabotSignal | null): string {
+  if (signal === null) return 'sin lectura de GitHub';
+  const overdue = overdueFailingPrs(signal).length;
+  return `${signal.openAlerts} alertas abiertas · ${overdue} PR vencidos (> ${DEPENDABOT_PR_SLA_DAYS} días)`;
+}
+
+function platformRows(input: DashboardInput, globalPass: boolean): string[] {
   const totalPassed = input.backend.passed + input.frontend.passed;
   const totalTests = input.backend.total + input.frontend.total;
-  lines.push(
+  return [
+    `| 🛡️ Backend API | ${
+      input.backend.passed === input.backend.total ? '✅ PASSED' : '❌ FAILED'
+    } | ${input.backend.passed} / ${input.backend.total} | ${integrityPct(input.backend)}% |`,
+    `| 🎨 Frontend Web | ${
+      input.frontend.passed === input.frontend.total ? '✅ PASSED' : '❌ FAILED'
+    } | ${input.frontend.passed} / ${input.frontend.total} | ${integrityPct(input.frontend)}% |`,
+    `| 🏷️ Static Type Checking | ${input.tsc.errors === 0 ? '✅ PASSED' : '❌ FAILED'} | ${
+      input.tsc.errors
+    } Errors / ${input.tsc.warnings} Warnings | ${input.tsc.errors === 0 ? 100 : 0}% |`,
+    `| 🗄️ Database (SQL) | ${statusEmoji(input.db)} | — | — |`,
+    `| 🧪 E2E (Playwright) | ${statusEmoji(input.e2e)} | — | — |`,
+    `| 🔍 SonarQube Quality Gate | ${statusEmoji(input.sonar)} | — | — |`,
+    `| 🤖 Dependabot Security & Supply Chain | ${statusEmoji(
+      computeDependabotStatus(input.dependabot)
+    )} | ${dependabotDetail(input.dependabot)} | — |`,
     `| **TOTAL** | **${
       globalPass ? 'CERTIFICADO' : 'NO CERTIFICADO'
-    }** | **${totalPassed} / ${totalTests}** | **${globalPass ? 100 : 0}%** |`
-  );
-  lines.push('');
-  lines.push('### 🛡️ OWASP SECURITY CERTIFICATION (TOP 10)');
-  lines.push('');
-  lines.push('| Categoría | Riesgo | Estado |');
-  lines.push('| :--- | :--- | :---: |');
-  OWASP_DOMAIN_ORDER.forEach((cat) => {
-    const entry = input.coverageMap[cat];
-    if (entry === undefined) return;
-    const status = owaspResults[cat];
-    lines.push(`| **${cat}** | ${entry.label} | ${statusEmoji(status)} |`);
-  });
+    }** | **${totalPassed} / ${totalTests}** | **${globalPass ? 100 : 0}%** |`,
+  ];
+}
 
-  return lines.join('\n');
+function owaspRows(input: DashboardInput): string[] {
+  const owaspResults = computeOwaspResults(
+    input.coverageMap,
+    input.junitSuites,
+    input.scriptResults
+  );
+  return OWASP_DOMAIN_ORDER.flatMap((cat) => {
+    const entry = input.coverageMap[cat];
+    if (entry === undefined) return [];
+    return [`| **${cat}** | ${entry.label} | ${statusEmoji(owaspResults[cat])} |`];
+  });
+}
+
+/** Markdown del «Archon Global Certification» a partir de señales computadas (cero texto fijo de estado). */
+export function generateCertificationDashboard(input: DashboardInput): string {
+  return [
+    '### 🔱 ARCHON CERTIFICATION DASHBOARD',
+    '',
+    '| Módulo | Estado | Tests Pasados | Integridad |',
+    '| :--- | :---: | :---: | :---: |',
+    ...platformRows(input, computeDashboardPass(input)),
+    '',
+    '### 🛡️ OWASP SECURITY CERTIFICATION (TOP 10)',
+    '',
+    '| Categoría | Riesgo | Estado |',
+    '| :--- | :--- | :---: |',
+    ...owaspRows(input),
+  ].join('\n');
 }
 
 /* v8 ignore start */
@@ -290,6 +361,78 @@ function exitCodeToStatus(exitCode: string | undefined): boolean | undefined {
   return exitCode === '0';
 }
 
+const DEPENDABOT_LOGIN = 'dependabot[bot]';
+
+async function githubGet<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  });
+  if (!response.ok) throw new Error(`GitHub ${path} → HTTP ${response.status}`);
+  return (await response.json()) as T;
+}
+
+interface GithubPull {
+  number: number;
+  created_at: string;
+  user: { login: string };
+  head: { sha: string };
+}
+
+async function readDependabotPr(
+  repo: string,
+  token: string,
+  pr: GithubPull,
+  now: Date
+): Promise<DependabotPr> {
+  const detail = await githubGet<{ mergeable_state: string | null }>(
+    `/repos/${repo}/pulls/${pr.number}`,
+    token
+  );
+  const checks = await githubGet<{ check_runs: { conclusion: string | null }[] }>(
+    `/repos/${repo}/commits/${pr.head.sha}/check-runs?per_page=100`,
+    token
+  );
+  return {
+    number: pr.number,
+    ageDays: ageInDays(pr.created_at, now),
+    failing: isFailingPr(
+      detail.mergeable_state,
+      checks.check_runs.map((run) => run.conclusion)
+    ),
+  };
+}
+
+/** Lee alertas abiertas y PR de Dependabot; null si falta token o la API rechaza la lectura. */
+async function readDependabotSignal(): Promise<DependabotSignal | null> {
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPOSITORY;
+  if (!token || !repo) return null;
+  try {
+    const now = new Date();
+    const alerts = await githubGet<unknown[]>(
+      `/repos/${repo}/dependabot/alerts?state=open&per_page=100`,
+      token
+    );
+    const pulls = await githubGet<GithubPull[]>(
+      `/repos/${repo}/pulls?state=open&per_page=100`,
+      token
+    );
+    const prs = await Promise.all(
+      pulls
+        .filter((pr) => pr.user.login === DEPENDABOT_LOGIN)
+        .map((pr) => readDependabotPr(repo, token, pr, now))
+    );
+    return { openAlerts: alerts.length, prs };
+  } catch (error) {
+    console.error(`[Dependabot] sin lectura — fila NO VERIFICADO (fail-closed): ${String(error)}`);
+    return null;
+  }
+}
+
 if (import.meta.main) {
   const allResultsDir = process.argv[2] ?? 'all-results';
 
@@ -317,6 +460,7 @@ if (import.meta.main) {
     },
     e2e: jobResultToStatus(process.env.E2E_RESULT),
     sonar: jobResultToStatus(process.env.SONAR_RESULT),
+    dependabot: await readDependabotSignal(),
     coverageMap,
     junitSuites: { api: backendSuites, web: frontendSuites },
     scriptResults: {
@@ -330,19 +474,6 @@ if (import.meta.main) {
   const markdown = generateCertificationDashboard(input);
   console.log(markdown);
 
-  const owaspResults = computeOwaspResults(
-    input.coverageMap,
-    input.junitSuites,
-    input.scriptResults
-  );
-  const pass = computeGlobalCertificationPass(
-    input.backend,
-    input.frontend,
-    input.db,
-    input.e2e,
-    input.sonar,
-    owaspResults
-  );
-  if (!pass) process.exit(1);
+  if (!computeDashboardPass(input)) process.exit(1);
 }
 /* v8 ignore stop */

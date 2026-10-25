@@ -5,13 +5,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ageInDays,
   computeCategoryStatus,
+  computeDashboardPass,
+  computeDependabotStatus,
   computeGlobalCertificationPass,
   computeOwaspResults,
+  DEPENDABOT_PR_SLA_DAYS,
   generateCertificationDashboard,
+  isFailingPr,
   mergeJunitSuiteMaps,
+  overdueFailingPrs,
   parseJUnitTestsuites,
   type DashboardInput,
+  type DependabotPr,
+  type DependabotSignal,
   type OwaspCoverageMap,
 } from './generateCertificationDashboard';
 
@@ -110,6 +118,7 @@ describe('T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VE
       'PASSED',
       'PASSED',
       'PASSED',
+      'PASSED',
       { ...fullPassOwasp }
     );
     expect(result).toBe(true);
@@ -119,6 +128,7 @@ describe('T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VE
     const result = computeGlobalCertificationPass(
       { passed: 10, total: 10 },
       { passed: 20, total: 20 },
+      'PASSED',
       'PASSED',
       'PASSED',
       'PASSED',
@@ -134,9 +144,26 @@ describe('T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VE
       'PASSED',
       'PASSED',
       'PASSED',
+      'PASSED',
       { ...fullPassOwasp }
     );
     expect(result).toBe(false);
+  });
+
+  it('Dependabot en FAILED o NO VERIFICADO fuerza GlobalCertificationPass ⊥', () => {
+    (['FAILED', 'NO VERIFICADO'] as const).forEach((dependabot) => {
+      expect(
+        computeGlobalCertificationPass(
+          { passed: 10, total: 10 },
+          { passed: 20, total: 20 },
+          'PASSED',
+          'PASSED',
+          'PASSED',
+          dependabot,
+          { ...fullPassOwasp }
+        )
+      ).toBe(false);
+    });
   });
 
   it('E2E o Sonar en FAILED fuerza GlobalCertificationPass ⊥', () => {
@@ -146,6 +173,7 @@ describe('T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VE
         { passed: 20, total: 20 },
         'PASSED',
         'FAILED',
+        'PASSED',
         'PASSED',
         { ...fullPassOwasp }
       )
@@ -157,6 +185,7 @@ describe('T2 — GlobalCertificationPass (enmienda v1.1: cero tolerancia a NO VE
         'PASSED',
         'PASSED',
         'FAILED',
+        'PASSED',
         { ...fullPassOwasp }
       )
     ).toBe(false);
@@ -196,6 +225,7 @@ describe('Scenario 5 — generador puro (generateCertificationDashboard)', () =>
     tsc: { errors: 0, warnings: 0 },
     e2e: 'PASSED',
     sonar: 'PASSED',
+    dependabot: { openAlerts: 0, prs: [] },
     coverageMap: {
       A05: {
         label: 'Security Misconfiguration',
@@ -222,5 +252,82 @@ describe('Scenario 5 — generador puro (generateCertificationDashboard)', () =>
     expect(md).toContain('**A05** | Security Misconfiguration | ✅ PASSED');
     expect(md).toContain('CERTIFICADO');
     expect(md).not.toContain('NO CERTIFICADO');
+  });
+});
+
+// FC222 F2 · T2 (S) — los cuatro casos de 639_AN/643_AN sobre la fila Dependabot.
+describe('FC222 F2 — fila Dependabot (alertas el mismo día, PR con SLA de 7 días)', () => {
+  const pr = (ageDays: number, failing: boolean): DependabotPr => ({ number: 1, ageDays, failing });
+
+  it('caso 1: cero alertas abiertas y sin PR → PASSED', () => {
+    expect(computeDependabotStatus({ openAlerts: 0, prs: [] })).toBe('PASSED');
+  });
+
+  it('caso 2: una alerta abierta de cualquier severidad → FAILED el mismo día, aun con PR recientes', () => {
+    expect(computeDependabotStatus({ openAlerts: 1, prs: [] })).toBe('FAILED');
+    expect(computeDependabotStatus({ openAlerts: 1, prs: [pr(0, true)] })).toBe('FAILED');
+  });
+
+  it('caso 3: PR en fallo de hasta 7 días y sin alertas → PASSED', () => {
+    expect(
+      computeDependabotStatus({ openAlerts: 0, prs: [pr(DEPENDABOT_PR_SLA_DAYS, true)] })
+    ).toBe('PASSED');
+  });
+
+  it('caso 4: PR en fallo con más de 7 días → FAILED', () => {
+    const signal: DependabotSignal = {
+      openAlerts: 0,
+      prs: [pr(DEPENDABOT_PR_SLA_DAYS + 1, true), pr(30, false)],
+    };
+    expect(computeDependabotStatus(signal)).toBe('FAILED');
+    expect(overdueFailingPrs(signal)).toHaveLength(1);
+  });
+
+  it('un PR viejo en verde no cuenta como vencido → PASSED', () => {
+    expect(computeDependabotStatus({ openAlerts: 0, prs: [pr(30, false)] })).toBe('PASSED');
+  });
+
+  it('sin lectura de GitHub → NO VERIFICADO (fail-closed)', () => {
+    expect(computeDependabotStatus(null)).toBe('NO VERIFICADO');
+  });
+
+  it('isFailingPr: conflicto (dirty) o un check en fallo; pendientes y éxitos no fallan', () => {
+    expect(isFailingPr('dirty', ['success'])).toBe(true);
+    expect(isFailingPr('clean', ['success', 'failure'])).toBe(true);
+    expect(isFailingPr('blocked', ['timed_out'])).toBe(true);
+    expect(isFailingPr('clean', ['success', 'skipped', null])).toBe(false);
+    expect(isFailingPr(null, [])).toBe(false);
+  });
+
+  it('ageInDays cuenta días completos', () => {
+    const now = new Date('2026-10-25T12:00:00Z');
+    expect(ageInDays('2026-10-18T12:00:00Z', now)).toBe(7);
+    expect(ageInDays('2026-10-18T12:00:01Z', now)).toBe(6);
+    expect(ageInDays('2026-10-17T11:59:59Z', now)).toBe(8);
+  });
+
+  it('el markdown muestra la fila con su detalle y el TOTAL la respeta', () => {
+    const input: DashboardInput = {
+      backend: { passed: 1, total: 1 },
+      frontend: { passed: 1, total: 1 },
+      db: 'PASSED',
+      tsc: { errors: 0, warnings: 0 },
+      e2e: 'PASSED',
+      sonar: 'PASSED',
+      dependabot: { openAlerts: 2, prs: [pr(9, true)] },
+      coverageMap: {},
+      junitSuites: { api: {}, web: {} },
+      scriptResults: {},
+    };
+    const md = generateCertificationDashboard(input);
+    expect(md).toContain(
+      '| 🤖 Dependabot Security & Supply Chain | ❌ FAILED | 2 alertas abiertas · 1 PR vencidos (> 7 días) | — |'
+    );
+    expect(md).toContain('NO CERTIFICADO');
+    expect(computeDashboardPass(input)).toBe(false);
+    expect(computeDashboardPass({ ...input, dependabot: { openAlerts: 0, prs: [] } })).toBe(true);
+    expect(generateCertificationDashboard({ ...input, dependabot: null })).toContain(
+      '⚠️ NO VERIFICADO | sin lectura de GitHub'
+    );
   });
 });
