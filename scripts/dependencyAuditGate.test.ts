@@ -5,7 +5,13 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { ACCEPTED_EXCEPTIONS, countBySeverity, evaluateAuditPass } from './dependencyAuditGate';
+import {
+  ACCEPTED_EXCEPTIONS,
+  countBySeverity,
+  evaluateAuditPass,
+  parseAuditOutput,
+  runBunAudit,
+} from './dependencyAuditGate';
 
 describe('T2 — AuditPass (4 filas · dominio {⊤, ⊥})', () => {
   it('fila ⊤⊤: critical=0 ∧ high=0 → AuditPass ≡ ⊤', () => {
@@ -72,21 +78,17 @@ describe('countBySeverity — parser del reporte `bun audit --json`', () => {
   });
 });
 
-describe('FC083 H4 — ACCEPTED_EXCEPTIONS (excepción acotada, Cond.1-2 Bravo 2026-07-26)', () => {
-  it('las excepciones activas son exactas: brace-expansion 1124334 y braces 1240992', () => {
-    expect(ACCEPTED_EXCEPTIONS).toHaveLength(2);
+describe('FC222 F1 — ACCEPTED_EXCEPTIONS (solo braces; brace-expansion retirada)', () => {
+  it('la única excepción activa es braces 1240992', () => {
+    expect(ACCEPTED_EXCEPTIONS).toHaveLength(1);
     expect(ACCEPTED_EXCEPTIONS[0]).toMatchObject({
-      packageName: 'brace-expansion',
-      advisoryId: 1124334,
-    });
-    expect(ACCEPTED_EXCEPTIONS[1]).toMatchObject({
       packageName: 'braces',
       advisoryId: 1240992,
       reviewBy: '2027-01-03',
     });
   });
 
-  it('high de brace-expansion CON el advisory exacto → se exceptúa, AuditPass ⊤', () => {
+  it('E: un high de brace-expansion con el advisory 1124334 ya NO se exceptúa → AuditPass ⊥', () => {
     const report = {
       'brace-expansion': [
         {
@@ -98,44 +100,28 @@ describe('FC083 H4 — ACCEPTED_EXCEPTIONS (excepción acotada, Cond.1-2 Bravo 2
       ],
     };
     const counts = countBySeverity(report);
-    expect(counts.high).toBe(0);
+    expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
+  });
+});
+
+describe('parseAuditOutput', () => {
+  it('sin salida equivale a un reporte vacío', () => {
+    expect(parseAuditOutput('  \n')).toEqual({});
+  });
+
+  it('salida no JSON → lanza (fail-closed)', () => {
+    expect(() => parseAuditOutput('error: registry unreachable')).toThrow();
+  });
+});
+
+// FC222 F1 · T1 (M) — D39: el reporte REAL de este repositorio, no uno sintético, sin moderate ni low.
+describe('FC222 F1 — M: `bun audit` del repositorio en cero', () => {
+  it('critical = high = moderate = low = 0 en el árbol real', () => {
+    const counts = countBySeverity(parseAuditOutput(runBunAudit().stdout));
+    expect(counts).toMatchObject({ critical: 0, high: 0, moderate: 0, low: 0 });
     expect(evaluateAuditPass(counts)).toBe(true);
-  });
-
-  it('Cond.2 Bravo: high de brace-expansion con OTRO advisory ID → NO se exceptúa, AuditPass ⊥', () => {
-    const report = {
-      'brace-expansion': [
-        {
-          id: 9999999, // CVE futuro distinto, no cubierto por la allowlist
-          severity: 'high',
-          title: 'brace-expansion: otra vulnerabilidad hipotética',
-          url: 'https://example.invalid',
-        },
-      ],
-    };
-    const counts = countBySeverity(report);
-    expect(counts.high).toBe(1);
-    expect(evaluateAuditPass(counts)).toBe(false);
-  });
-
-  it('Cond.1 Bravo: high de OTRO paquete distinto → NO se exceptúa, AuditPass ⊥', () => {
-    const report = {
-      'left-pad': [{ id: 1124334, severity: 'high', title: 'RCE', url: 'https://x' }],
-    };
-    const counts = countBySeverity(report);
-    expect(counts.high).toBe(1);
-    expect(evaluateAuditPass(counts)).toBe(false);
-  });
-
-  it('excepción convive con un high real no relacionado: solo se descuenta el exceptuado', () => {
-    const report = {
-      'brace-expansion': [{ id: 1124334, severity: 'high', title: 'x', url: 'https://x' }],
-      'left-pad': [{ id: 42, severity: 'high', title: 'RCE', url: 'https://y' }],
-    };
-    const counts = countBySeverity(report);
-    expect(counts.high).toBe(1);
-    expect(evaluateAuditPass(counts)).toBe(false);
-  });
+  }, 120_000);
 });
 
 // FC203 F1 (O 479_AN · R 480_AN) — excepción de braces: solo ese advisory; todo lo demás sigue frenando.

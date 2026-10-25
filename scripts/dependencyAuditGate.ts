@@ -25,6 +25,11 @@
  * sigue bloqueando; (3) Kanban P1 -- reevaluar si eslint suelta minimatch@3.x
  * en un futuro release; (4) todo bump de eslint/plugins relacionados se loguea
  * en H/F; (5) prohibido ampliar esta allowlist sin O/R/Omega.
+ *
+ * FC222 F1 (O 641_AN · R 643_AN) — la excepcion de brace-expansion (1124334) se
+ * retira: el advisory ya no aparece en el reporte, asi que vuelve a bloquear si
+ * reaparece. Solo queda braces (1240992). El umbral del gate no cambia; el cero
+ * de moderate y low (D39) lo exige la prueba sobre el reporte real del repo.
  */
 import { spawnSync } from 'child_process';
 
@@ -53,18 +58,6 @@ interface AcceptedException {
 // FC083 H4 Cond.1/5 (Bravo): allowlist exacta, un unico advisory ID, no
 // ampliable sin FC firmado O/R/Omega.
 export const ACCEPTED_EXCEPTIONS: readonly AcceptedException[] = [
-  {
-    packageName: 'brace-expansion',
-    advisoryId: 1124334,
-    reason:
-      'eslint@9.39.5 (nucleo, ultima version publicada) + @eslint/eslintrc + ' +
-      '@eslint/config-array + eslint-plugin-import + eslint-plugin-react ' +
-      'dependen de minimatch@^3.1.x -> brace-expansion@1.x. Sin backport ' +
-      'disponible (GHSA-mh99-v99m-4gvg); forzar minimatch@10 rompe ' +
-      '@eslint/eslintrc (SyntaxError verificado). Solo devDependency de ' +
-      'tooling, sin runtime de produccion.',
-    reviewBy: '2026-10-26',
-  },
   {
     // FC203 F1 (O 479_AN · R 480_AN · ratificada por Ω 2026-10-03).
     packageName: 'braces',
@@ -115,15 +108,26 @@ export function evaluateAuditPass(counts: Pick<SeverityCounts, 'critical' | 'hig
   return counts.critical === 0 && counts.high === 0; // T2
 }
 
-/* v8 ignore start */
-if (import.meta.main) {
+/** Corre `bun audit --json` sobre el árbol real del repositorio y devuelve su salida cruda. */
+export function runBunAudit(): { stdout: string; stderr: string } {
   const result = spawnSync('bun', ['audit', '--json'], {
     encoding: 'utf8',
     shell: process.platform === 'win32',
   });
+  return { stdout: result.stdout, stderr: result.stderr };
+}
+
+/** Parsea la salida de `bun audit --json`; sin salida significa reporte vacío. */
+export function parseAuditOutput(stdout: string): unknown {
+  // bun audit sale con exit ≠ 0 ante cualquier vulnerabilidad; el umbral lo decide T2
+  return JSON.parse(stdout.trim() === '' ? '{}' : stdout);
+}
+
+/* v8 ignore start */
+if (import.meta.main) {
+  const result = runBunAudit();
   try {
-    // bun audit sale con exit ≠ 0 ante cualquier vulnerabilidad; el umbral lo decide T2 aquí
-    const report: unknown = JSON.parse(result.stdout.trim() === '' ? '{}' : result.stdout);
+    const report = parseAuditOutput(result.stdout);
     const counts = countBySeverity(report);
     console.log(
       `[AuditGate] critical=${counts.critical} · high=${counts.high} · moderate=${counts.moderate} · low=${counts.low} · info=${counts.info}`
