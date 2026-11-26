@@ -42,6 +42,7 @@ describe('T1b · pisos del lock', () => {
     '"zod": ["zod@4.6.7", "", {}, "sha512-x"],',
     '"eslint-plugin-react-hooks/zod": ["zod@3.25.76", "", {}, "sha512-y"],',
     '"undici": ["undici@7.30.1", "", {}, "sha512-z"],',
+    '"follow-redirects": ["follow-redirects@1.16.2", "", {}, "sha512-w"],',
   ].join('\n');
 
   it('lee todas las copias resueltas, incluidas las anidadas', () => {
@@ -56,6 +57,13 @@ describe('T1b · pisos del lock', () => {
 
   it('un paquete con piso que el lock no resuelve es un hallazgo', () => {
     expect(checkLockFloors('', { zod: '4.6.7' })).toEqual(['bun.lock no resuelve zod']);
+  });
+
+  it('FC224: follow-redirects por debajo de 1.16.2 es un hallazgo', () => {
+    const stale = lock.replace('follow-redirects@1.16.2', 'follow-redirects@1.16.1');
+    expect(checkLockFloors(stale)).toContain(
+      'follow-redirects@1.16.1 en bun.lock está por debajo del piso 1.16.2'
+    );
   });
 
   it('el bun.lock real cumple los pisos', () => {

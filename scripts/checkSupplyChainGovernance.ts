@@ -17,10 +17,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { declaredBunVersion } from './checkBunVersion';
 
-/** Pisos de seguridad vigentes (FC220 F1: GHSA-mrhx-c7xc-m3w5 y GHSA-xjj6-f33q-929c). */
+/** Pisos de seguridad vigentes (FC220 F1: GHSA-mrhx-c7xc-m3w5 y GHSA-xjj6-f33q-929c · FC224 F1: GHSA-mrwp-f3q8-3g9p). */
 export const SECURITY_FLOORS: Readonly<Record<string, string>> = {
   zod: '4.6.7',
   undici: '7.30.1',
+  'follow-redirects': '1.16.2',
 };
 
 /** Compara dos versiones `x.y.z` (ignora sufijos de prerelease): negativo, cero o positivo. */
